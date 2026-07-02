@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Realteek — Buy. Sell. Rent. Real Estate Done Right</title>
+<meta name="description" content="Realteek — handpicked residential homes, offices and luxury units. Buy, sell and rent real estate done right." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Bricolage+Grotesque:opsz,wght@12..96,300..800&family=Hanken+Grotesk:wght@300..700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<div class="grain" aria-hidden="true"></div>
+
+<!-- ============ HEADER ============ -->
+<header class="site-header" id="header">
+  <div class="container header-inner">
+    <a href="#" class="brand" aria-label="Realteek home">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 32 32" fill="none"><path d="M4 28V13l8-6 8 6v15h-5v-8h-6v8H4Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M20 28V11l4-3 4 3v17" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+      </span>
+      <span class="brand-name">Realteek</span>
+    </a>
+
+    <nav class="nav" id="nav">
+      <a href="index.html" class="active">Home</a>
+      <a href="projects.html">Projects</a>
+      <a href="about.html">About Us</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+
+    <div class="header-actions">
+      <a href="admin/login.html" class="btn btn-glass login">Login</a>
+      <button class="nav-toggle" id="navToggle" aria-label="Open menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- ============ HERO ============ -->
+<section class="hero" id="hero">
+  <div class="hero-sky" aria-hidden="true"></div>
+  <div class="hero-skyline solo" id="heroSkyline" aria-hidden="true"></div>
+  <canvas class="stars" aria-hidden="true"></canvas>
+
+  <div class="container hero-content">
+    <p class="hero-eyebrow reveal">Buy. Sell. Rent.</p>
+    <h1 class="hero-title reveal">Real Estate <span>Done Right</span></h1>
+    <p class="hero-sub reveal">A handpicked collection of homes, offices and luxury spaces — curated for people who refuse to settle.</p>
+  </div>
+
+  <!-- Floating search bar -->
+  <div class="container">
+    <form class="search-bar reveal" id="searchBar" onsubmit="return false;">
+      <div class="search-field search-loc">
+        <span class="sf-icon">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11Z" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="10" r="2.5" stroke="currentColor" stroke-width="1.6"/></svg>
+        </span>
+        <input type="text" placeholder="Search location" aria-label="Search location" />
+      </div>
+      <div class="search-field">
+        <span class="sf-icon">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M4 20V9l8-5 8 5v11" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M9 20v-6h6v6" stroke="currentColor" stroke-width="1.6"/></svg>
+        </span>
+        <select aria-label="Purpose"><option>Buy</option><option>Rent</option><option>Sell</option></select>
+      </div>
+      <div class="search-field">
+        <span class="sf-icon">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M3 11.5 12 4l9 7.5" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M5 10v10h14V10" stroke="currentColor" stroke-width="1.6"/></svg>
+        </span>
+        <select aria-label="Property type"><option>House</option><option>Apartment</option><option>Villa</option><option>Office</option><option>Townhouse</option></select>
+      </div>
+      <button class="btn btn-dark search-go" type="submit">Find Property</button>
+    </form>
+  </div>
+</section>
+
+<!-- ============ HANDPICKED HOMES ============ -->
+<section class="section homes" id="homes">
+  <div class="container">
+    <h2 class="display-head center reveal">Discover Handpicked Homes<br/>That <em>Define Elegance</em></h2>
+
+    <div class="filter-row reveal">
+      <button class="scroll-arrow" id="filterPrev" aria-label="Previous categories">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="chips" id="chips">
+        <button class="chip active" data-filter="all">All</button>
+        <button class="chip" data-filter="villas">Villas</button>
+        <button class="chip" data-filter="apartments">Apartments</button>
+        <button class="chip" data-filter="duplex">Duplex Homes</button>
+        <button class="chip" data-filter="townhouses">Townhouses</button>
+        <button class="chip" data-filter="studio">Studio Apartments</button>
+        <button class="chip" data-filter="luxury">Luxury Villas</button>
+        <button class="chip" data-filter="retail">Retail Spaces</button>
+        <button class="chip" data-filter="offices">Offices</button>
+      </div>
+      <button class="scroll-arrow" id="filterNext" aria-label="More categories">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+
+    <div class="property-grid" id="propertyGrid">
+      <!-- cards injected here -->
+    </div>
+
+    <div class="center reveal">
+      <a href="projects.html" class="btn btn-dark explore">Explore More</a>
+    </div>
+  </div>
+</section>
+
+<!-- ============ BY CITIES (NEW) ============ -->
+<section class="section cities" id="cities">
+  <div class="container">
+    <div class="section-head reveal">
+      <div>
+        <p class="eyebrow"><span class="dot"></span>Where you'll live</p>
+        <h2 class="display-head">Explore Properties <em>By Cities</em></h2>
+      </div>
+      <p class="section-lead">From skyline penthouses to beachfront estates — browse our most sought-after destinations and the homes waiting there.</p>
+    </div>
+
+    <div class="city-grid" id="cityGrid">
+      <article class="city-card big reveal" style="--img:url('https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=900&q=80')">
+        <div class="city-meta"><h3>Dubai</h3><p>United Arab Emirates</p></div>
+        <span class="city-count">1,240 Units</span>
+      </article>
+      <article class="city-card reveal" style="--img:url('https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?auto=format&fit=crop&w=700&q=80')">
+        <div class="city-meta"><h3>New York</h3><p>United States</p></div>
+        <span class="city-count">980 Units</span>
+      </article>
+      <article class="city-card reveal" style="--img:url('https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?auto=format&fit=crop&w=700&q=80')">
+        <div class="city-meta"><h3>London</h3><p>United Kingdom</p></div>
+        <span class="city-count">760 Units</span>
+      </article>
+      <article class="city-card reveal" style="--img:url('https://images.unsplash.com/photo-1525625293386-3f8f99389edd?auto=format&fit=crop&w=700&q=80')">
+        <div class="city-meta"><h3>Singapore</h3><p>Singapore</p></div>
+        <span class="city-count">540 Units</span>
+      </article>
+      <article class="city-card wide reveal" style="--img:url('https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&w=900&q=80')">
+        <div class="city-meta"><h3>Tokyo</h3><p>Japan</p></div>
+        <span class="city-count">615 Units</span>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ============ JOURNEY / STATS ============ -->
+<section class="section journey" id="journey">
+  <div class="container">
+    <h2 class="display-head center reveal">Your Journey To The Perfect<br/>Home <em>Starts With Us</em></h2>
+    <p class="journey-lead center reveal">With a proven track record and in-depth market knowledge, we're here to make your real estate journey smooth and stress-free. Whether buying, selling, or investing, you can count on our team to deliver results with integrity.</p>
+
+    <div class="journey-card reveal">
+      <div class="journey-photo" style="background-image:url('https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&w=1400&q=80')"></div>
+      <div class="stats">
+        <div class="stat">
+          <span class="stat-num" data-count="1500" data-suffix="">0</span>
+          <p>Total properties sold, helping families find their dream homes for over a decade.</p>
+        </div>
+        <div class="stat">
+          <span class="stat-num" data-count="30" data-suffix="+">0</span>
+          <p>Strong partnerships with local businesses to enhance and extend our services.</p>
+        </div>
+        <div class="stat">
+          <span class="stat-num" data-count="98" data-suffix="%">0</span>
+          <p>Client satisfaction rate, reflecting our commitment to exceptional service.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ RECENT PROJECTS (NEW) ============ -->
+<section class="section projects" id="projects">
+  <div class="container">
+    <div class="section-head reveal">
+      <div>
+        <p class="eyebrow"><span class="dot"></span>Freshly delivered</p>
+        <h2 class="display-head">Recent <em>Projects</em></h2>
+      </div>
+      <div class="section-lead">
+        <p>A look at the developments we've recently brought to life — each one designed, built and finished to an uncompromising standard.</p>
+        <a href="projects.html" class="view-all">View all projects
+          <svg viewBox="0 0 24 24" fill="none"><path d="M7 17 17 7M9 7h8v8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+      </div>
+    </div>
+
+    <div class="project-list" id="projectList">
+      <a class="project reveal" href="project.html?id=azure-residences">
+        <div class="project-img" style="background-image:url('https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=900&q=80')"></div>
+        <div class="project-body">
+          <span class="project-tag">Residential</span>
+          <h3>The Azure Residences</h3>
+          <p>48 sky-villas overlooking the marina, blending glass façades with warm interiors.</p>
+          <div class="project-foot"><span>Dubai Marina</span><span>2025</span></div>
+        </div>
+      </a>
+      <a class="project reveal" href="project.html?id=meridian-workspaces">
+        <div class="project-img" style="background-image:url('https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=900&q=80')"></div>
+        <div class="project-body">
+          <span class="project-tag">Offices</span>
+          <h3>Meridian Workspaces</h3>
+          <p>A grade-A office tower with column-free floors and a landscaped rooftop terrace.</p>
+          <div class="project-foot"><span>Singapore CBD</span><span>2025</span></div>
+        </div>
+      </a>
+      <a class="project reveal" href="project.html?id=palm-grove-estate">
+        <div class="project-img" style="background-image:url('https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&w=900&q=80')"></div>
+        <div class="project-body">
+          <span class="project-tag">Luxury Villas</span>
+          <h3>Palm Grove Estate</h3>
+          <p>Twelve private villas with infinity pools, set within a gated tropical garden.</p>
+          <div class="project-foot"><span>Seminyak, Bali</span><span>2024</span></div>
+        </div>
+      </a>
+      <a class="project reveal" href="project.html?id=highline-quarter">
+        <div class="project-img" style="background-image:url('https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=900&q=80')"></div>
+        <div class="project-body">
+          <span class="project-tag">Mixed-Use</span>
+          <h3>Highline Quarter</h3>
+          <p>Retail, lofts and co-working wrapped around a pedestrian boulevard.</p>
+          <div class="project-foot"><span>New York</span><span>2024</span></div>
+        </div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ============ DEVELOPERS WHO TRUST US (NEW) ============ -->
+<section class="section developers" id="developers">
+  <div class="container">
+    <div class="dev-head reveal">
+      <p class="eyebrow center-eyebrow"><span class="dot"></span>Trusted partners</p>
+      <h2 class="display-head center">Developers Who <em>Trust Us</em></h2>
+      <p class="section-lead center">We list and sell on behalf of the region's most respected developers. These are a few of the names that put their flagship projects in our hands.</p>
+    </div>
+
+    <div class="logo-wall reveal" id="logoWall">
+      <div class="logo">Emaar</div>
+      <div class="logo">DAMAC</div>
+      <div class="logo">Aldar</div>
+      <div class="logo">Nakheel</div>
+      <div class="logo">Sobha</div>
+      <div class="logo">Meraas</div>
+      <div class="logo">Ellington</div>
+      <div class="logo">Omniyat</div>
+      <div class="logo">Binghatti</div>
+      <div class="logo">Select Group</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ TESTIMONIALS ============ -->
+<section class="section testimonials" id="testimonials">
+  <div class="container">
+    <h2 class="display-head center reveal">Hear From Our Awesome<br/><em>Satisfied Clients</em></h2>
+
+    <div class="testi-grid" id="testiGrid">
+      <!-- review cards injected -->
+    </div>
+
+    <div class="testi-nav">
+      <button class="round-btn" id="testiPrev" aria-label="Previous reviews">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <span class="testi-count"><span id="testiIndex">01</span><i>/</i><span id="testiPages">01</span></span>
+      <button class="round-btn" id="testiNext" aria-label="Next reviews">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CTA ============ -->
+<section class="section cta-section" id="cta">
+  <div class="container">
+    <div class="cta-banner reveal">
+      <div class="cta-text">
+        <h2>Make Your Dream<br/>Space a <em>Reality</em></h2>
+        <p>Partner with us to create stunning, innovative spaces that match your vision. Let's build something extraordinary together.</p>
+        <a href="#" class="btn btn-light">Get Started</a>
+      </div>
+      <div class="cta-img" style="background-image:url('https://images.unsplash.com/photo-1582407947304-fd86f028f716?auto=format&fit=crop&w=900&q=80')"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FOOTER ============ -->
+<footer class="footer" id="footer">
+  <canvas class="stars stars--light" aria-hidden="true"></canvas>
+  <div class="container footer-grid">
+    <div class="footer-brand">
+      <a href="#" class="brand brand--light">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 32 32" fill="none"><path d="M4 28V13l8-6 8 6v15h-5v-8h-6v8H4Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M20 28V11l4-3 4 3v17" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+        </span>
+        <span class="brand-name">Realteek</span>
+      </a>
+      <p>Real estate done right — handpicked homes, offices and luxury units across the world's great cities.</p>
+      <div class="socials">
+        <a href="#" aria-label="Instagram"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="5" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="1.6"/><circle cx="17.5" cy="6.5" r="1.1" fill="currentColor"/></svg></a>
+        <a href="#" aria-label="X"><svg viewBox="0 0 24 24" fill="none"><path d="M4 4l16 16M20 4L4 20" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></a>
+        <a href="#" aria-label="LinkedIn"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="3" stroke="currentColor" stroke-width="1.6"/><path d="M7 10v7M7 7v.01M11 17v-4a2 2 0 0 1 4 0v4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></a>
+      </div>
+    </div>
+    <div class="footer-col">
+      <h4>Explore</h4>
+      <a href="#homes">Buy</a><a href="#cta">Sell</a><a href="#homes">Rent</a><a href="#cities">Cities</a>
+    </div>
+    <div class="footer-col">
+      <h4>Company</h4>
+      <a href="about.html">About Us</a><a href="projects.html">Projects</a><a href="#developers">Partners</a><a href="contact.html">Contact</a>
+    </div>
+    <div class="footer-col footer-news">
+      <h4>Stay in the loop</h4>
+      <p>New listings, market notes and quiet off-market deals — once a month.</p>
+      <form class="news-form" onsubmit="return false;">
+        <input type="email" placeholder="Your email" aria-label="Your email" />
+        <button class="btn btn-dark" type="submit">Join</button>
+      </form>
+    </div>
+  </div>
+  <div class="container footer-bottom">
+    <p>© 2026 Realteek. All rights reserved.</p>
+    <p>Privacy · Terms · Cookies</p>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script src="data.js"></script>
+<script src="fallback.js"></script>
+<script src="local-backend.js"></script>
+<script src="store.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
