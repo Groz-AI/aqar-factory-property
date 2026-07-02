@@ -100,6 +100,9 @@ button{font-family:inherit;cursor:pointer}
 .tbl tr:last-child td{border-bottom:none}
 .tbl tr:hover td{background:#fafbfc}
 .tbl .thumb{width:52px;height:40px;border-radius:8px;object-fit:cover;background:var(--paper)}
+.tbl tr.inq-new td{background:rgba(245,166,35,.07)}
+.tbl tr.inq-new:hover td{background:rgba(245,166,35,.12)}
+.inq-status{padding:5px 8px;border:1px solid var(--line);border-radius:8px;font:inherit;font-size:.85rem;background:#fff;cursor:pointer}
 .tbl .name{font-weight:600}
 .row-actions{display:flex;gap:.4rem;justify-content:flex-end}
 .icon-btn{width:32px;height:32px;border-radius:8px;border:1px solid var(--line);background:#fff;display:grid;place-items:center;color:var(--ink-soft);transition:.2s}

@@ -212,6 +212,57 @@ create policy "media admin delete" on storage.objects
   for delete using (bucket_id = 'media' and public.is_admin());
 
 -- ============================================================
+-- INQUIRIES — contact-form submissions
+-- Anyone may submit (anon insert); only admins can read/manage.
+-- ============================================================
+create table if not exists public.inquiries (
+  id         uuid primary key default gen_random_uuid(),
+  first      text,
+  last       text,
+  email      text,
+  phone      text,
+  interest   text,
+  budget     text,
+  message    text,
+  status     text default 'new',                 -- new | read | handled
+  created_at timestamptz default now()
+);
+
+alter table public.inquiries enable row level security;
+
+drop policy if exists "public submit inquiry" on public.inquiries;
+create policy "public submit inquiry" on public.inquiries
+  for insert with check (true);
+
+drop policy if exists "admin read inquiries" on public.inquiries;
+create policy "admin read inquiries" on public.inquiries
+  for select using (public.is_admin());
+
+drop policy if exists "admin update inquiries" on public.inquiries;
+create policy "admin update inquiries" on public.inquiries
+  for update using (public.is_admin()) with check (public.is_admin());
+
+drop policy if exists "admin delete inquiries" on public.inquiries;
+create policy "admin delete inquiries" on public.inquiries
+  for delete using (public.is_admin());
+
+-- ============================================================
+-- REALTIME — let the public site receive live updates when an
+-- admin edits content (branding, listings, projects, etc.)
+-- ============================================================
+do $$
+declare t text;
+begin
+  foreach t in array array['content_blocks','projects','properties','cities','testimonials','developers','categories']
+  loop
+    begin
+      execute format('alter publication supabase_realtime add table public.%I;', t);
+    exception when others then null;   -- already added
+    end;
+  end loop;
+end $$;
+
+-- ============================================================
 -- MAKE YOURSELF AN ADMIN
 -- After creating a user in Authentication → Users, run:
 --

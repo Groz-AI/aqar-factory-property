@@ -58,19 +58,19 @@
       <ul class="contact-cards">
         <li class="contact-card">
           <span class="cc-ic"><svg viewBox="0 0 24 24" fill="none"><path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11Z" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="10" r="2.5" stroke="currentColor" stroke-width="1.6"/></svg></span>
-          <div><h4>Visit the studio</h4><p>Level 18, Marina Gate Tower<br/>Dubai Marina, United Arab Emirates</p></div>
+          <div><h4>Visit the studio</h4><p data-brand="address">Level 18, Marina Gate Tower<br/>Dubai Marina, United Arab Emirates</p></div>
         </li>
         <li class="contact-card">
           <span class="cc-ic"><svg viewBox="0 0 24 24" fill="none"><path d="M5 4h4l2 5-3 2a12 12 0 0 0 5 5l2-3 5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></span>
-          <div><h4>Call or WhatsApp</h4><p><a href="tel:+97145550100">+971 4 555 0100</a><br/>Sun–Thu, 9:00 – 18:00 GST</p></div>
+          <div><h4>Call or WhatsApp</h4><p><a href="tel:+97145550100" data-brand="phone">+971 4 555 0100</a><br/>Sun–Thu, 9:00 – 18:00 GST</p></div>
         </li>
         <li class="contact-card">
           <span class="cc-ic"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="m4 7 8 6 8-6" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></span>
-          <div><h4>Email us</h4><p><a href="mailto:hello@realteek.com">hello@realteek.com</a><br/><a href="mailto:press@realteek.com">press@realteek.com</a></p></div>
+          <div><h4>Email us</h4><p><a href="mailto:hello@realteek.com" data-brand="email">hello@realteek.com</a><br/><a href="mailto:press@realteek.com" data-brand="emailSecondary">press@realteek.com</a></p></div>
         </li>
         <li class="contact-card">
           <span class="cc-ic"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/><path d="M12 7v5l3 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-          <div><h4>Office hours</h4><p>Sunday – Thursday: 9am – 6pm<br/>Saturday: by appointment</p></div>
+          <div><h4>Office hours</h4><p data-brand="hours">Sunday – Thursday: 9am – 6pm<br/>Saturday: by appointment</p></div>
         </li>
       </ul>
 
@@ -139,6 +139,7 @@
           <svg viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
         <p class="cf-success" id="cfSuccess" hidden>Thanks — your message is on its way. We'll be in touch within one business day.</p>
+        <p class="cf-error" id="cfError" hidden>Sorry, we couldn't send your message just now. Please try again, or email us directly.</p>
       </form>
     </div>
   </div>
@@ -163,7 +164,7 @@
       <p class="eyebrow center-eyebrow"><span class="dot"></span>Find a desk near you</p>
       <h2 class="display-head center">Our <em>offices</em></h2>
     </div>
-    <div class="office-grid">
+    <div class="office-grid" data-brand-offices>
       <article class="office-card reveal">
         <h3>Dubai · HQ</h3>
         <p>Level 18, Marina Gate Tower<br/>Dubai Marina, UAE</p>
@@ -202,6 +203,13 @@
   <div class="container footer-bottom"><p>© 2026 Realteek. All rights reserved.</p><p>Privacy · Terms · Cookies</p></div>
 </footer>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script src="data.js"></script>
+<script src="fallback.js"></script>
+<script src="local-backend.js"></script>
+<script src="store.js"></script>
+<script src="branding.js"></script>
 <script>
 (function(){
   var header=document.getElementById('header');
@@ -222,13 +230,35 @@
     b.classList.add('active');
   });
 
-  /* form submit (demo) */
+  /* form submit → save inquiry to the backend */
   var form=document.getElementById('contactForm');
-  if(form)form.addEventListener('submit',function(e){
+  if(form)form.addEventListener('submit',async function(e){
     e.preventDefault();
     if(!form.checkValidity()){form.reportValidity();return;}
+    var btn=form.querySelector('.cf-submit');
+    var original=btn.innerHTML;
+    var err=document.getElementById('cfError');
+    err.hidden=true;
+    btn.disabled=true; btn.textContent='Sending…';
+
+    var val=function(n){var el=form.querySelector('[name="'+n+'"]');return el?el.value.trim():'';};
+    var chip=document.querySelector('#cfChips .cf-chip.active');
+    var payload={
+      first:val('first'), last:val('last'), email:val('email'), phone:val('phone'),
+      interest:val('interest'), budget:chip?chip.getAttribute('data-v'):'', message:val('message')
+    };
+
+    var res={error:null};
+    try{
+      res = (window.store && window.store.submitInquiry) ? await window.store.submitInquiry(payload) : {error:null};
+    }catch(_){ res={error:{message:'network'}}; }
+
+    if(res && res.error){
+      btn.disabled=false; btn.innerHTML=original; err.hidden=false;
+      return;
+    }
     document.getElementById('cfSuccess').hidden=false;
-    form.querySelector('.cf-submit').textContent='Sent ✓';
+    btn.textContent='Sent ✓';
     form.querySelectorAll('input,textarea,select,button').forEach(function(el){el.disabled=true;});
   });
 })();

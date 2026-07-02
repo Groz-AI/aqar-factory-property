@@ -263,6 +263,7 @@
 
     if (view === 'overview') { renderOverview(); pa.style.display = 'none'; }
     else if (view === 'content') { renderContent(); pa.style.display = 'none'; }
+    else if (view === 'inquiries') { renderInquiries(); pa.style.display = 'none'; }
     else if (view === 'settings') { renderSettings(); pa.style.display = 'none'; }
     else if (RESOURCES[view]) {
       const r = RESOURCES[view];
@@ -283,6 +284,12 @@
       if (badge) badge.textContent = n;
       state.cache[key + '_count'] = n;
     }));
+    // inquiries: badge shows the number of unread ("new") leads
+    try {
+      const { count } = await sb.from('inquiries').select('id', { count: 'exact', head: true }).eq('status', 'new');
+      const badge = $('.badge[data-count="inquiries"]');
+      if (badge) badge.textContent = count || 0;
+    } catch (_) { /* inquiries table may not exist yet */ }
   }
 
   // ============================================================
@@ -568,6 +575,23 @@
   // SITE CONTENT EDITOR (content_blocks)
   // ============================================================
   const CONTENT_SCHEMA = {
+    company: { title: 'Company / Brand', fields: [
+      { key: 'name', label: 'Company name' },
+      { key: 'logo', label: 'Logo', type: 'image', hint: 'shown in the header & footer — leave empty to use the default mark' },
+      { key: 'tagline', label: 'Footer tagline', type: 'textarea' },
+      { key: 'email', label: 'Primary email' },
+      { key: 'emailSecondary', label: 'Secondary email' },
+      { key: 'phone', label: 'Primary phone' },
+      { key: 'phoneSecondary', label: 'Secondary phone / WhatsApp' },
+      { key: 'address', label: 'Address / HQ (one line per row)', type: 'textarea' },
+      { key: 'hours', label: 'Office hours (one line per row)', type: 'textarea' },
+      { key: 'instagram', label: 'Instagram URL' },
+      { key: 'x', label: 'X (Twitter) URL' },
+      { key: 'linkedin', label: 'LinkedIn URL' },
+      { key: 'facebook', label: 'Facebook URL' },
+      { key: 'copyright', label: 'Copyright line' } ],
+      list: 'offices', listAddLabel: 'Add office',
+      listFields: [ { key: 'city', label: 'Office name / city' }, { key: 'lines', label: 'Address (one line per row)', type: 'textarea' }, { key: 'phone', label: 'Phone' } ] },
     hero: { title: 'Hero', fields: [
       { key: 'eyebrow', label: 'Eyebrow' }, { key: 'titleA', label: 'Title line 1' },
       { key: 'titleB', label: 'Title line 2' }, { key: 'sub', label: 'Subtext', type: 'textarea' },
@@ -604,11 +628,10 @@
       if (sch.list) {
         const items = Array.isArray(val[sch.list]) ? val[sch.list] : [];
         html += `<div class="field-hint" style="margin:10px 0 6px">${esc(sch.list)}</div>`;
-        items.forEach((it, i) => {
-          html += `<div class="grid-2" style="border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:10px">`;
-          sch.listFields.forEach(f => html += contentField(key + '__' + sch.list + '__' + i, f, it[f.key] == null ? '' : it[f.key]));
-          html += `</div>`;
-        });
+        html += `<div class="content-list" id="clist_${key}">`;
+        items.forEach(it => { html += listItemHTML(key, sch.list, sch.listFields, it); });
+        html += `</div>`;
+        html += `<button type="button" class="btn btn-ghost btn-sm list-add" data-key="${key}" style="margin:2px 0 8px">+ ${esc(sch.listAddLabel || 'Add row')}</button>`;
       }
       html += `<button class="btn btn-sky btn-sm" data-save-block="${key}" style="margin-top:8px">Save ${esc(sch.title.toLowerCase())}</button>`;
       html += `</div></div>`;
@@ -623,7 +646,37 @@
         if (f.type === 'gallery') wireGallery(id, id, Array.isArray(val[f.key]) ? val[f.key] : []);
       });
     }
+    // wire dynamic list rows (add / remove)
+    $$('.content-list-item').forEach(wireListItem);
+    $$('.list-add').forEach(b => b.addEventListener('click', () => {
+      const key = b.dataset.key, sch = CONTENT_SCHEMA[key];
+      const container = $('#clist_' + key);
+      if (!container) return;
+      const holder = el('div');
+      holder.innerHTML = listItemHTML(key, sch.list, sch.listFields, {});
+      const node = holder.firstElementChild;
+      container.appendChild(node);
+      wireListItem(node);
+    }));
     $$('[data-save-block]').forEach(b => b.addEventListener('click', () => saveBlock(b.dataset.saveBlock)));
+  }
+
+  // monotonic id so add/removed list rows keep unique field ids
+  let listSeq = 0;
+  function listItemHTML(key, list, listFields, item) {
+    const idx = listSeq++;
+    item = item || {};
+    const inner = listFields.map(f => contentField(key + '__' + list + '__' + idx, f, item[f.key] == null ? '' : item[f.key])).join('');
+    return `<div class="content-list-item" data-idx="${idx}" style="position:relative;border:1px solid var(--line);border-radius:10px;padding:12px 12px 12px;margin-bottom:10px">
+      <button type="button" class="icon-btn del list-rm" title="Remove" style="position:absolute;top:8px;right:8px">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+      </button>
+      <div class="grid-2">${inner}</div>
+    </div>`;
+  }
+  function wireListItem(node) {
+    const rm = node.querySelector('.list-rm');
+    if (rm) rm.addEventListener('click', () => node.remove());
   }
 
   function contentField(prefix, f, v) {
@@ -663,15 +716,20 @@
       value[f.key] = f.type === 'number' ? Number(node.value) : node.value;
     });
     if (sch.list) {
-      const prev = (state.cache.content[key] || {})[sch.list] || [];
-      value[sch.list] = prev.map((_, i) => {
-        const o = {};
-        sch.listFields.forEach(f => {
-          const node = $('#c_' + key + '__' + sch.list + '__' + i + '__' + f.key);
-          if (node) o[f.key] = f.type === 'number' ? Number(node.value) : node.value;
+      const container = $('#clist_' + key);
+      const items = [];
+      if (container) {
+        $$('.content-list-item', container).forEach(node => {
+          const idx = node.dataset.idx;
+          const o = {};
+          sch.listFields.forEach(f => {
+            const n = $('#c_' + key + '__' + sch.list + '__' + idx + '__' + f.key);
+            if (n) o[f.key] = f.type === 'number' ? Number(n.value) : n.value;
+          });
+          if (Object.values(o).some(v => v !== '' && v != null)) items.push(o);
         });
-        return o;
-      });
+      }
+      value[sch.list] = items;
     }
     const { error } = await sb.from('content_blocks').upsert({ key, value }, { onConflict: 'key' });
     if (error) { toast(error.message, 'err'); return; }
@@ -836,6 +894,64 @@
       const { error } = await sb.from(table).upsert(rows, { onConflict: conflictKey });
       note(error ? `${table}: ${error.message}` : `${table}: ${rows.length} rows ✓`);
     }
+  }
+
+  // ============================================================
+  // INQUIRIES (contact-form leads)
+  // ============================================================
+  async function renderInquiries() {
+    $('#viewTitle').textContent = 'Inquiries';
+    $('#viewSub').textContent = 'Messages submitted through your contact form';
+    $('#content').innerHTML = `<div class="panel"><div id="inqWrap"><div class="empty-row"><span class="spinner" style="border-color:rgba(0,0,0,.15);border-top-color:var(--sky)"></span></div></div></div>`;
+    const { data, error } = await sb.from('inquiries').select('*').order('created_at', { ascending: false });
+    if (error) {
+      $('#inqWrap').innerHTML = `<div class="empty-row">Couldn’t load inquiries: ${esc(error.message)}<br><span class="field-hint">If you haven’t yet, run the inquiries section of <code>supabase/schema.sql</code> in your Supabase SQL editor.</span></div>`;
+      return;
+    }
+    state.cache.inquiries = data || [];
+    paintInquiries();
+  }
+
+  function paintInquiries() {
+    const rows = state.cache.inquiries || [];
+    if (!rows.length) { $('#inqWrap').innerHTML = `<div class="empty-row">No inquiries yet. Submissions from the contact page will appear here.</div>`; return; }
+    const opt = (v, cur) => `<option value="${v}" ${v === cur ? 'selected' : ''}>${v[0].toUpperCase() + v.slice(1)}</option>`;
+    const body = rows.map(r => {
+      const name = esc([r.first, r.last].filter(Boolean).join(' ') || '—');
+      const when = r.created_at ? new Date(r.created_at).toLocaleString() : '';
+      const msg = String(r.message || '');
+      return `<tr${r.status === 'new' ? ' class="inq-new"' : ''}>
+        <td><div class="name">${name}</div><div style="color:var(--ink-soft);font-size:.8rem">${esc(when)}</div></td>
+        <td>${r.email ? `<a href="mailto:${esc(r.email)}">${esc(r.email)}</a>` : ''}${r.phone ? `<div style="color:var(--ink-soft);font-size:.8rem">${esc(r.phone)}</div>` : ''}</td>
+        <td>${esc(r.interest || '')}${r.budget ? `<div style="color:var(--ink-soft);font-size:.8rem">${esc(r.budget)}</div>` : ''}</td>
+        <td style="max-width:340px;white-space:normal">${esc(msg.length > 180 ? msg.slice(0, 180) + '…' : msg)}</td>
+        <td><select class="inq-status" data-id="${r.id}">${opt('new', r.status)}${opt('read', r.status)}${opt('handled', r.status)}</select></td>
+        <td><div class="row-actions"><button class="icon-btn del" data-del="${r.id}" title="Delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button></div></td>
+      </tr>`;
+    }).join('');
+    $('#inqWrap').innerHTML = `<table class="tbl"><thead><tr><th>From</th><th>Contact</th><th>Interest</th><th>Message</th><th>Status</th><th></th></tr></thead><tbody>${body}</tbody></table>`;
+    $$('.inq-status').forEach(s => s.addEventListener('change', () => updateInquiry(s.dataset.id, s.value)));
+    $$('[data-del]', $('#inqWrap')).forEach(b => b.addEventListener('click', () => deleteInquiry(b.dataset.del)));
+  }
+
+  async function updateInquiry(id, status) {
+    const { error } = await sb.from('inquiries').update({ status }).eq('id', id);
+    if (error) { toast(error.message, 'err'); return; }
+    const row = (state.cache.inquiries || []).find(x => x.id === id);
+    if (row) row.status = status;
+    paintInquiries();
+    refreshCounts();
+    toast('Status updated');
+  }
+
+  async function deleteInquiry(id) {
+    if (!confirm('Delete this inquiry? This can’t be undone.')) return;
+    const { error } = await sb.from('inquiries').delete().eq('id', id);
+    if (error) { toast(error.message, 'err'); return; }
+    state.cache.inquiries = (state.cache.inquiries || []).filter(x => x.id !== id);
+    paintInquiries();
+    refreshCounts();
+    toast('Inquiry deleted');
   }
 
   // ---------- icons ----------

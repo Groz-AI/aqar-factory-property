@@ -52,6 +52,21 @@
     }
   }
 
+  // fetch a single content_blocks singleton, merged over its fallback default
+  async function getBlock(key, fallback) {
+    fallback = fallback || {};
+    if (!sb) return fallback;
+    try {
+      const { data, error } = await sb.from('content_blocks').select('key,value').eq('key', key);
+      if (error || !data || !data.length) return fallback;
+      return Object.assign({}, fallback, data[0].value || {});
+    } catch (_) {
+      return fallback;
+    }
+  }
+
+  const getCompany = () => getBlock('company', (F.content && F.content.company) || {});
+
   const DEFAULT_CATS = [
     { filter: 'villas', label: 'Villas' }, { filter: 'apartments', label: 'Apartments' },
     { filter: 'duplex', label: 'Duplex Homes' }, { filter: 'townhouses', label: 'Townhouses' },
@@ -59,13 +74,43 @@
     { filter: 'retail', label: 'Retail Spaces' }, { filter: 'offices', label: 'Offices' }
   ];
 
+  // ---------- inquiries (contact form) ----------
+  async function submitInquiry(payload) {
+    if (!sb) return { error: { message: 'No backend configured' } };
+    try {
+      const row = Object.assign({ status: 'new' }, payload || {});
+      const { error } = await sb.from('inquiries').insert([row]);
+      return { error: error || null };
+    } catch (e) {
+      return { error: { message: (e && e.message) || String(e) } };
+    }
+  }
+
   // ---------- live sync ----------
-  // In local mode the "database" is localStorage; when the admin (in another
+  // Local mode: the "database" is localStorage; when the admin (in another
   // tab) writes a change, mirror it onto any open public page immediately.
   if (!cloud && window.RealteekLocal) {
     window.addEventListener('storage', (e) => {
       if (e.key === 'realteek_db_v1') location.reload();
     });
+  }
+
+  // Cloud mode: subscribe to Supabase Realtime so an admin edit refreshes any
+  // open public page within a moment (requires the tables to be in the
+  // supabase_realtime publication — see schema.sql).
+  if (cloud && sb && typeof sb.channel === 'function') {
+    try {
+      const TABLES = ['content_blocks', 'projects', 'properties', 'cities', 'testimonials', 'developers', 'categories'];
+      let reloadT;
+      const ch = sb.channel('realteek-public');
+      TABLES.forEach(table => {
+        ch.on('postgres_changes', { event: '*', schema: 'public', table }, () => {
+          clearTimeout(reloadT);
+          reloadT = setTimeout(() => location.reload(), 400);
+        });
+      });
+      ch.subscribe();
+    } catch (_) { /* realtime not available — pages still update on next load */ }
   }
 
   window.store = {
@@ -76,6 +121,8 @@
     getTestimonials: () => fetchTable('testimonials', F.testimonials || []),
     getDevelopers:   () => fetchTable('developers', F.developers || []),
     getCategories:   () => fetchTable('categories', DEFAULT_CATS),
-    getContent
+    getContent,
+    getCompany,
+    submitInquiry
   };
 })();

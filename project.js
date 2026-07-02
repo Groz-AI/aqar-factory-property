@@ -111,6 +111,11 @@ const nav = document.getElementById('nav');
 document.getElementById('navToggle').addEventListener('click', () => nav.classList.toggle('open'));
 nav.addEventListener('click', e => { if (e.target.tagName === 'A') nav.classList.remove('open'); });
 
+const header = document.getElementById('header');
+const onHeaderScroll = () => header.classList.toggle('scrolled', window.scrollY > 30);
+onHeaderScroll();
+window.addEventListener('scroll', onHeaderScroll, { passive: true });
+
 /* ---- boot ---- */
 (async function () {
   try { ALL = await window.store.getProjects(); }

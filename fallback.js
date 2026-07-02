@@ -49,6 +49,27 @@ window.FALLBACK = {
   ],
 
   content: {
+    company: {
+      name: "Realteek",
+      logo: "",
+      tagline: "Real estate done right — handpicked homes, offices and luxury units across the world's great cities.",
+      email: "hello@realteek.com",
+      emailSecondary: "press@realteek.com",
+      phone: "+971 4 555 0100",
+      phoneSecondary: "",
+      address: "Level 18, Marina Gate Tower\nDubai Marina, United Arab Emirates",
+      hours: "Sunday – Thursday: 9am – 6pm\nSaturday: by appointment",
+      instagram: "#",
+      x: "#",
+      linkedin: "#",
+      facebook: "",
+      copyright: "© 2026 Realteek. All rights reserved.",
+      offices: [
+        { city: "Dubai · HQ", lines: "Level 18, Marina Gate Tower\nDubai Marina, UAE", phone: "+971 4 555 0100" },
+        { city: "London", lines: "22 Curzon Street, Mayfair\nLondon W1J, United Kingdom", phone: "+44 20 7555 0140" },
+        { city: "Singapore", lines: "One Raffles Place, #44-01\nSingapore 048616", phone: "+65 6255 0180" }
+      ]
+    },
     hero: {
       eyebrow: "Buy. Sell. Rent.",
       titleA: "Real Estate",
