@@ -506,14 +506,31 @@
   }
 
   async function uploadFile(f) {
+    if (!f) return null;
+    // guard: only images, and keep them a sane size
+    if (f.type && !/^image\//.test(f.type)) { toast('Please choose an image file', 'err'); return null; }
+    if (f.size > 12 * 1024 * 1024) { toast('Image is larger than 12 MB — please pick a smaller one', 'err'); return null; }
     try {
-      const ext = (f.name.split('.').pop() || 'jpg').toLowerCase();
+      const ext = (f.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
       const path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-      const { error } = await sb.storage.from('media').upload(path, f, { cacheControl: '3600', upsert: false });
-      if (error) { toast(error.message, 'err'); return null; }
+      const { error } = await sb.storage.from('media').upload(path, f, { cacheControl: '3600', upsert: false, contentType: f.type || undefined });
+      if (error) {
+        console.error('Image upload failed:', error);
+        const m = String(error.message || error.error || '').toLowerCase();
+        let msg = error.message || 'Upload failed';
+        if (m.includes('bucket not found')) msg = 'Storage bucket "media" is missing. In Supabase → Storage, create a public bucket named "media" (or run supabase/fix-storage-and-admin.sql).';
+        else if (m.includes('row-level security') || m.includes('not authorized') || m.includes('violates') || m.includes('permission')) msg = 'Upload blocked — your account is not an admin yet. Add your user to the admins table (see supabase/fix-storage-and-admin.sql).';
+        toast(msg, 'err');
+        return null;
+      }
       const { data } = sb.storage.from('media').getPublicUrl(path);
+      if (!data || !data.publicUrl) { toast('Uploaded, but could not resolve the public URL', 'err'); return null; }
       return data.publicUrl;
-    } catch (e) { toast('Upload failed', 'err'); return null; }
+    } catch (e) {
+      console.error('Image upload exception:', e);
+      toast('Upload failed: ' + (e.message || e), 'err');
+      return null;
+    }
   }
 
   // ---------- collect + save ----------
