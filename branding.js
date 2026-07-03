@@ -31,6 +31,17 @@
     return `https://images.unsplash.com/photo-${ref}?auto=format&fit=crop&w=${w}&q=80`;
   }
 
+  // ---- brand cache (kills the flash of default branding on refresh) ----
+  const CACHE_KEY = 'realteek_brand_cache';
+  function readCache() {
+    try { return JSON.parse(localStorage.getItem(CACHE_KEY)); } catch (_) { return null; }
+  }
+  function writeCache(c) {
+    // only cache a meaningful brand so a failed/empty fetch never wipes it
+    if (!c || (!c.name && !c.logo)) return;
+    try { localStorage.setItem(CACHE_KEY, JSON.stringify(c)); } catch (_) {}
+  }
+
   async function getCompany() {
     try {
       if (window.store && window.store.getCompany) return await window.store.getCompany();
@@ -104,14 +115,25 @@
     }
   }
 
-  document.addEventListener('DOMContentLoaded', async () => {
-    apply(await getCompany());
-  });
+  // 1) paint the cached brand immediately — this script is parser-blocking at the
+  //    end of <body>, so the header/footer already exist and we can update them
+  //    before the first paint, eliminating the flash of the default brand.
+  const cached = readCache();
+  if (cached) apply(cached);
+
+  // 2) fetch the live brand and refresh (usually identical → no visible change)
+  async function refresh() {
+    const c = await getCompany();
+    apply(c);
+    writeCache(c);
+  }
+  if (document.readyState !== 'loading') refresh();
+  else document.addEventListener('DOMContentLoaded', refresh);
 
   // in local (localStorage) mode, mirror admin edits onto open pages live
   if (window.RealteekLocal) {
     window.addEventListener('storage', (e) => {
-      if (e.key === 'realteek_db_v1') getCompany().then(apply);
+      if (e.key === 'realteek_db_v1') getCompany().then((c) => { apply(c); writeCache(c); });
     });
   }
 })();
