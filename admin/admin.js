@@ -392,6 +392,7 @@
   // ============================================================
   let editing = null; // { view, id }
   let uploads = {};   // transient per-form state for arrays/gallery
+  let pendingUploads = 0; // in-flight image uploads — block saves until they finish
 
   function openForm(view, row) {
     const r = RESOURCES[view];
@@ -475,10 +476,12 @@
     btn.addEventListener('click', () => file.click());
     file.addEventListener('change', async () => {
       if (!file.files[0]) return;
+      pendingUploads++;
       btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>';
       const url = await uploadFile(file.files[0]);
+      pendingUploads--;
       btn.disabled = false; btn.textContent = 'Upload…';
-      if (url) { input.value = url; prev.src = url; toast('Image uploaded'); }
+      if (url) { input.value = url; prev.src = url; toast('Image uploaded — remember to Save'); }
     });
   }
 
@@ -498,9 +501,11 @@
     file.addEventListener('change', async () => {
       const files = Array.from(file.files || []);
       if (!files.length) return;
+      pendingUploads++;
       toast('Uploading ' + files.length + ' image(s)…');
       for (const f of files) { const url = await uploadFile(f); if (url) uploads[key].push(url); }
-      file.value = ''; paint(); toast('Gallery updated');
+      pendingUploads--;
+      file.value = ''; paint(); toast('Gallery updated — remember to Save');
     });
     paint();
   }
@@ -551,6 +556,7 @@
   }
 
   async function saveForm(view) {
+    if (pendingUploads > 0) { toast('An image is still uploading — please wait a moment', 'err'); return; }
     const r = RESOURCES[view];
     const payload = collect(view);
     // required check
@@ -723,6 +729,7 @@
   }
 
   async function saveBlock(key) {
+    if (pendingUploads > 0) { toast('An image is still uploading — please wait a moment', 'err'); return; }
     const sch = CONTENT_SCHEMA[key];
     const value = {};
     sch.fields.forEach(f => {
