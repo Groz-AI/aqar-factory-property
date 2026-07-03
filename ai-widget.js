@@ -1,16 +1,20 @@
 /* ============================================================
    REALTEEK AI — floating property matchmaker
-   A self-contained widget: injects its own markup, asks a short
-   conversational flow (type -> city -> budget), scores real listings
-   from window.store, and surfaces the best-fit matches. No external
-   AI service is called — it's a transparent, deterministic matching
-   engine presented as a friendly assistant.
+   A self-contained widget with two ways to get matched:
+     1. A guided quick-reply flow (type -> city -> budget) that
+        scores real listings from window.store with a transparent,
+        deterministic matching engine — instant, no API calls.
+     2. A free-text box wired to a real AI (Gemini, via the
+        /api/ai-chat serverless proxy) that can hold an open-ended
+        conversation, grounded in the site's live listings so it
+        only ever recommends real properties.
    ============================================================ */
 (function () {
   'use strict';
 
   const sparkSVG = `<svg viewBox="0 0 24 24" fill="none"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M12 8l1.4 3.6L17 13l-3.6 1.4L12 18l-1.4-3.6L7 13l3.6-1.4L12 8Z" fill="currentColor"/></svg>`;
   const closeSVG = `<svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`;
+  const sendSVG = `<svg viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 
   const IMG = (ref, w = 200) =>
     !ref ? '' :
@@ -47,6 +51,10 @@
       </div>
       <div class="ai-panel-body" id="aiPanelBody"></div>
       <div class="ai-panel-foot" id="aiPanelFoot"></div>
+      <form class="ai-input-row" id="aiInputForm">
+        <input type="text" id="aiInputField" placeholder="Or just ask me anything…" autocomplete="off" maxlength="500" />
+        <button type="submit" aria-label="Send" id="aiInputSend">${sendSVG}</button>
+      </form>
     </div>
     <button class="ai-fab" id="aiFabBtn" aria-expanded="false" aria-label="Let AI choose for you">
       <span class="ai-fab-glow" aria-hidden="true"></span>
@@ -60,10 +68,14 @@
   const closeBtn = root.querySelector('#aiPanelClose');
   const body = root.querySelector('#aiPanelBody');
   const foot = root.querySelector('#aiPanelFoot');
+  const inputForm = root.querySelector('#aiInputForm');
+  const inputField = root.querySelector('#aiInputField');
+  const sendBtn = root.querySelector('#aiInputSend');
 
   let started = false;
   let answers = { type: null, typeLabel: '', city: '', budget: null };
-  let dataset = { properties: [], categories: [], cities: [] };
+  let dataset = { properties: [], categories: [], cities: [], companyName: '' };
+  let chatHistory = []; // { role: 'user'|'model', text } — free-text AI conversation memory
 
   function openPanel() {
     panel.classList.add('open');
@@ -134,19 +146,83 @@
     const S = window.store;
     if (!S) return;
     try {
-      const [props, cats, cities] = await Promise.all([
+      const [props, cats, cities, content] = await Promise.all([
         S.getProperties ? S.getProperties() : [],
         S.getCategories ? S.getCategories() : [],
-        S.getCities ? S.getCities() : []
+        S.getCities ? S.getCities() : [],
+        S.getContent ? S.getContent() : {}
       ]);
       dataset.properties = props || [];
       dataset.categories = cats || [];
       dataset.cities = cities || [];
+      dataset.companyName = (content && content.company && content.company.name) || '';
     } catch (_) { /* keep empty dataset, matching just falls back gracefully */ }
   }
 
+  // ---------- free-text chat with the real AI (Gemini, via /api/ai-chat) ----------
+  function slimProperties() {
+    return dataset.properties.slice(0, 30).map(p => ({
+      name: p.name, price: p.price, location: p.location,
+      categories: p.categories, beds: p.beds, baths: p.baths, badge: p.badge
+    }));
+  }
+
+  async function sendFreeText(message) {
+    addMessage(message, 'user');
+    chatHistory.push({ role: 'user', text: message });
+    if (!dataset.properties.length) await loadData();
+
+    const typing = showTyping();
+    let reply = "Sorry, I'm having trouble connecting right now. Please try again shortly.";
+    try {
+      const res = await fetch('/api/ai-chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message,
+          history: chatHistory.slice(0, -1),
+          context: {
+            companyName: dataset.companyName,
+            cities: dataset.cities.map(c => c.name),
+            categories: dataset.categories.map(c => c.label),
+            properties: slimProperties()
+          }
+        })
+      });
+      const data = await res.json();
+      if (data && data.reply) reply = data.reply;
+    } catch (_) { /* keep the fallback message */ }
+
+    typing.remove();
+    addMessage(reply, 'bot');
+    chatHistory.push({ role: 'model', text: reply });
+    body.scrollTop = body.scrollHeight;
+
+    // if the AI named an exact listing, surface it as a clickable match card too
+    const named = dataset.properties.filter(p => p.name && reply.includes(p.name));
+    if (named.length) renderMatchCards(named.slice(0, 3));
+  }
+
+  function setSending(isSending) {
+    inputField.disabled = isSending;
+    sendBtn.disabled = isSending;
+  }
+
+  inputForm.addEventListener('submit', async e => {
+    e.preventDefault();
+    const text = inputField.value.trim();
+    if (!text) return;
+    if (!started) { started = true; openPanel(); await botSay("Hi! I'm Realteek AI — what can I help you find?", 400); await loadData(); }
+    inputField.value = '';
+    clearFoot();
+    setSending(true);
+    await sendFreeText(text);
+    setSending(false);
+    inputField.focus();
+  });
+
   async function boot() {
-    await botSay("Hi! I'm Realteek AI — tell me what you're after and I'll match you with the best-fit homes.", 500);
+    await botSay("Hi! I'm Realteek AI — answer a few quick questions and I'll match you with the best-fit homes, or just type your own question below anytime.", 500);
     await loadData();
     askType();
   }
@@ -193,6 +269,28 @@
     return score;
   }
 
+  function renderMatchCards(list) {
+    if (!list.length) return;
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'display:flex;flex-direction:column;gap:8px;align-self:stretch';
+    list.forEach(p => {
+      const card = document.createElement('button');
+      card.type = 'button';
+      card.className = 'ai-match';
+      card.innerHTML = `
+        <img src="${IMG(p.image, 160)}" alt="" loading="lazy">
+        <div class="ai-match-body">
+          <h4>${p.name || ''}</h4>
+          <p>${p.location || ''}</p>
+          <b>${p.price || ''}</b>
+        </div>`;
+      card.addEventListener('click', () => jumpToProperty(p.name));
+      wrap.appendChild(card);
+    });
+    body.appendChild(wrap);
+    body.scrollTop = body.scrollHeight;
+  }
+
   async function showResults() {
     clearFoot();
     await botSay('Let me find your best matches…', 700);
@@ -206,28 +304,8 @@
       ? "Here's what I found for you ✨"
       : "I don't have an exact match for that combination, but here are some homes you might love:", 550);
 
-    if (!top.length) {
-      addMessage('No listings are published yet — check back soon!', 'bot');
-    } else {
-      const wrap = document.createElement('div');
-      wrap.style.cssText = 'display:flex;flex-direction:column;gap:8px;align-self:stretch';
-      top.forEach(({ p }) => {
-        const card = document.createElement('button');
-        card.type = 'button';
-        card.className = 'ai-match';
-        card.innerHTML = `
-          <img src="${IMG(p.image, 160)}" alt="" loading="lazy">
-          <div class="ai-match-body">
-            <h4>${p.name || ''}</h4>
-            <p>${p.location || ''}</p>
-            <b>${p.price || ''}</b>
-          </div>`;
-        card.addEventListener('click', () => jumpToProperty(p.name));
-        wrap.appendChild(card);
-      });
-      body.appendChild(wrap);
-      body.scrollTop = body.scrollHeight;
-    }
+    if (!top.length) addMessage('No listings are published yet — check back soon!', 'bot');
+    else renderMatchCards(top.map(x => x.p));
 
     setChips(
       [{ label: 'Start over', value: 'restart' }, { label: 'Talk to an advisor', value: 'advisor' }],
