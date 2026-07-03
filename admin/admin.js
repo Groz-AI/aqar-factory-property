@@ -107,7 +107,7 @@
         { key: 'image', label: 'Cover image', type: 'image' },
         { key: 'images', label: 'Gallery', type: 'gallery' },
         { key: 'price', label: 'Price', type: 'text', half: true },
-        { key: 'badge', label: 'Badge', type: 'select', options: ['For Sale', 'For Rent', 'For Lease'], half: true },
+        { key: 'badge', label: 'Badge', type: 'select', options: ['For Sale', 'New Listing', 'Exclusive'], half: true },
         { key: 'categories', label: 'Categories', type: 'tags', hint: 'villas, apartments, offices…' },
         { key: 'beds', label: 'Beds', type: 'number', half: true },
         { key: 'baths', label: 'Baths', type: 'number', half: true },
@@ -429,7 +429,12 @@
       return `<div class="field"><label class="switch"><input type="checkbox" id="${id}" ${val ? 'checked' : ''}><span class="track"></span>${esc(f.label)}</label>${hint}</div>`;
     }
     if (f.type === 'select') {
-      const opts = f.options.map(o => `<option ${o === val ? 'selected' : ''}>${esc(o)}</option>`).join('');
+      // if the saved value predates a later options change (e.g. an old badge
+      // value no longer offered), keep it as a selected extra option instead
+      // of silently swapping it to the first option on next save
+      const known = f.options.includes(val);
+      const legacy = (val != null && val !== '' && !known) ? `<option selected>${esc(val)}</option>` : '';
+      const opts = legacy + f.options.map(o => `<option ${o === val ? 'selected' : ''}>${esc(o)}</option>`).join('');
       return `<div class="field"><label for="${id}">${esc(f.label)}</label><select id="${id}">${opts}</select>${hint}</div>`;
     }
     if (f.type === 'textarea') {

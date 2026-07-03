@@ -29,6 +29,8 @@ const emLast = (s) => {
    PROPERTIES (Handpicked Homes)
    ============================================================ */
 let properties = [];
+let activeCatFilter = 'all';
+let activeCityQuery = '';
 const grid = document.getElementById('propertyGrid');
 
 /* shared interior shots to enrich single-image listings into a small gallery */
@@ -76,11 +78,17 @@ function cardHTML(p, i) {
   </article>`;
 }
 
-function renderProperties(filter = 'all') {
+function renderProperties(filter = activeCatFilter) {
+  activeCatFilter = filter;
   // clear any running gallery timers before replacing the cards
   grid.querySelectorAll('[data-gallery]').forEach(b => { if (b._tid) clearInterval(b._tid); });
-  const list = filter === 'all' ? properties : properties.filter(p => (p.categories || []).includes(filter));
-  grid.innerHTML = list.map((p, i) => cardHTML(p, i)).join('');
+  let list = filter === 'all' ? properties : properties.filter(p => (p.categories || []).includes(filter));
+  if (activeCityQuery) {
+    const q = activeCityQuery.toLowerCase();
+    list = list.filter(p => (p.location || '').toLowerCase().includes(q));
+  }
+  grid.innerHTML = list.length ? list.map((p, i) => cardHTML(p, i)).join('')
+    : `<p style="grid-column:1/-1;text-align:center;color:var(--ink-soft);padding:40px 0">No properties match that search. Try a different location or property type.</p>`;
   grid.querySelectorAll('.card-fav').forEach(b => b.addEventListener('click', (e) => {
     e.preventDefault();
     b.classList.toggle('on');
@@ -110,6 +118,40 @@ function wireChips() {
   });
   document.getElementById('filterNext').addEventListener('click', () => chips.scrollBy({ left: 260, behavior: 'smooth' }));
   document.getElementById('filterPrev').addEventListener('click', () => chips.scrollBy({ left: -260, behavior: 'smooth' }));
+}
+
+/* ---------- hero search bar (buy-only: location + property type) ---------- */
+function renderSearchFacets(cities, categories) {
+  const citySel = document.getElementById('searchCity');
+  const typeSel = document.getElementById('searchType');
+  if (citySel && cities && cities.length) {
+    citySel.innerHTML = `<option value="">All locations</option>` +
+      cities.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+  }
+  if (typeSel && categories && categories.length) {
+    typeSel.innerHTML = `<option value="all">All property types</option>` +
+      categories.map(c => `<option value="${c.filter}">${c.label}</option>`).join('');
+  }
+}
+
+function wireSearchForm() {
+  const form = document.getElementById('searchBar');
+  if (!form) return;
+  form.addEventListener('submit', e => {
+    e.preventDefault();
+    const city = document.getElementById('searchCity')?.value || '';
+    const type = document.getElementById('searchType')?.value || 'all';
+
+    activeCityQuery = city;
+    const chips = document.getElementById('chips');
+    if (chips) {
+      const match = chips.querySelector(`[data-filter="${type}"]`) || chips.querySelector('[data-filter="all"]');
+      chips.querySelector('.active')?.classList.remove('active');
+      match?.classList.add('active');
+    }
+    renderProperties(type);
+    document.getElementById('homes')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
 }
 
 /* ============================================================
@@ -488,6 +530,7 @@ function wireReveals() {
     properties = props || [];
     applyContent(content);
     renderChips(cats || []);
+    renderSearchFacets(cities || [], cats || []);
     initHeroTyping();
     renderProperties();
     renderCities(cities || []);
@@ -500,5 +543,6 @@ function wireReveals() {
   }
   initStarfields();
   wireChips();
+  wireSearchForm();
   wireReveals();
 })();

@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Realteek — Buy. Sell. Rent. Real Estate Done Right</title>
-<meta name="description" content="Realteek — handpicked residential homes, offices and luxury units. Buy, sell and rent real estate done right." />
+<title>Realteek — Real Estate Done Right</title>
+<meta name="description" content="Realteek — handpicked residential homes, offices and luxury units for sale, curated for people who refuse to settle." />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Bricolage+Grotesque:opsz,wght@12..96,300..800&family=Hanken+Grotesk:wght@300..700&display=swap" rel="stylesheet" />
@@ -17,7 +17,7 @@
 <!-- ============ HEADER ============ -->
 <header class="site-header" id="header">
   <div class="container header-inner">
-    <a href="#" class="brand" aria-label="Realteek home">
+    <a href="index.html" class="brand" aria-label="Realteek home">
       <span class="brand-mark" aria-hidden="true">
         <svg viewBox="0 0 32 32" fill="none"><path d="M4 28V13l8-6 8 6v15h-5v-8h-6v8H4Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M20 28V11l4-3 4 3v17" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
       </span>
@@ -47,31 +47,29 @@
   <canvas class="stars" aria-hidden="true"></canvas>
 
   <div class="container hero-content">
-    <p class="hero-eyebrow reveal">Buy. Sell. Rent.</p>
+    <p class="hero-eyebrow reveal">Curated Homes For Sale.</p>
     <h1 class="hero-title reveal">Real Estate <span>Done Right</span></h1>
     <p class="hero-sub reveal">A handpicked collection of homes, offices and luxury spaces — curated for people who refuse to settle.</p>
   </div>
 
   <!-- Floating search bar -->
   <div class="container">
-    <form class="search-bar reveal" id="searchBar" onsubmit="return false;">
+    <form class="search-bar reveal" id="searchBar">
       <div class="search-field search-loc">
         <span class="sf-icon">
           <svg viewBox="0 0 24 24" fill="none"><path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11Z" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="10" r="2.5" stroke="currentColor" stroke-width="1.6"/></svg>
         </span>
-        <input type="text" placeholder="Search location" aria-label="Search location" />
-      </div>
-      <div class="search-field">
-        <span class="sf-icon">
-          <svg viewBox="0 0 24 24" fill="none"><path d="M4 20V9l8-5 8 5v11" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M9 20v-6h6v6" stroke="currentColor" stroke-width="1.6"/></svg>
-        </span>
-        <select aria-label="Purpose"><option>Buy</option><option>Rent</option><option>Sell</option></select>
+        <select id="searchCity" aria-label="Location">
+          <option value="">All locations</option>
+        </select>
       </div>
       <div class="search-field">
         <span class="sf-icon">
           <svg viewBox="0 0 24 24" fill="none"><path d="M3 11.5 12 4l9 7.5" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M5 10v10h14V10" stroke="currentColor" stroke-width="1.6"/></svg>
         </span>
-        <select aria-label="Property type"><option>House</option><option>Apartment</option><option>Villa</option><option>Office</option><option>Townhouse</option></select>
+        <select id="searchType" aria-label="Property type">
+          <option value="all">All property types</option>
+        </select>
       </div>
       <button class="btn btn-dark search-go" type="submit">Find Property</button>
     </form>
@@ -284,7 +282,7 @@
       <div class="cta-text">
         <h2>Make Your Dream<br/>Space a <em>Reality</em></h2>
         <p>Partner with us to create stunning, innovative spaces that match your vision. Let's build something extraordinary together.</p>
-        <a href="#" class="btn btn-light">Get Started</a>
+        <a href="contact.html" class="btn btn-light">Get Started</a>
       </div>
       <div class="cta-img" style="background-image:url('https://images.unsplash.com/photo-1582407947304-fd86f028f716?auto=format&fit=crop&w=900&q=80')"></div>
     </div>
@@ -311,7 +309,7 @@
     </div>
     <div class="footer-col">
       <h4>Explore</h4>
-      <a href="#homes">Buy</a><a href="#cta">Sell</a><a href="#homes">Rent</a><a href="#cities">Cities</a>
+      <a href="#homes">Listings</a><a href="projects.html">Projects</a><a href="#cities">Cities</a>
     </div>
     <div class="footer-col">
       <h4>Company</h4>

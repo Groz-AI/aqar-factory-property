@@ -33,19 +33,20 @@ function buildFacets() {
 const statusClass = s => (s || '').toLowerCase().replace(/[^a-z]/g, '-');
 
 function cardHTML(p){
+  const stats = p.stats || {};
   return `
-  <a class="pcard" href="project.html?id=${p.id}">
+  <a class="pcard" href="project.html?id=${encodeURIComponent(p.id)}">
     <div class="pcard-img">
-      <img src="${U(p.cover, 800)}" alt="${p.name}" loading="lazy" />
-      <span class="pcard-status ${statusClass(p.status)}"><i></i>${p.status}</span>
-      <span class="pcard-cat">${p.category}</span>
+      <img src="${U(p.cover, 800)}" alt="${p.name || ''}" loading="lazy" />
+      <span class="pcard-status ${statusClass(p.status)}"><i></i>${p.status || ''}</span>
+      <span class="pcard-cat">${p.category || ''}</span>
     </div>
     <div class="pcard-body">
-      <h3>${p.name}</h3>
-      <p class="pcard-loc">${pinSVG}${p.location}</p>
-      <p class="pcard-tag">${p.tagline}</p>
+      <h3>${p.name || ''}</h3>
+      <p class="pcard-loc">${pinSVG}${p.location || ''}</p>
+      <p class="pcard-tag">${p.tagline || ''}</p>
       <div class="pcard-foot">
-        <span class="pcard-price">${p.stats.price}</span>
+        <span class="pcard-price">${stats.price || ''}</span>
         <span class="arrow">${arrowSVG}</span>
       </div>
     </div>
@@ -60,14 +61,14 @@ function getFiltered(){
     (state.city === 'all' || p.city === state.city) &&
     (!q || [p.name, p.city, p.location, p.category, p.developer].join(' ').toLowerCase().includes(q))
   );
-  const byNum = (key, dir) => (a, b) => dir * (a[key] - b[key]);
+  const byNum = (key, dir) => (a, b) => dir * ((Number(a[key]) || 0) - (Number(b[key]) || 0));
   switch(state.sort){
     case 'price-desc': list.sort(byNum('priceValue', -1)); break;
     case 'price-asc':  list.sort(byNum('priceValue', 1)); break;
     case 'area-desc':  list.sort(byNum('areaValue', -1)); break;
     case 'area-asc':   list.sort(byNum('areaValue', 1)); break;
     case 'year-desc':  list.sort(byNum('year', -1)); break;
-    case 'name-asc':   list.sort((a, b) => a.name.localeCompare(b.name)); break;
+    case 'name-asc':   list.sort((a, b) => (a.name || '').localeCompare(b.name || '')); break;
   }
   return list;
 }
@@ -100,18 +101,19 @@ function renderMap(list){
   markerLayer.clearLayers();
   const pts = [];
   list.forEach(p => {
+    const stats = p.stats || {};
     const icon = L.divIcon({
       className: 'rt-pin',
-      html: `<span>${p.stats.price}</span>`,
+      html: `<span>${stats.price || ''}</span>`,
       iconSize: [60, 28], iconAnchor: [30, 32]
     });
     const m = L.marker(p.coords, { icon }).addTo(markerLayer);
     m.bindPopup(
-      `<a class="map-pop" href="project.html?id=${p.id}">
-        <img src="${U(p.cover, 320)}" alt="${p.name}" />
-        <strong>${p.name}</strong>
-        <span>${p.location}</span>
-        <b>${p.stats.price}</b>
+      `<a class="map-pop" href="project.html?id=${encodeURIComponent(p.id)}">
+        <img src="${U(p.cover, 320)}" alt="${p.name || ''}" />
+        <strong>${p.name || ''}</strong>
+        <span>${p.location || ''}</span>
+        <b>${stats.price || ''}</b>
       </a>`, { closeButton: true, minWidth: 200 }
     );
     pts.push(p.coords);
