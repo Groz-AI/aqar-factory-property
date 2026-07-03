@@ -494,6 +494,10 @@ function wireReveals() {
   const header = document.getElementById('header');
   const onScroll = () => header.classList.toggle('scrolled', window.scrollY > 30);
   onScroll(); window.addEventListener('scroll', onScroll, { passive: true });
+  // re-check on back/forward-cache restores and late layout/scroll-anchor shifts,
+  // so the header never gets stuck transparent over busy page content
+  window.addEventListener('pageshow', onScroll);
+  window.addEventListener('load', onScroll);
 
   const nav = document.getElementById('nav');
   document.getElementById('navToggle').addEventListener('click', () => nav.classList.toggle('open'));
