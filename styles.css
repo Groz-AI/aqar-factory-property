@@ -161,19 +161,21 @@ em{font-style:normal}
 /* ============================================================
    HERO
    ============================================================ */
-.hero{position:relative;padding-top:200px;padding-bottom:120px;overflow:hidden}
+.hero{position:relative;min-height:100vh;min-height:100svh;display:flex;flex-direction:column;justify-content:center;padding-top:140px;padding-bottom:100px;overflow:hidden}
 .hero-sky{
   position:absolute;inset:0;z-index:-2;
   background:
     radial-gradient(120% 80% at 50% -10%, #cfeafd 0%, #a9d8f6 36%, #8fc9ef 60%, #cfe6f6 100%);
 }
+/* full-bleed background photo — covers the whole hero from the very top,
+   with only a short fade at the bottom so it blends into the next section */
 .hero-skyline{
-  position:absolute;left:0;right:0;bottom:0;height:62%;z-index:-1;
-  -webkit-mask-image:linear-gradient(180deg,transparent 0%,#000 28%,#000 72%,transparent 100%);
-  mask-image:linear-gradient(180deg,transparent 0%,#000 28%,#000 72%,transparent 100%);
+  position:absolute;inset:0;z-index:-1;
+  -webkit-mask-image:linear-gradient(180deg,#000 0%,#000 80%,transparent 100%);
+  mask-image:linear-gradient(180deg,#000 0%,#000 80%,transparent 100%);
 }
 .hero-slide{
-  position:absolute;inset:0;background-size:cover;background-position:center 30%;
+  position:absolute;inset:0;background-size:cover;background-position:center 22%;
   opacity:0;transform:scale(1.05);transition:opacity 1.6s ease;
 }
 .hero-slide.active{opacity:.92;animation:heroKen 7.5s ease-out forwards}
@@ -181,11 +183,11 @@ em{font-style:normal}
 /* fallback single image until the gallery script runs */
 .hero-skyline.solo{
   background-image:url("https://images.unsplash.com/photo-1486325212027-8081e485255e?auto=format&fit=crop&w=1600&q=80");
-  background-size:cover;background-position:center 30%;opacity:.92;
+  background-size:cover;background-position:center 22%;opacity:.92;
 }
 .hero::after{
-  content:"";position:absolute;left:0;right:0;bottom:0;height:42%;z-index:-1;
-  background:linear-gradient(180deg,transparent,var(--paper) 86%);
+  content:"";position:absolute;left:0;right:0;bottom:0;height:26%;z-index:-1;
+  background:linear-gradient(180deg,transparent,var(--paper) 92%);
 }
 .hero-content{text-align:center;max-width:880px;margin-inline:auto}
 .hero-eyebrow{
