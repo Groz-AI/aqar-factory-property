@@ -59,7 +59,7 @@ function cardHTML(p, i) {
   const dots = imgs.length > 1
     ? `<div class="pg-dots">${imgs.map((_, n) => `<i class="${n === 0 ? 'on' : ''}"></i>`).join('')}</div>` : '';
   return `
-  <article class="card" data-cat="${cats.join(' ')}" style="animation-delay:${i * 60}ms">
+  <article class="card" data-cat="${cats.join(' ')}" data-pname="${p.name || ''}" style="animation-delay:${i * 60}ms">
     <div class="card-img" data-gallery>
       ${slides}<div class="pg-shade"></div>
       <span class="card-badge">${p.badge || ''}</span>
