@@ -329,8 +329,9 @@ em{font-style:normal}
 .card{
   background:#fff;border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow-sm);
   border:1px solid var(--line);transition:transform .5s var(--ease),box-shadow .5s var(--ease);
-  animation:cardIn .55s var(--ease) both;
+  animation:cardIn .55s var(--ease) both;cursor:pointer;
 }
+.card:focus-visible{outline:2px solid var(--sky);outline-offset:2px}
 .card:hover{transform:translateY(-8px);box-shadow:var(--shadow-md)}
 .card-img{position:relative;aspect-ratio:16/11;overflow:hidden}
 .card-img img{width:100%;height:100%;object-fit:cover;transition:transform .8s var(--ease)}
@@ -358,6 +359,49 @@ em{font-style:normal}
 .card-specs span{display:inline-flex;align-items:center;gap:.3rem}
 .card-specs svg{width:15px;height:15px}
 @keyframes cardIn{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
+
+/* ============================================================
+   UNIT DETAIL MODAL — scrollable pop-up opened from a property card
+   ============================================================ */
+.unit-modal-overlay{
+  position:fixed;inset:0;z-index:400;background:rgba(10,14,20,.55);backdrop-filter:blur(6px);
+  display:flex;align-items:center;justify-content:center;padding:24px;
+  opacity:0;pointer-events:none;transition:opacity .3s;
+}
+.unit-modal-overlay.open{opacity:1;pointer-events:auto}
+.unit-modal{
+  position:relative;background:#fff;border-radius:24px;overflow:hidden;
+  width:min(640px,100%);max-height:86vh;display:flex;flex-direction:column;
+  box-shadow:0 60px 120px -40px rgba(10,14,20,.5);
+  transform:translateY(16px) scale(.97);transition:transform .35s var(--ease);
+}
+.unit-modal-overlay.open .unit-modal{transform:none}
+.unit-modal-close{
+  position:absolute;top:14px;right:14px;z-index:2;width:38px;height:38px;border-radius:50%;
+  background:rgba(10,14,20,.55);color:#fff;border:none;display:grid;place-items:center;cursor:pointer;
+  backdrop-filter:blur(6px);transition:.2s;
+}
+.unit-modal-close:hover{background:rgba(10,14,20,.85)}
+.unit-modal-close svg{width:16px;height:16px}
+.unit-modal-scroll{overflow-y:auto;flex:1}
+
+.um-gallery{position:relative;height:280px;flex:none;background:var(--paper)}
+.um-badge{
+  position:absolute;top:16px;left:16px;z-index:1;background:#fff;color:var(--ink);
+  font-size:.78rem;font-weight:700;padding:.4em .95em;border-radius:999px;box-shadow:var(--shadow-sm);
+}
+.um-details{padding:26px 28px 30px}
+.um-details h3{font-family:"Bricolage Grotesque",sans-serif;font-size:1.5rem;letter-spacing:-.01em;margin-bottom:.35rem}
+.um-loc{display:flex;align-items:center;gap:.4em;color:var(--sky-deep);font-size:.95rem;margin-bottom:1rem}
+.um-loc svg{width:16px;height:16px;flex:none}
+.um-specs{display:flex;gap:1.4rem;margin-bottom:1.1rem;flex-wrap:wrap}
+.um-spec{display:flex;align-items:center;gap:.4em;color:var(--ink-soft);font-size:.9rem}
+.um-spec svg{width:18px;height:18px;color:var(--sky)}
+.um-price{font-family:"Fraunces",serif;font-style:italic;font-weight:600;font-size:1.6rem;color:var(--ink);margin-bottom:1.1rem}
+.um-desc{color:var(--ink-soft);line-height:1.7;margin-bottom:1.2rem}
+.um-tags{display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:1.5rem}
+.um-tag{background:var(--paper);color:var(--ink-soft);font-size:.8rem;font-weight:500;padding:.4em .9em;border-radius:999px}
+.um-actions{display:flex;gap:.7rem;flex-wrap:wrap}
 
 /* ============================================================
    BY CITIES

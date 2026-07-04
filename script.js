@@ -91,11 +91,100 @@ function renderProperties(filter = activeCatFilter) {
     : `<p style="grid-column:1/-1;text-align:center;color:var(--ink-soft);padding:40px 0">No properties match that search. Try a different location or property type.</p>`;
   grid.querySelectorAll('.card-fav').forEach(b => b.addEventListener('click', (e) => {
     e.preventDefault();
+    e.stopPropagation();
     b.classList.toggle('on');
     b.style.background = b.classList.contains('on') ? 'var(--sky)' : '';
     b.style.color = b.classList.contains('on') ? '#fff' : '';
   }));
+  grid.querySelectorAll('.card').forEach((cardEl, i) => {
+    cardEl.setAttribute('tabindex', '0');
+    cardEl.setAttribute('role', 'button');
+    cardEl.setAttribute('aria-label', `View details for ${list[i].name || 'this property'}`);
+    cardEl.addEventListener('click', (e) => {
+      if (e.target.closest('.card-fav')) return;
+      openUnitModal(list[i]);
+    });
+    cardEl.addEventListener('keydown', (e) => {
+      if ((e.key === 'Enter' || e.key === ' ') && !e.target.closest('.card-fav')) {
+        e.preventDefault();
+        openUnitModal(list[i]);
+      }
+    });
+  });
   cycleGalleries('#propertyGrid', '.card', 3600);
+}
+
+/* ============================================================
+   UNIT DETAIL MODAL — scrollable pop-up opened from a property card
+   ============================================================ */
+const closeSVG = `<svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`;
+
+let unitModalOverlay = null;
+let unitModalBody = null;
+
+function ensureUnitModal() {
+  if (unitModalOverlay) return;
+  const el = document.createElement('div');
+  el.className = 'unit-modal-overlay';
+  el.id = 'unitModalOverlay';
+  el.innerHTML = `
+    <div class="unit-modal" role="dialog" aria-modal="true" aria-label="Property details">
+      <button class="unit-modal-close" id="unitModalClose" aria-label="Close">${closeSVG}</button>
+      <div class="unit-modal-scroll" id="unitModalBody"></div>
+    </div>`;
+  document.body.appendChild(el);
+  unitModalOverlay = el;
+  unitModalBody = el.querySelector('#unitModalBody');
+  el.addEventListener('click', e => { if (e.target === el) closeUnitModal(); });
+  el.querySelector('#unitModalClose').addEventListener('click', closeUnitModal);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeUnitModal(); });
+}
+
+function unitModalHTML(p) {
+  const imgs = propImages(p, 0);
+  const slides = imgs.map((g, n) =>
+    `<div class="pg-slide${n === 0 ? ' active' : ''}" style="background-image:url('${IMG(g, 1000)}')"></div>`).join('');
+  const dots = imgs.length > 1
+    ? `<div class="pg-dots">${imgs.map((_, n) => `<i class="${n === 0 ? 'on' : ''}"></i>`).join('')}</div>` : '';
+  const specs = [];
+  if (p.beds) specs.push(`<div class="um-spec">${bedSVG}<span>${p.beds} Beds</span></div>`);
+  if (p.baths) specs.push(`<div class="um-spec">${bathSVG}<span>${p.baths} Baths</span></div>`);
+  if (p.area) specs.push(`<div class="um-spec">${areaSVG}<span>${p.area}</span></div>`);
+  const tags = (p.categories || []).map(c => `<span class="um-tag">${c}</span>`).join('');
+
+  return `
+    <div class="um-gallery" data-gallery>
+      ${slides}<div class="pg-shade"></div>
+      ${p.badge ? `<span class="um-badge">${p.badge}</span>` : ''}
+      ${dots}
+    </div>
+    <div class="um-details">
+      <h3>${p.name || ''}</h3>
+      <p class="um-loc">${pinSVG}${p.location || ''}</p>
+      ${specs.length ? `<div class="um-specs">${specs.join('')}</div>` : ''}
+      ${p.price ? `<p class="um-price">${p.price}</p>` : ''}
+      ${p.description ? `<p class="um-desc">${p.description}</p>` : ''}
+      ${tags ? `<div class="um-tags">${tags}</div>` : ''}
+      <div class="um-actions">
+        <a href="projects.html" class="btn btn-dark">Go to Projects Page</a>
+        <a href="contact.html" class="btn btn-ghost">Enquire About This Property</a>
+      </div>
+    </div>`;
+}
+
+function openUnitModal(p) {
+  if (!p) return;
+  ensureUnitModal();
+  unitModalBody.innerHTML = unitModalHTML(p);
+  unitModalOverlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+  cycleGalleries('#unitModalOverlay', '.um-gallery', 3800);
+}
+
+function closeUnitModal() {
+  if (!unitModalOverlay) return;
+  unitModalOverlay.classList.remove('open');
+  document.body.style.overflow = '';
 }
 
 /* ---------- filter chips ---------- */
