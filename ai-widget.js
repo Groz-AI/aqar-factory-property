@@ -12,7 +12,7 @@
 (function () {
   'use strict';
 
-  const sparkSVG = `<svg viewBox="0 0 24 24" fill="none"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M12 8l1.4 3.6L17 13l-3.6 1.4L12 18l-1.4-3.6L7 13l3.6-1.4L12 8Z" fill="currentColor"/></svg>`;
+  const sparkSVG = `<svg viewBox="0 0 24 24" fill="none"><path d="M4 6.8A2.8 2.8 0 0 1 6.8 4h10.4A2.8 2.8 0 0 1 20 6.8v6.4a2.8 2.8 0 0 1-2.8 2.8H10.2l-3.9 2.9a.7.7 0 0 1-1.12-.56V16h-.4A2.8 2.8 0 0 1 4 13.2V6.8Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M14.2 7.4c.3 1.55.95 2.2 2.5 2.5-1.55.3-2.2.95-2.5 2.5-.3-1.55-.95-2.2-2.5-2.5 1.55-.3 2.2-.95 2.5-2.5Z" fill="currentColor"/></svg>`;
   const closeSVG = `<svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`;
   const sendSVG = `<svg viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 
@@ -76,6 +76,40 @@
   let answers = { type: null, typeLabel: '', city: '', budget: null };
   let dataset = { properties: [], categories: [], cities: [], companyName: '' };
   let chatHistory = []; // { role: 'user'|'model', text } — free-text AI conversation memory
+
+  // ---------- keep the fab clear of the hero search bar at any viewport size ----------
+  // The search bar sits inside a vertically-centered 100vh hero, so its on-screen
+  // position shifts with viewport height — a fixed pixel offset can't reliably
+  // clear it. Measure it live instead and only lift the widget while it's visible.
+  (function avoidSearchBarOverlap() {
+    const searchBar = document.getElementById('searchBar');
+    if (!searchBar) return; // pages without a hero search bar just use the CSS default
+    const GAP = 24;
+    const DEFAULT_BOTTOM = 26;
+    function reposition() {
+      const r = searchBar.getBoundingClientRect();
+      const visible = r.bottom > 0 && r.top < window.innerHeight;
+      if (!visible) { root.style.removeProperty('--ai-fab-bottom'); return; }
+
+      const fabH = fabBtn.offsetHeight || 54;
+      const roomBelow = window.innerHeight - r.bottom;
+      if (roomBelow >= fabH + GAP + DEFAULT_BOTTOM) {
+        // plenty of space between the search bar and the viewport edge already
+        root.style.removeProperty('--ai-fab-bottom');
+      } else {
+        // not enough room below — lift the button clear of the search bar's top instead
+        const needed = Math.max(DEFAULT_BOTTOM, window.innerHeight - r.top + GAP);
+        root.style.setProperty('--ai-fab-bottom', needed + 'px');
+      }
+    }
+    reposition();
+    window.addEventListener('scroll', reposition, { passive: true });
+    window.addEventListener('resize', reposition);
+    // re-check after web fonts / hero images settle, since that can nudge layout
+    setTimeout(reposition, 350);
+    setTimeout(reposition, 1200);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(reposition);
+  })();
 
   function openPanel() {
     panel.classList.add('open');

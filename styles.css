@@ -237,9 +237,13 @@ em{font-style:normal}
   box-shadow:0 10px 24px -14px rgba(12,22,32,.45),inset 0 1px 0 rgba(255,255,255,.4);
 }
 .hero-ai-dot{
-  width:8px;height:8px;border-radius:50%;flex:none;
-  background:conic-gradient(from 0deg,var(--sky),var(--violet),var(--gold),var(--pink),var(--sky));
-  animation:aiSpin 3s linear infinite;box-shadow:0 0 8px 2px rgba(155,92,246,.55);
+  width:8px;height:8px;border-radius:50%;flex:none;background:var(--sky);
+  animation:aiDotGlow 3.6s ease-in-out infinite;
+}
+@keyframes aiDotGlow{
+  0%,100%{background:var(--sky);box-shadow:0 0 7px 2px rgba(46,155,221,.6)}
+  33%{background:var(--violet);box-shadow:0 0 8px 2px rgba(155,92,246,.6)}
+  66%{background:var(--gold);box-shadow:0 0 8px 2px rgba(229,162,59,.6)}
 }
 
 /* search bar — frosted glass panel */
@@ -537,9 +541,10 @@ em{font-style:normal}
 /* ============================================================
    AI MATCHMAKER WIDGET — floating pulsing FAB + chat panel
    ============================================================ */
-@keyframes aiSpin{to{transform:rotate(360deg)}}
-
-.ai-widget{position:fixed;right:26px;bottom:26px;z-index:300}
+/* --ai-fab-bottom is measured live by ai-widget.js so the button always
+   clears the hero search bar, no matter the viewport height — 26px is the
+   default once that bar has scrolled out of view (or on pages without one) */
+.ai-widget{position:fixed;right:26px;bottom:var(--ai-fab-bottom,26px);z-index:300;transition:bottom .25s var(--ease)}
 
 .ai-fab{
   position:relative;display:inline-flex;align-items:center;gap:.65rem;
@@ -548,30 +553,38 @@ em{font-style:normal}
   font-family:"Hanken Grotesk",sans-serif;font-weight:600;font-size:.95rem;
   box-shadow:0 10px 30px -10px rgba(10,20,30,.55);
   transition:transform .35s var(--ease);
-  animation:aiShadowPulse 4.2s ease-in-out infinite;
+  animation:aiShadowPulse 5.5s ease-in-out infinite;
 }
 .ai-fab:hover{transform:translateY(-3px)}
 .ai-fab:active{transform:translateY(-1px) scale(.98)}
+/* the shadow hugging the button cycles through brand colors in place —
+   no rotation, just a gentle glow that breathes and shifts hue */
 @keyframes aiShadowPulse{
   0%,100%{box-shadow:0 0 0 0 rgba(46,155,221,0),0 10px 30px -10px rgba(10,20,30,.55)}
-  22%{box-shadow:0 0 22px 5px rgba(46,155,221,.55),0 10px 30px -10px rgba(10,20,30,.55)}
-  48%{box-shadow:0 0 26px 7px rgba(155,92,246,.5),0 10px 30px -10px rgba(10,20,30,.55)}
-  74%{box-shadow:0 0 24px 6px rgba(229,162,59,.5),0 10px 30px -10px rgba(10,20,30,.55)}
-  90%{box-shadow:0 0 20px 5px rgba(255,111,165,.45),0 10px 30px -10px rgba(10,20,30,.55)}
+  25%{box-shadow:0 0 26px 7px rgba(46,155,221,.5),0 10px 30px -10px rgba(10,20,30,.55)}
+  50%{box-shadow:0 0 30px 9px rgba(155,92,246,.48),0 10px 30px -10px rgba(10,20,30,.55)}
+  75%{box-shadow:0 0 28px 8px rgba(229,162,59,.46),0 10px 30px -10px rgba(10,20,30,.55)}
 }
+/* a soft blurred aura behind the button that breathes in size/opacity only */
 .ai-fab-glow{
-  position:absolute;inset:-11px;border-radius:999px;z-index:-1;filter:blur(15px);opacity:.7;
-  background:conic-gradient(from 0deg,var(--sky),var(--violet),var(--gold),var(--pink),var(--sky));
-  animation:aiSpin 7s linear infinite;
+  position:absolute;inset:-13px;border-radius:999px;z-index:-1;filter:blur(16px);
+  background:
+    radial-gradient(circle at 28% 32%, var(--sky) 0%, transparent 62%),
+    radial-gradient(circle at 72% 68%, var(--violet) 0%, transparent 62%),
+    radial-gradient(circle at 50% 85%, var(--gold) 0%, transparent 65%);
+  animation:aiGlowBreathe 5.5s ease-in-out infinite;
+}
+@keyframes aiGlowBreathe{
+  0%,100%{opacity:.32;transform:scale(.92)}
+  50%{opacity:.7;transform:scale(1.1)}
 }
 .ai-fab-icon{width:20px;height:20px;flex:none;display:grid;place-items:center}
-.ai-fab-icon svg{width:20px;height:20px;animation:aiIconPulse 2.4s ease-in-out infinite}
-@keyframes aiIconPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.16)}}
+.ai-fab-icon svg{width:20px;height:20px}
 .ai-fab-label{white-space:nowrap}
 
-/* chat panel */
+/* chat panel — always rides 74px above wherever the fab button currently is */
 .ai-panel{
-  position:fixed;right:26px;bottom:100px;width:min(400px,calc(100vw - 40px));
+  position:fixed;right:26px;bottom:calc(var(--ai-fab-bottom,26px) + 74px);width:min(400px,calc(100vw - 40px));
   max-height:min(640px,74vh);display:flex;flex-direction:column;
   background:#fff;border-radius:22px;overflow:hidden;
   box-shadow:0 40px 90px -30px rgba(10,20,30,.45),0 0 0 1px rgba(12,22,32,.06);
@@ -590,9 +603,12 @@ em{font-style:normal}
   display:grid;place-items:center;background:#fff;color:var(--sky-deep);
 }
 .ai-avatar::before{
-  content:"";position:absolute;inset:-4px;border-radius:50%;z-index:-1;
-  background:conic-gradient(from 0deg,var(--sky),var(--violet),var(--gold),var(--pink),var(--sky));
-  animation:aiSpin 6s linear infinite;
+  content:"";position:absolute;inset:-4px;border-radius:50%;z-index:-1;filter:blur(3px);
+  background:
+    radial-gradient(circle at 30% 30%, var(--sky) 0%, transparent 60%),
+    radial-gradient(circle at 70% 70%, var(--violet) 0%, transparent 60%),
+    radial-gradient(circle at 50% 90%, var(--gold) 0%, transparent 65%);
+  animation:aiGlowBreathe 5.5s ease-in-out infinite;
 }
 .ai-avatar svg{width:18px;height:18px}
 .ai-panel-id b{font-family:"Bricolage Grotesque",sans-serif;font-size:1rem;display:block}
@@ -692,8 +708,8 @@ em{font-style:normal}
   .testi-grid{grid-template-columns:1fr}
   .section{padding:70px 0}
   .hero-ai-badge{font-size:.78rem;text-align:left;padding:.55em 1em}
-  .ai-widget{right:14px;bottom:14px}
+  .ai-widget{right:14px}
   .ai-fab-label{display:none}
   .ai-fab{padding:.9em}
-  .ai-panel{right:10px;left:10px;width:auto;bottom:84px}
+  .ai-panel{right:10px;left:10px;width:auto}
 }
