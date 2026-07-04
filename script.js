@@ -29,6 +29,7 @@ const emLast = (s) => {
    PROPERTIES (Handpicked Homes)
    ============================================================ */
 let properties = [];
+let allProjects = [];
 let activeCatFilter = 'all';
 let activeCityQuery = '';
 const grid = document.getElementById('propertyGrid');
@@ -151,6 +152,10 @@ function unitModalHTML(p) {
   if (p.baths) specs.push(`<div class="um-spec">${bathSVG}<span>${p.baths} Baths</span></div>`);
   if (p.area) specs.push(`<div class="um-spec">${areaSVG}<span>${p.area}</span></div>`);
   const tags = (p.categories || []).map(c => `<span class="um-tag">${c}</span>`).join('');
+  const linkedProject = p.project_slug ? allProjects.find(pr => pr.id === p.project_slug) : null;
+  const projectCTA = linkedProject
+    ? `<a href="project.html?id=${encodeURIComponent(linkedProject.id)}" class="btn btn-dark">Go to ${linkedProject.name}</a>`
+    : `<a href="projects.html" class="btn btn-dark">Go to Projects Page</a>`;
 
   return `
     <div class="um-gallery" data-gallery>
@@ -166,7 +171,7 @@ function unitModalHTML(p) {
       ${p.description ? `<p class="um-desc">${p.description}</p>` : ''}
       ${tags ? `<div class="um-tags">${tags}</div>` : ''}
       <div class="um-actions">
-        <a href="projects.html" class="btn btn-dark">Go to Projects Page</a>
+        ${projectCTA}
         <a href="contact.html" class="btn btn-ghost">Enquire About This Property</a>
       </div>
     </div>`;
@@ -621,6 +626,7 @@ function wireReveals() {
       S.getCategories ? S.getCategories() : Promise.resolve([])
     ]);
     properties = props || [];
+    allProjects = projects || [];
     applyContent(content);
     renderChips(cats || []);
     renderSearchFacets(cities || [], cats || []);

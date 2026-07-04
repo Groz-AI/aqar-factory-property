@@ -112,6 +112,11 @@
         { key: 'beds', label: 'Beds', type: 'number', half: true },
         { key: 'baths', label: 'Baths', type: 'number', half: true },
         { key: 'area', label: 'Area', type: 'text', half: true },
+        {
+          key: 'project_slug', label: 'Linked project (optional)', type: 'select',
+          options: [{ value: '', label: '— No linked project —' }],
+          hint: 'The homepage popup for this listing links to this project\'s page instead of the general Projects page.'
+        },
         { key: 'sort_order', label: 'Sort order', type: 'number', half: true },
         { key: 'published', label: 'Published', type: 'bool' }
       ]
@@ -394,13 +399,23 @@
   let uploads = {};   // transient per-form state for arrays/gallery
   let pendingUploads = 0; // in-flight image uploads — block saves until they finish
 
-  function openForm(view, row) {
+  async function openForm(view, row) {
     const r = RESOURCES[view];
     editing = { view, id: row ? row.id : null };
     uploads = {};
     $('#drawerTitle').textContent = (row ? 'Edit ' : 'New ') + r.singular.toLowerCase();
     const body = $('#drawerBody');
     body.innerHTML = '';
+
+    // properties can link to a project — populate that dropdown from the live list
+    if (view === 'properties') {
+      const projectField = r.fields.find(f => f.key === 'project_slug');
+      try {
+        const { data } = await sb.from('projects').select('slug,name').order('name', { ascending: true });
+        projectField.options = [{ value: '', label: '— No linked project —' }]
+          .concat((data || []).map(p => ({ value: p.slug, label: p.name })));
+      } catch (_) { /* keep the "none" option only if this fails */ }
+    }
 
     let buf = [];
     const flush = () => { if (buf.length) { body.appendChild(el('div', { class: 'grid-2' }, buf.join(''))); buf = []; } };
@@ -429,12 +444,18 @@
       return `<div class="field"><label class="switch"><input type="checkbox" id="${id}" ${val ? 'checked' : ''}><span class="track"></span>${esc(f.label)}</label>${hint}</div>`;
     }
     if (f.type === 'select') {
+      // options may be plain strings ("For Sale") or {value,label} pairs
+      // (e.g. linking to a project by slug while showing its name)
+      const optVal = o => (o && typeof o === 'object') ? o.value : o;
+      const optLabel = o => (o && typeof o === 'object') ? o.label : o;
       // if the saved value predates a later options change (e.g. an old badge
       // value no longer offered), keep it as a selected extra option instead
       // of silently swapping it to the first option on next save
-      const known = f.options.includes(val);
-      const legacy = (val != null && val !== '' && !known) ? `<option selected>${esc(val)}</option>` : '';
-      const opts = legacy + f.options.map(o => `<option ${o === val ? 'selected' : ''}>${esc(o)}</option>`).join('');
+      const known = f.options.some(o => optVal(o) === val);
+      const legacy = (val != null && val !== '' && !known) ? `<option value="${esc(val)}" selected>${esc(val)}</option>` : '';
+      const opts = legacy + f.options.map(o =>
+        `<option value="${esc(optVal(o))}" ${optVal(o) === val ? 'selected' : ''}>${esc(optLabel(o))}</option>`
+      ).join('');
       return `<div class="field"><label for="${id}">${esc(f.label)}</label><select id="${id}">${opts}</select>${hint}</div>`;
     }
     if (f.type === 'textarea') {

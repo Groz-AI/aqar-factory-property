@@ -76,11 +76,14 @@ create table if not exists public.properties (
   beds        int default 0,
   baths       int default 0,
   area        text,
+  project_slug text,                                -- optional: links this listing to a project's detail page
   sort_order  int default 0,
   published   boolean default true,
   created_at  timestamptz default now(),
   updated_at  timestamptz default now()
 );
+-- adds the column if this table already existed from an earlier version of this schema
+alter table public.properties add column if not exists project_slug text;
 
 -- Cities
 create table if not exists public.cities (
