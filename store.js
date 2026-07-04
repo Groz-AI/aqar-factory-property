@@ -19,6 +19,8 @@
   function mapProject(r) {
     return {
       id: r.slug || r.id,
+      dbId: r.id,          // the real uuid primary key — used to match properties.project_id
+      cityId: r.city_id || null,
       name: r.name, category: r.category, city: r.city, location: r.location,
       country: r.country, year: r.year, status: r.status, tagline: r.tagline, cover: r.cover,
       about: r.about || [], amenities: r.amenities || [], developer: r.developer,

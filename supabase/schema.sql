@@ -29,13 +29,27 @@ begin new.updated_at = now(); return new; end $$;
 -- CONTENT TABLES
 -- ============================================================
 
--- Developments / projects
+-- Cities — top of the hierarchy: City -> Projects -> Units
+create table if not exists public.cities (
+  id          uuid primary key default gen_random_uuid(),
+  name        text not null,
+  country     text,
+  image       text,
+  size        text default 'normal',              -- normal | wide | big
+  sort_order  int default 0,
+  published   boolean default true,
+  created_at  timestamptz default now(),
+  updated_at  timestamptz default now()
+);
+
+-- Developments / projects — each optionally belongs to a city
 create table if not exists public.projects (
   id          uuid primary key default gen_random_uuid(),
   slug        text unique not null,
   name        text not null,
   category    text not null default 'Residential',
-  city        text not null,
+  city        text not null,                      -- display fallback; city_id is the real link
+  city_id     uuid references public.cities(id) on delete set null,
   location    text,
   country     text,
   year        int,
@@ -62,7 +76,8 @@ create table if not exists public.projects (
   updated_at  timestamptz default now()
 );
 
--- Featured units / listings ("Discover Handpicked Homes")
+-- Featured units / listings ("Discover Handpicked Homes") — each optionally
+-- belongs to a project (which supplies its city) or, if standalone, a city directly
 create table if not exists public.properties (
   id          uuid primary key default gen_random_uuid(),
   name        text not null,
@@ -70,34 +85,56 @@ create table if not exists public.properties (
   description text,
   price       text,
   categories  text[] default '{}',                -- villas, apartments, offices...
-  badge       text,                               -- For Sale | For Rent | For Lease
+  badge       text,                               -- For Sale | New Listing | Exclusive
   image       text,
   images      text[] default '{}',                -- gallery (cover is `image`)
   beds        int default 0,
   baths       int default 0,
   area        text,
-  project_slug text,                                -- optional: links this listing to a project's detail page
+  project_id  uuid references public.projects(id) on delete set null,
+  city_id     uuid references public.cities(id) on delete set null,
   sort_order  int default 0,
   published   boolean default true,
   created_at  timestamptz default now(),
   updated_at  timestamptz default now()
 );
--- adds the column if this table already existed from an earlier version of this schema
-alter table public.properties add column if not exists project_slug text;
 
--- Cities
-create table if not exists public.cities (
-  id          uuid primary key default gen_random_uuid(),
-  name        text not null,
-  country     text,
-  image       text,
-  unit_count  text,
-  size        text default 'normal',              -- normal | wide | big
-  sort_order  int default 0,
-  published   boolean default true,
-  created_at  timestamptz default now(),
-  updated_at  timestamptz default now()
-);
+-- ---------- migrate an existing install to the relational schema above ----------
+-- (all no-ops on a brand new database; safe to re-run any time)
+alter table public.projects   add column if not exists city_id    uuid references public.cities(id) on delete set null;
+alter table public.properties add column if not exists project_id uuid references public.projects(id) on delete set null;
+alter table public.properties add column if not exists city_id    uuid references public.cities(id) on delete set null;
+alter table public.cities     drop column if exists unit_count;   -- replaced by a live computed count on the site
+
+-- carry over the old text-based project link, if this install still has it
+do $$
+begin
+  update public.properties p
+     set project_id = pr.id
+    from public.projects pr
+   where p.project_slug = pr.slug
+     and p.project_id is null;
+exception when undefined_column then null; -- project_slug never existed on this install
+end $$;
+alter table public.properties drop column if exists project_slug;
+
+-- best-effort backfill: link existing rows to a city by matching their free text
+update public.projects pr
+   set city_id = c.id
+  from public.cities c
+ where pr.city_id is null
+   and lower(trim(pr.city)) = lower(trim(c.name));
+
+update public.properties p
+   set city_id = c.id
+  from public.cities c
+ where p.city_id is null
+   and p.project_id is null
+   and p.location ilike '%' || c.name || '%';
+
+create index if not exists idx_projects_city_id    on public.projects(city_id);
+create index if not exists idx_properties_project_id on public.properties(project_id);
+create index if not exists idx_properties_city_id    on public.properties(city_id);
 
 -- Testimonials
 create table if not exists public.testimonials (

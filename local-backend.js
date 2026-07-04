@@ -33,19 +33,38 @@
       id: uuid(), sort_order: i, published: true, ...x
     }));
 
+    // cities go first — everything else links to their generated ids
+    const cities = withMeta(F.cities);
+    const findCity = (text) => {
+      const t = String(text || '').toLowerCase();
+      return cities.find(c => t === c.name.toLowerCase() || t.includes(c.name.toLowerCase()));
+    };
+
     // projects come in "public" shape → map to DB columns (mirror of admin seeder)
-    const projects = (F.projects || []).map((p, i) => ({
-      id: uuid(), slug: p.id, name: p.name, category: p.category, city: p.city,
-      location: p.location, country: p.country, year: p.year, status: p.status,
-      tagline: p.tagline, cover: p.cover, about: p.about || [], amenities: p.amenities || [],
-      developer: p.developer, gallery: p.gallery || [],
-      price: p.stats && p.stats.price, units: p.stats && p.stats.units,
-      floors: p.stats && p.stats.floors, area: p.stats && p.stats.area,
-      handover: p.stats && p.stats.handover,
-      price_value: p.priceValue || 0, area_value: p.areaValue || 0, is_rental: !!p.isRental,
-      lat: p.coords ? p.coords[0] : null, lng: p.coords ? p.coords[1] : null,
-      sort_order: i, published: true
-    }));
+    // city_id links to the matching city above; city stays as a text fallback
+    const projects = (F.projects || []).map((p, i) => {
+      const city = findCity(p.city);
+      return {
+        id: uuid(), slug: p.id, name: p.name, category: p.category, city: p.city,
+        city_id: city ? city.id : null,
+        location: p.location, country: p.country, year: p.year, status: p.status,
+        tagline: p.tagline, cover: p.cover, about: p.about || [], amenities: p.amenities || [],
+        developer: p.developer, gallery: p.gallery || [],
+        price: p.stats && p.stats.price, units: p.stats && p.stats.units,
+        floors: p.stats && p.stats.floors, area: p.stats && p.stats.area,
+        handover: p.stats && p.stats.handover,
+        price_value: p.priceValue || 0, area_value: p.areaValue || 0, is_rental: !!p.isRental,
+        lat: p.coords ? p.coords[0] : null, lng: p.coords ? p.coords[1] : null,
+        sort_order: i, published: true
+      };
+    });
+
+    // properties: link to a city by matching their free-text location, when possible
+    // (project_id is intentionally left unset — that's an optional link admins add by hand)
+    const properties = (F.properties || []).map((x, i) => {
+      const city = findCity(x.location);
+      return { id: uuid(), sort_order: i, published: true, city_id: city ? city.id : null, ...x };
+    });
 
     // categories that drive the home "Discover Handpicked Homes" filter
     const categories = [
@@ -67,8 +86,8 @@
 
     return {
       projects,
-      properties:   withMeta(F.properties),
-      cities:       withMeta(F.cities),
+      properties,
+      cities,
       testimonials: withMeta(F.testimonials),
       developers:   withMeta(F.developers),
       categories,

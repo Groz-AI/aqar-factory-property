@@ -67,7 +67,11 @@
         { key: 'slug', label: 'Slug (URL id)', type: 'text', required: true, half: true, hint: 'lowercase, dashes — e.g. azure-residences' },
         { key: 'category', label: 'Category', type: 'select', options: ['Residential', 'Commercial', 'Mixed-use', 'Hospitality', 'Retail', 'Office'], half: true },
         { key: 'status', label: 'Status', type: 'select', options: ['Completed', 'Ongoing', 'Off-plan'], half: true },
-        { key: 'city', label: 'City', type: 'text', half: true },
+        {
+          key: 'city_id', label: 'City', type: 'select', required: true, half: true,
+          options: [{ value: '', label: '— No linked city —' }],
+          hint: 'Add cities under the Cities section first. This also fills the project\'s display city name.'
+        },
         { key: 'country', label: 'Country', type: 'text', half: true },
         { key: 'location', label: 'Location / address', type: 'text' },
         { key: 'tagline', label: 'Tagline', type: 'text' },
@@ -113,9 +117,14 @@
         { key: 'baths', label: 'Baths', type: 'number', half: true },
         { key: 'area', label: 'Area', type: 'text', half: true },
         {
-          key: 'project_slug', label: 'Linked project (optional)', type: 'select',
+          key: 'project_id', label: 'Linked project (optional)', type: 'select', half: true,
           options: [{ value: '', label: '— No linked project —' }],
-          hint: 'The homepage popup for this listing links to this project\'s page instead of the general Projects page.'
+          hint: 'The homepage popup links to this project\'s page instead of the general Projects page, and this listing counts toward the project\'s city.'
+        },
+        {
+          key: 'city_id', label: 'City (optional)', type: 'select', half: true,
+          options: [{ value: '', label: '— No linked city —' }],
+          hint: 'Only used when there\'s no linked project above. Powers the "By Cities" unit counts on the homepage.'
         },
         { key: 'sort_order', label: 'Sort order', type: 'number', half: true },
         { key: 'published', label: 'Published', type: 'bool' }
@@ -398,6 +407,8 @@
   let editing = null; // { view, id }
   let uploads = {};   // transient per-form state for arrays/gallery
   let pendingUploads = 0; // in-flight image uploads — block saves until they finish
+  let dynamicCitiesList = [];   // { id, name } — cached whenever a City picker is populated
+  let dynamicProjectsList = []; // { id, name } — cached whenever the Project picker is populated
 
   async function openForm(view, row) {
     const r = RESOURCES[view];
@@ -407,14 +418,29 @@
     const body = $('#drawerBody');
     body.innerHTML = '';
 
-    // properties can link to a project — populate that dropdown from the live list
-    if (view === 'properties') {
-      const projectField = r.fields.find(f => f.key === 'project_slug');
+    // Projects and Listings both link to a City; Listings can also link to a Project.
+    // Populate those dropdowns from the live tables right before rendering the form.
+    if (view === 'properties' || view === 'projects') {
+      const cityField = r.fields.find(f => f.key === 'city_id');
       try {
-        const { data } = await sb.from('projects').select('slug,name').order('name', { ascending: true });
+        const { data } = await sb.from('cities').select('id,name').order('name', { ascending: true });
+        dynamicCitiesList = data || [];
+      } catch (_) { dynamicCitiesList = []; }
+      if (cityField) {
+        cityField.options = [{ value: '', label: '— No linked city —' }]
+          .concat(dynamicCitiesList.map(c => ({ value: c.id, label: c.name })));
+      }
+    }
+    if (view === 'properties') {
+      const projectField = r.fields.find(f => f.key === 'project_id');
+      try {
+        const { data } = await sb.from('projects').select('id,name').order('name', { ascending: true });
+        dynamicProjectsList = data || [];
+      } catch (_) { dynamicProjectsList = []; }
+      if (projectField) {
         projectField.options = [{ value: '', label: '— No linked project —' }]
-          .concat((data || []).map(p => ({ value: p.slug, label: p.name })));
-      } catch (_) { /* keep the "none" option only if this fails */ }
+          .concat(dynamicProjectsList.map(p => ({ value: p.id, label: p.name })));
+      }
     }
 
     let buf = [];
@@ -574,6 +600,9 @@
       if (f.type === 'gallery') { out[f.key] = uploads[f.key] || []; continue; }
       let v = node ? node.value : '';
       if (f.type === 'number') { out[f.key] = v === '' ? null : Number(v); continue; }
+      // an empty selection on a reference field (city/project) means "unlinked" —
+      // save it as null, not an empty string (uuid columns reject "")
+      if (f.type === 'select' && (f.key === 'city_id' || f.key === 'project_id')) { out[f.key] = v === '' ? null : v; continue; }
       if (f.type === 'tags') { out[f.key] = v.split(',').map(s => s.trim()).filter(Boolean); continue; }
       if (f.type === 'lines') { out[f.key] = v.split('\n').map(s => s.trim()).filter(Boolean); continue; }
       out[f.key] = v.trim ? v.trim() : v;
@@ -590,6 +619,12 @@
       if (f.required && (payload[f.key] == null || payload[f.key] === '')) {
         toast(`“${f.label}” is required`, 'err'); return;
       }
+    }
+    // keep the legacy display "city" text column in sync with the picked city,
+    // so anything still reading project.city (list views, filters) stays correct
+    if (view === 'projects' && 'city_id' in payload) {
+      const picked = dynamicCitiesList.find(c => c.id === payload.city_id);
+      payload.city = picked ? picked.name : '';
     }
     const save = $('#drawerSave');
     save.disabled = true; save.innerHTML = '<span class="spinner"></span>';
@@ -922,6 +957,8 @@
         note(error ? `content: ${error.message}` : `content: ${rows.length} blocks ✓`);
       }
 
+      await backfillCityLinks(note);
+
       note('\nDone. Reloading counts…');
       await refreshCounts();
       toast('Starter data imported');
@@ -930,6 +967,35 @@
       toast('Import failed', 'err');
     }
     btn.disabled = false; btn.textContent = 'Import starter data';
+  }
+
+  // links any project/listing that still has a free-text city (no city_id yet)
+  // to a matching row in the Cities table — runs right after seeding so demo
+  // data is fully relational immediately, without needing to re-run schema.sql
+  async function backfillCityLinks(note) {
+    const { data: cities } = await sb.from('cities').select('id,name');
+    if (!cities || !cities.length) return;
+    const findCity = (text) => {
+      const t = String(text || '').toLowerCase();
+      return cities.find(c => t === c.name.toLowerCase() || t.includes(c.name.toLowerCase()));
+    };
+
+    const { data: projects } = await sb.from('projects').select('id,city,city_id');
+    let projLinked = 0;
+    for (const p of (projects || [])) {
+      if (p.city_id) continue;
+      const c = findCity(p.city);
+      if (c) { await sb.from('projects').update({ city_id: c.id }).eq('id', p.id); projLinked++; }
+    }
+
+    const { data: props } = await sb.from('properties').select('id,location,project_id,city_id');
+    let propLinked = 0;
+    for (const p of (props || [])) {
+      if (p.city_id || p.project_id) continue;
+      const c = findCity(p.location);
+      if (c) { await sb.from('properties').update({ city_id: c.id }).eq('id', p.id); propLinked++; }
+    }
+    note(`city links: ${projLinked} project(s), ${propLinked} listing(s) ✓`);
   }
 
   async function seedTable(table, rows, conflictKey, note) {

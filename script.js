@@ -152,7 +152,7 @@ function unitModalHTML(p) {
   if (p.baths) specs.push(`<div class="um-spec">${bathSVG}<span>${p.baths} Baths</span></div>`);
   if (p.area) specs.push(`<div class="um-spec">${areaSVG}<span>${p.area}</span></div>`);
   const tags = (p.categories || []).map(c => `<span class="um-tag">${c}</span>`).join('');
-  const linkedProject = p.project_slug ? allProjects.find(pr => pr.id === p.project_slug) : null;
+  const linkedProject = p.project_id ? allProjects.find(pr => pr.dbId === p.project_id) : null;
   const projectCTA = linkedProject
     ? `<a href="project.html?id=${encodeURIComponent(linkedProject.id)}" class="btn btn-dark">Go to ${linkedProject.name}</a>`
     : `<a href="projects.html" class="btn btn-dark">Go to Projects Page</a>`;
@@ -251,15 +251,33 @@ function wireSearchForm() {
 /* ============================================================
    CITIES
    ============================================================ */
-function renderCities(cities) {
+// a unit's city comes from its linked project when it has one, else its own city_id
+function resolveCityId(p, projectsByDbId) {
+  if (p.project_id) {
+    const proj = projectsByDbId[p.project_id];
+    if (proj) return proj.cityId || null;
+  }
+  return p.city_id || null;
+}
+
+function renderCities(cities, props, projectList) {
   const wrap = document.getElementById('cityGrid');
   if (!wrap || !cities.length) return;
+  const projectsByDbId = {};
+  (projectList || []).forEach(pr => { if (pr.dbId) projectsByDbId[pr.dbId] = pr; });
+  const counts = {};
+  (props || []).forEach(p => {
+    const cid = resolveCityId(p, projectsByDbId);
+    if (cid) counts[cid] = (counts[cid] || 0) + 1;
+  });
   wrap.innerHTML = cities.map(c => {
     const size = c.size === 'big' ? ' big' : c.size === 'wide' ? ' wide' : '';
     const w = size ? 900 : 700;
+    const n = counts[c.id] || 0;
+    const label = n === 1 ? '1 Unit' : `${n.toLocaleString()} Units`;
     return `<article class="city-card${size} reveal" style="--img:url('${IMG(c.image, w)}')">
       <div class="city-meta"><h3>${c.name}</h3><p>${c.country || ''}</p></div>
-      <span class="city-count">${c.unit_count || ''}</span>
+      <span class="city-count">${label}</span>
     </article>`;
   }).join('');
 }
@@ -632,7 +650,7 @@ function wireReveals() {
     renderSearchFacets(cities || [], cats || []);
     initHeroTyping();
     renderProperties();
-    renderCities(cities || []);
+    renderCities(cities || [], properties, allProjects);
     initHeroGallery(cities || [], content);
     renderProjects(projects || []);
     renderDevelopers(devs || []);
