@@ -66,7 +66,9 @@
       document.getElementById('email').value = c.email;
     }
 
-    const sb = cloud ? window.supabase.createClient(cfg.url, cfg.anonKey)
+    // sessionStorage (not localStorage) — admin sessions end when the tab/browser
+    // closes, so every new browser session requires a fresh sign-in
+    const sb = cloud ? window.supabase.createClient(cfg.url, cfg.anonKey, { auth: { storage: window.sessionStorage } })
              : window.RealteekLocal.makeClient();
 
     // already signed in? skip straight to the dashboard

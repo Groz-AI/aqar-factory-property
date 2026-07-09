@@ -83,33 +83,6 @@ em{font-style:normal}
 .btn-ghost{background:#fff;color:var(--ink);box-shadow:var(--shadow-sm);padding:.7em 1.4em}
 .btn-ghost:hover{transform:translateY(-2px)}
 
-/* glassmorphism button — frosted, see-through, glossy edge */
-.btn-glass{
-  padding:.7em 1.5em;color:#fff;
-  background:linear-gradient(135deg,rgba(255,255,255,.22),rgba(255,255,255,.08));
-  backdrop-filter:blur(12px) saturate(1.6);
-  -webkit-backdrop-filter:blur(12px) saturate(1.6);
-  border:1px solid rgba(255,255,255,.40);
-  box-shadow:0 8px 24px -12px rgba(12,22,32,.45),inset 0 1px 0 rgba(255,255,255,.5);
-}
-.btn-glass:hover{
-  transform:translateY(-2px);
-  background:linear-gradient(135deg,rgba(255,255,255,.34),rgba(255,255,255,.16));
-  box-shadow:0 14px 30px -12px rgba(12,22,32,.5),inset 0 1px 0 rgba(255,255,255,.6);
-}
-/* on a light/solid surface the glass needs dark ink so it stays legible */
-.site-header.scrolled .btn-glass,
-.site-header.solid .btn-glass{
-  color:var(--ink);
-  background:linear-gradient(135deg,rgba(255,255,255,.65),rgba(255,255,255,.35));
-  border-color:rgba(255,255,255,.7);
-  box-shadow:0 8px 22px -14px rgba(12,22,32,.4),inset 0 1px 0 rgba(255,255,255,.8);
-}
-.site-header.scrolled .btn-glass:hover,
-.site-header.solid .btn-glass:hover{
-  background:linear-gradient(135deg,rgba(255,255,255,.85),rgba(255,255,255,.55));
-}
-
 /* ============================================================
    HEADER — rounded glass tab-nav only (no outer capsule)
    ============================================================ */
@@ -741,7 +714,6 @@ em{font-style:normal}
   .nav.open{transform:none}
   .nav a{color:var(--ink)!important;background:none!important;box-shadow:none!important;font-size:1.1rem;padding:.7em 0;border-bottom:1px solid var(--line);border-radius:0}
   .nav-toggle{display:flex}
-  .login{display:none}
   .search-bar{flex-direction:column;border-radius:24px;align-items:stretch}
   .search-field{border-left:none!important;border-bottom:1px solid var(--line)}
   .search-go{margin-top:.4rem}

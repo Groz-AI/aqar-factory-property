@@ -207,8 +207,10 @@
     try { const c = JSON.parse(localStorage.getItem(CRED_KEY)); if (c && c.email) return c; } catch (_) {}
     return DEFAULT_CRED;
   }
+  // sessionStorage (not localStorage) — the session ends when the tab/browser
+  // closes, so every new browser session requires a fresh sign-in
   function getSessionRaw() {
-    try { return JSON.parse(localStorage.getItem(SESSION_KEY)); } catch (_) { return null; }
+    try { return JSON.parse(sessionStorage.getItem(SESSION_KEY)); } catch (_) { return null; }
   }
   const auth = {
     async getSession() { return { data: { session: getSessionRaw() }, error: null }; },
@@ -220,10 +222,10 @@
       }
       const user = { id: 'local-admin', email: cred.email };
       const session = { user, access_token: 'local', token_type: 'local', created_at: Date.now() };
-      localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+      sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
       return { data: { session, user }, error: null };
     },
-    async signOut() { localStorage.removeItem(SESSION_KEY); return { error: null }; }
+    async signOut() { sessionStorage.removeItem(SESSION_KEY); return { error: null }; }
   };
 
   // ---------- rpc ----------
@@ -304,7 +306,7 @@
       localStorage.setItem(CRED_KEY, JSON.stringify({ email, password }));
       // keep the active session's identity in sync so you stay signed in as the new email
       const s = getSessionRaw();
-      if (s && s.user) { s.user.email = email; localStorage.setItem(SESSION_KEY, JSON.stringify(s)); }
+      if (s && s.user) { s.user.email = email; sessionStorage.setItem(SESSION_KEY, JSON.stringify(s)); }
     },
     resetData() { localStorage.removeItem(DB_KEY); },
     _load: load, _save: save

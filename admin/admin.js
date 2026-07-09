@@ -10,7 +10,9 @@
   const cfg = window.SUPA || {};
   const cloud = window.supabase && cfg.url && !/YOUR_/.test(cfg.url) && cfg.anonKey && !/YOUR_/.test(cfg.anonKey);
   const localMode = !cloud && !!window.RealteekLocal;
-  const sb = cloud ? window.supabase.createClient(cfg.url, cfg.anonKey)
+  // sessionStorage (not localStorage) — admin sessions end when the tab/browser
+  // closes, so every new browser session requires a fresh sign-in
+  const sb = cloud ? window.supabase.createClient(cfg.url, cfg.anonKey, { auth: { storage: window.sessionStorage } })
            : (localMode ? window.RealteekLocal.makeClient() : null);
   const configured = cloud || localMode;
   const FALLBACK = window.FALLBACK || {};
