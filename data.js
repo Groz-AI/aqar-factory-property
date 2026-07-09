@@ -25,7 +25,7 @@ window.PROJECTS = [
       "Residents arrive through a double-height lobby finished in travertine and brushed bronze, then ascend to homes designed around uninterrupted water views and seamless indoor-outdoor living."
     ],
     amenities: ["Infinity Pool","Sky Gym","24/7 Concierge","Smart Home","Valet Parking","Spa & Sauna"],
-    stats: { units: "48 Villas", floors: "32 Floors", area: "610 m² avg", price: "$3.2M", handover: "Q4 2025" },
+    stats: { units: "48 Villas", floors: "32 Floors", area: "610 m² avg", price: "EGP 3.2M", handover: "Q4 2025" },
     developer: "Emaar Properties"
   },
   {
@@ -45,7 +45,7 @@ window.PROJECTS = [
       "A landscaped sky-terrace on the 18th floor offers tenants a green retreat above the city, while the ground-floor atrium hosts cafés, a wellness studio and end-of-trip facilities."
     ],
     amenities: ["Co-working Lounge","Sky Terrace","EV Charging","24/7 Security","Wellness Studio","Concierge"],
-    stats: { units: "22 Floors Leasable", floors: "26 Floors", area: "180–1,400 m²", price: "$4.8K/mo", handover: "Q1 2025" },
+    stats: { units: "22 Floors Leasable", floors: "26 Floors", area: "180–1,400 m²", price: "EGP 4.8K/mo", handover: "Q1 2025" },
     developer: "Aldar Commercial"
   },
   {
@@ -65,7 +65,7 @@ window.PROJECTS = [
       "Local stone, reclaimed teak and handwoven textiles ground the architecture in its surroundings, while discreet smart-home systems keep everything effortless."
     ],
     amenities: ["Private Infinity Pool","Landscaped Gardens","Beach Access","Smart Home","Housekeeping","Spa & Sauna"],
-    stats: { units: "12 Villas", floors: "2 Storeys", area: "480 m² avg", price: "$2.45M", handover: "Delivered 2024" },
+    stats: { units: "12 Villas", floors: "2 Storeys", area: "480 m² avg", price: "EGP 2.45M", handover: "Delivered 2024" },
     developer: "Ellington Bali"
   },
   {
@@ -85,7 +85,7 @@ window.PROJECTS = [
       "Exposed steel, blackened brick and crittall glazing nod to the neighbourhood's industrial past while delivering thoroughly contemporary spaces."
     ],
     amenities: ["Co-working Lounge","Rooftop Terrace","Retail Promenade","EV Charging","Bike Storage","24/7 Security"],
-    stats: { units: "90 Lofts + 14 Retail", floors: "12 Floors", area: "Mixed", price: "$1.1M", handover: "Delivered 2024" },
+    stats: { units: "90 Lofts + 14 Retail", floors: "12 Floors", area: "Mixed", price: "EGP 1.1M", handover: "Delivered 2024" },
     developer: "Meraas Urban"
   },
   {
@@ -105,7 +105,7 @@ window.PROJECTS = [
       "Six bedrooms, a private cinema and a wellness wing open onto a 30-metre infinity edge, with landscaping by an award-winning studio."
     ],
     amenities: ["Infinity Pool","Private Cinema","Wellness Wing","Smart Home","Staff Quarters","EV Charging"],
-    stats: { units: "1 Residence", floors: "2 Storeys", area: "1,150 m²", price: "$12M", handover: "Q3 2025" },
+    stats: { units: "1 Residence", floors: "2 Storeys", area: "1,150 m²", price: "EGP 12M", handover: "Q3 2025" },
     developer: "Omniyat"
   },
   {
@@ -125,7 +125,7 @@ window.PROJECTS = [
       "Each home gains a landscaped courtyard, a basement wellness suite and discreetly integrated climate control."
     ],
     amenities: ["Private Courtyard","Wellness Suite","Smart Home","Underfloor Heating","Wine Cellar","Concierge"],
-    stats: { units: "8 Townhouses", floors: "4 Storeys + Basement", area: "240 m² avg", price: "$1.18M", handover: "Delivered 2023" },
+    stats: { units: "8 Townhouses", floors: "4 Storeys + Basement", area: "240 m² avg", price: "EGP 1.18M", handover: "Delivered 2023" },
     developer: "Select Group"
   },
   {
@@ -145,7 +145,7 @@ window.PROJECTS = [
       "Reservations are open off-plan, with bespoke finish packages available for early buyers."
     ],
     amenities: ["Glazed Courtyard","Concierge","Smart Home","Bike Storage","Cellar Storage","Lift Access"],
-    stats: { units: "16 Lofts", floors: "6 Floors", area: "165 m² avg", price: "$1.54M", handover: "Q4 2026" },
+    stats: { units: "16 Lofts", floors: "6 Floors", area: "165 m² avg", price: "EGP 1.54M", handover: "Q4 2026" },
     developer: "Sobha Realty"
   },
   {
@@ -165,7 +165,7 @@ window.PROJECTS = [
       "Generous double-height units, full glazing and a unified canopy create a destination as much as a shopping address."
     ],
     amenities: ["Waterfront Promenade","Valet Parking","Loading Docks","24/7 Security","Outdoor Seating","EV Charging"],
-    stats: { units: "18 Retail Units", floors: "2 Floors", area: "120–520 m²", price: "$6.2K/mo", handover: "Delivered 2024" },
+    stats: { units: "18 Retail Units", floors: "2 Floors", area: "120–520 m²", price: "EGP 6.2K/mo", handover: "Delivered 2024" },
     developer: "DAMAC Retail"
   },
   {
@@ -185,7 +185,7 @@ window.PROJECTS = [
       "A residents' sky-lounge on the top floor frames panoramic views of the skyline and, in spring, the cherry blossom below."
     ],
     amenities: ["Sky Lounge","Fitness Studio","Concierge","Smart Home","Bicycle Parking","24/7 Security"],
-    stats: { units: "210 Apartments", floors: "40 Floors", area: "45–95 m²", price: "$2.15K/mo", handover: "Q2 2026" },
+    stats: { units: "210 Apartments", floors: "40 Floors", area: "45–95 m²", price: "EGP 2.15K/mo", handover: "Q2 2026" },
     developer: "Binghatti East"
   }
 ];

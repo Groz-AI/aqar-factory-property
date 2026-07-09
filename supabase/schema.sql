@@ -59,7 +59,7 @@ create table if not exists public.projects (
   about       text[] default '{}',
   amenities   text[] default '{}',
   developer   text,
-  price       text,                               -- display string, e.g. "$3.2M"
+  price       text,                               -- display string, e.g. "EGP 3.2M"
   units       text,
   floors      text,
   area        text,

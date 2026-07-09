@@ -59,19 +59,29 @@
         <span class="sf-icon">
           <svg viewBox="0 0 24 24" fill="none"><path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11Z" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="10" r="2.5" stroke="currentColor" stroke-width="1.6"/></svg>
         </span>
-        <select id="searchCity" aria-label="Location">
-          <option value="">All locations</option>
-        </select>
-        <span class="sf-caret" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        <div class="csel" id="searchCity">
+          <button type="button" class="csel-btn" aria-haspopup="listbox" aria-expanded="false">
+            <span class="csel-label">All locations</span>
+            <span class="csel-caret" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          </button>
+          <ul class="csel-list" role="listbox" hidden>
+            <li role="option" data-value="" aria-selected="true" class="active">All locations</li>
+          </ul>
+        </div>
       </div>
       <div class="search-field">
         <span class="sf-icon">
           <svg viewBox="0 0 24 24" fill="none"><path d="M3 11.5 12 4l9 7.5" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M5 10v10h14V10" stroke="currentColor" stroke-width="1.6"/></svg>
         </span>
-        <select id="searchType" aria-label="Property type">
-          <option value="all">All property types</option>
-        </select>
-        <span class="sf-caret" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        <div class="csel" id="searchType">
+          <button type="button" class="csel-btn" aria-haspopup="listbox" aria-expanded="false">
+            <span class="csel-label">All property types</span>
+            <span class="csel-caret" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          </button>
+          <ul class="csel-list" role="listbox" hidden>
+            <li role="option" data-value="all" aria-selected="true" class="active">All property types</li>
+          </ul>
+        </div>
       </div>
       <button class="btn btn-dark search-go" type="submit">Find Property</button>
     </form>

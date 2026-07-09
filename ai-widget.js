@@ -22,10 +22,10 @@
     `https://images.unsplash.com/photo-${ref}?auto=format&fit=crop&w=${w}&q=80`;
 
   const BUDGETS = [
-    { label: '< $500k', min: 0, max: 500000 },
-    { label: '$500k – $1M', min: 500000, max: 1000000 },
-    { label: '$1M – $3M', min: 1000000, max: 3000000 },
-    { label: '$3M+', min: 3000000, max: Infinity }
+    { label: '< EGP 500k', min: 0, max: 500000 },
+    { label: 'EGP 500k – 1M', min: 500000, max: 1000000 },
+    { label: 'EGP 1M – 3M', min: 1000000, max: 3000000 },
+    { label: 'EGP 3M+', min: 3000000, max: Infinity }
   ];
 
   function parsePrice(str) {

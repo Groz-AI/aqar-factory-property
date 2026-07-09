@@ -83,7 +83,7 @@
         { key: 'gallery', label: 'Gallery', type: 'gallery' },
         { key: 'about', label: 'About (one paragraph per line)', type: 'lines' },
         { key: 'amenities', label: 'Amenities', type: 'tags' },
-        { key: 'price', label: 'Price (display)', type: 'text', half: true, hint: 'e.g. $3.2M' },
+        { key: 'price', label: 'Price (display)', type: 'text', half: true, hint: 'e.g. EGP 3.2M' },
         { key: 'price_value', label: 'Price value (number)', type: 'number', half: true },
         { key: 'area', label: 'Area (display)', type: 'text', half: true },
         { key: 'area_value', label: 'Area value (number)', type: 'number', half: true },
@@ -259,8 +259,9 @@
     $('#overlay').addEventListener('click', closeDrawer);
     $('#primaryAction').addEventListener('click', () => { if (RESOURCES[state.view]) openForm(state.view, null); });
 
+    // visibility is handled by CSS (@media in admin.css) so it stays correct
+    // if the window is resized after load, not just at initial page load
     const menuBtn = $('#menuBtn'), sidebar = $('#sidebar');
-    if (window.innerWidth <= 860) menuBtn.style.display = 'grid';
     menuBtn.addEventListener('click', () => sidebar.classList.toggle('open'));
 
     // clicking the account row opens Account & settings
@@ -419,24 +420,26 @@
     body.innerHTML = '';
 
     // Projects and Listings both link to a City; Listings can also link to a Project.
-    // Populate those dropdowns from the live tables right before rendering the form.
-    if (view === 'properties' || view === 'projects') {
+    // Populate those dropdowns from the live tables right before rendering the form
+    // (fetched in parallel — the Listings form needs both, so this halves its wait).
+    const needsCities = view === 'properties' || view === 'projects';
+    const needsProjects = view === 'properties';
+    const safeFetch = (q) => q.then(res => res, () => ({ data: [] }));
+    const [citiesRes, projectsRes] = await Promise.all([
+      needsCities ? safeFetch(sb.from('cities').select('id,name').order('name', { ascending: true })) : null,
+      needsProjects ? safeFetch(sb.from('projects').select('id,name').order('name', { ascending: true })) : null
+    ]);
+    if (needsCities) {
+      dynamicCitiesList = (citiesRes && citiesRes.data) || [];
       const cityField = r.fields.find(f => f.key === 'city_id');
-      try {
-        const { data } = await sb.from('cities').select('id,name').order('name', { ascending: true });
-        dynamicCitiesList = data || [];
-      } catch (_) { dynamicCitiesList = []; }
       if (cityField) {
         cityField.options = [{ value: '', label: '— No linked city —' }]
           .concat(dynamicCitiesList.map(c => ({ value: c.id, label: c.name })));
       }
     }
-    if (view === 'properties') {
+    if (needsProjects) {
+      dynamicProjectsList = (projectsRes && projectsRes.data) || [];
       const projectField = r.fields.find(f => f.key === 'project_id');
-      try {
-        const { data } = await sb.from('projects').select('id,name').order('name', { ascending: true });
-        dynamicProjectsList = data || [];
-      } catch (_) { dynamicProjectsList = []; }
       if (projectField) {
         projectField.options = [{ value: '', label: '— No linked project —' }]
           .concat(dynamicProjectsList.map(p => ({ value: p.id, label: p.name })));
@@ -642,9 +645,28 @@
     renderList(view);
   }
 
+  // deleting a City/Project doesn't fail if other rows link to it (the FK is
+  // ON DELETE SET NULL) — warn first so that unlinking isn't a silent surprise
+  async function linkedChildrenWarning(view, id) {
+    if (view === 'cities') {
+      const [{ count: pc }, { count: uc }] = await Promise.all([
+        sb.from('projects').select('id', { count: 'exact', head: true }).eq('city_id', id),
+        sb.from('properties').select('id', { count: 'exact', head: true }).eq('city_id', id)
+      ]);
+      const total = (pc || 0) + (uc || 0);
+      return total > 0 ? `\n\n${total} project(s)/listing(s) are linked to this city — they'll be kept, just unlinked from it.` : '';
+    }
+    if (view === 'projects') {
+      const { count } = await sb.from('properties').select('id', { count: 'exact', head: true }).eq('project_id', id);
+      return count > 0 ? `\n\n${count} listing(s) are linked to this project — they'll be kept, just unlinked from it.` : '';
+    }
+    return '';
+  }
+
   async function removeRow(view, id) {
     const r = RESOURCES[view];
-    if (!confirm(`Delete this ${r.singular.toLowerCase()}? This can’t be undone.`)) return;
+    const warning = await linkedChildrenWarning(view, id);
+    if (!confirm(`Delete this ${r.singular.toLowerCase()}? This can’t be undone.${warning}`)) return;
     const { error } = await sb.from(r.table).delete().eq('id', id);
     if (error) { toast(error.message, 'err'); return; }
     toast(`${r.singular} deleted`);
@@ -888,14 +910,23 @@
           <button class="btn btn-sky btn-sm" id="accPassSave">Update password</button>
         </div></div>
 
-      <div class="panel"><div class="panel-head"><b class="bricolage" style="font-size:1.05rem">Starter data</b></div>
+      <div class="panel" style="margin-bottom:20px"><div class="panel-head"><b class="bricolage" style="font-size:1.05rem">Starter data</b></div>
         <div style="padding:20px">
           <p style="color:var(--ink-soft);margin-bottom:14px;line-height:1.6">Seed your database with the site’s bundled demo content — projects, listings, cities, testimonials, developers and copy. Tables that already contain rows are skipped, so this is safe to run once.</p>
           <button class="btn btn-sky" id="seedBtn">Import starter data</button>
           <div id="seedLog" class="field-hint" style="margin-top:14px;white-space:pre-line"></div>
+        </div></div>
+
+      <div class="panel"><div class="panel-head"><b class="bricolage" style="font-size:1.05rem">Currency</b></div>
+        <div style="padding:20px">
+          <p style="color:var(--ink-soft);margin-bottom:14px;line-height:1.6">Some project/listing prices were saved with a "$" before EGP became the site's only currency. This rewrites any price still starting with "$" to start with "EGP" instead, leaving the rest of the value untouched. Safe to run more than once — already-converted prices are left alone.</p>
+          <button class="btn btn-sky" id="egpBtn">Convert existing prices to EGP</button>
+          <div id="egpLog" class="field-hint" style="margin-top:14px;white-space:pre-line"></div>
         </div></div>`;
     const btn = $('#seedBtn');
     if (btn) btn.addEventListener('click', seedAll);
+    const egpBtn = $('#egpBtn');
+    if (egpBtn) egpBtn.addEventListener('click', convertPricesToEGP);
 
     const emailBtn = $('#accEmailSave');
     if (emailBtn) emailBtn.addEventListener('click', async () => {
@@ -969,6 +1000,38 @@
     btn.disabled = false; btn.textContent = 'Import starter data';
   }
 
+  // one-time cleanup for content saved back when prices were shown in "$" —
+  // rewrites only the leading "$" to "EGP ", leaving the rest of the value
+  // (the number, /mo suffix, etc.) exactly as the admin entered it
+  async function convertPricesToEGP() {
+    const btn = $('#egpBtn'), log = $('#egpLog');
+    btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Converting…';
+    const lines = [];
+    const note = (s) => { lines.push(s); log.textContent = lines.join('\n'); };
+
+    try {
+      for (const table of ['projects', 'properties']) {
+        const { data, error } = await sb.from(table).select('id,price');
+        if (error) { note(`${table}: ${error.message}`); continue; }
+        const toFix = (data || []).filter(row => typeof row.price === 'string' && row.price.trim().startsWith('$'));
+        if (!toFix.length) { note(`${table}: nothing to convert`); continue; }
+        let ok = 0, fail = 0;
+        for (const row of toFix) {
+          const price = row.price.replace(/^\s*\$/, 'EGP ');
+          const { error: upErr } = await sb.from(table).update({ price }).eq('id', row.id);
+          if (upErr) fail++; else ok++;
+        }
+        note(`${table}: ${ok} price(s) converted${fail ? `, ${fail} failed` : ''}`);
+      }
+      note('\nDone.');
+      toast('Prices converted to EGP');
+    } catch (e) {
+      note('Error: ' + (e.message || e));
+      toast('Conversion failed', 'err');
+    }
+    btn.disabled = false; btn.textContent = 'Convert existing prices to EGP';
+  }
+
   // links any project/listing that still has a free-text city (no city_id yet)
   // to a matching row in the Cities table — runs right after seeding so demo
   // data is fully relational immediately, without needing to re-run schema.sql
@@ -1000,16 +1063,24 @@
 
   async function seedTable(table, rows, conflictKey, note) {
     if (!rows.length) { note(`${table}: nothing to seed`); return; }
-    // skip if already populated (unless we can upsert by a natural key)
     if (!conflictKey) {
+      // no natural key to de-dupe by — skip entirely if the table already has any rows
       const { count } = await sb.from(table).select('id', { count: 'exact', head: true });
       if (count && count > 0) { note(`${table}: ${count} rows exist, skipped`); return; }
       const { error } = await sb.from(table).insert(rows);
       note(error ? `${table}: ${error.message}` : `${table}: ${rows.length} rows ✓`);
-    } else {
-      const { error } = await sb.from(table).upsert(rows, { onConflict: conflictKey });
-      note(error ? `${table}: ${error.message}` : `${table}: ${rows.length} rows ✓`);
+      return;
     }
+    // has a natural key (e.g. slug) — only insert rows that don't already exist.
+    // Never upsert here: an upsert would silently overwrite any live edits an
+    // admin made to a project that happens to share a slug with the demo data.
+    const { data: existing } = await sb.from(table).select(conflictKey);
+    const have = new Set((existing || []).map(row => row[conflictKey]));
+    const fresh = rows.filter(row => !have.has(row[conflictKey]));
+    if (!fresh.length) { note(`${table}: ${rows.length} rows already exist, skipped`); return; }
+    const { error } = await sb.from(table).insert(fresh);
+    const skipped = rows.length - fresh.length;
+    note(error ? `${table}: ${error.message}` : `${table}: ${fresh.length} new row(s) ✓${skipped ? ` (${skipped} already existed, skipped)` : ''}`);
   }
 
   // ============================================================

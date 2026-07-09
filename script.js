@@ -214,17 +214,71 @@ function wireChips() {
   document.getElementById('filterPrev').addEventListener('click', () => chips.scrollBy({ left: -260, behavior: 'smooth' }));
 }
 
-/* ---------- hero search bar (buy-only: location + property type) ---------- */
-function renderSearchFacets(cities, categories) {
-  const citySel = document.getElementById('searchCity');
-  const typeSel = document.getElementById('searchType');
-  if (citySel && cities && cities.length) {
-    citySel.innerHTML = `<option value="">All locations</option>` +
-      cities.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+/* ---------- custom dropdown (replaces native <select> so the open list can
+   actually be styled — browsers render native option popups unstyleable) ---------- */
+function initCustomSelect(root) {
+  if (!root) return null;
+  const btn = root.querySelector('.csel-btn');
+  const label = root.querySelector('.csel-label');
+  const list = root.querySelector('.csel-list');
+  const escHTML = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+  function close() {
+    list.hidden = true;
+    root.classList.remove('open');
+    btn.setAttribute('aria-expanded', 'false');
   }
-  if (typeSel && categories && categories.length) {
-    typeSel.innerHTML = `<option value="all">All property types</option>` +
-      categories.map(c => `<option value="${c.filter}">${c.label}</option>`).join('');
+  function open() {
+    document.querySelectorAll('.csel.open').forEach(o => { if (o !== root) o.querySelector('.csel-btn')?.click(); });
+    list.hidden = false;
+    root.classList.add('open');
+    btn.setAttribute('aria-expanded', 'true');
+  }
+  function select(li) {
+    list.querySelector('.active')?.classList.remove('active');
+    list.querySelectorAll('li').forEach(o => o.setAttribute('aria-selected', 'false'));
+    li.classList.add('active');
+    li.setAttribute('aria-selected', 'true');
+    label.textContent = li.textContent;
+    root.dataset.value = li.dataset.value || '';
+    root.dispatchEvent(new CustomEvent('change'));
+  }
+
+  btn.addEventListener('click', e => {
+    e.stopPropagation();
+    list.hidden ? open() : close();
+  });
+  list.addEventListener('click', e => {
+    const li = e.target.closest('li');
+    if (!li) return;
+    select(li);
+    close();
+  });
+  document.addEventListener('click', e => { if (!root.contains(e.target)) close(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+
+  return {
+    setOptions(options) {
+      list.innerHTML = options.map((o, i) =>
+        `<li role="option" data-value="${escHTML(o.value)}" aria-selected="${i === 0 ? 'true' : 'false'}" class="${i === 0 ? 'active' : ''}">${escHTML(o.label)}</li>`
+      ).join('');
+      label.textContent = options[0] ? options[0].label : '';
+      root.dataset.value = options[0] ? options[0].value : '';
+    },
+    get value() { return root.dataset.value || ''; }
+  };
+}
+
+/* ---------- hero search bar (buy-only: location + property type) ---------- */
+let searchCitySelect, searchTypeSelect;
+function renderSearchFacets(cities, categories) {
+  searchCitySelect = searchCitySelect || initCustomSelect(document.getElementById('searchCity'));
+  searchTypeSelect = searchTypeSelect || initCustomSelect(document.getElementById('searchType'));
+  if (searchCitySelect && cities && cities.length) {
+    searchCitySelect.setOptions([{ value: '', label: 'All locations' }].concat(cities.map(c => ({ value: c.name, label: c.name }))));
+  }
+  if (searchTypeSelect && categories && categories.length) {
+    searchTypeSelect.setOptions([{ value: 'all', label: 'All property types' }].concat(categories.map(c => ({ value: c.filter, label: c.label }))));
   }
 }
 
@@ -233,8 +287,8 @@ function wireSearchForm() {
   if (!form) return;
   form.addEventListener('submit', e => {
     e.preventDefault();
-    const city = document.getElementById('searchCity')?.value || '';
-    const type = document.getElementById('searchType')?.value || 'all';
+    const city = searchCitySelect ? searchCitySelect.value : '';
+    const type = searchTypeSelect ? searchTypeSelect.value : 'all';
 
     activeCityQuery = city;
     const chips = document.getElementById('chips');

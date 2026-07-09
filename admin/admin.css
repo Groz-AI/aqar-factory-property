@@ -73,6 +73,7 @@ button{font-family:inherit;cursor:pointer}
 .topbar .sub{color:var(--ink-soft);font-size:.9rem}
 .topbar .spacer{flex:1}
 .content{padding:28px 32px 60px}
+#menuBtn{display:none}
 
 /* setup notice */
 .notice{background:#fff;border:1px solid var(--line);border-left:4px solid var(--warn);border-radius:var(--r);padding:22px 24px;margin-bottom:24px}
@@ -161,4 +162,5 @@ button{font-family:inherit;cursor:pointer}
   .sidebar.open{transform:none}
   .content{padding:20px}
   .grid-2{grid-template-columns:1fr}
+  #menuBtn{display:grid}
 }
