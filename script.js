@@ -223,6 +223,16 @@ function initCustomSelect(root) {
   const list = root.querySelector('.csel-list');
   const escHTML = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
+  // the hero section uses overflow:hidden (for its background/starfield fx),
+  // which would clip an absolutely-positioned list — so the open list is
+  // repositioned to the viewport (position:fixed) instead, escaping that clip
+  function position() {
+    const r = btn.getBoundingClientRect();
+    list.style.position = 'fixed';
+    list.style.top = (r.bottom + 10) + 'px';
+    list.style.left = r.left + 'px';
+    list.style.width = Math.max(r.width, 220) + 'px';
+  }
   function close() {
     list.hidden = true;
     root.classList.remove('open');
@@ -230,6 +240,7 @@ function initCustomSelect(root) {
   }
   function open() {
     document.querySelectorAll('.csel.open').forEach(o => { if (o !== root) o.querySelector('.csel-btn')?.click(); });
+    position();
     list.hidden = false;
     root.classList.add('open');
     btn.setAttribute('aria-expanded', 'true');
@@ -256,6 +267,10 @@ function initCustomSelect(root) {
   });
   document.addEventListener('click', e => { if (!root.contains(e.target)) close(); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+  // fixed-position list won't track the page scrolling under it — simplest
+  // correct behavior is to close it rather than let it drift out of place
+  window.addEventListener('scroll', () => { if (!list.hidden) close(); }, { passive: true, capture: true });
+  window.addEventListener('resize', () => { if (!list.hidden) position(); });
 
   return {
     setOptions(options) {

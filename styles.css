@@ -257,9 +257,11 @@ em{font-style:normal}
 .csel-caret svg{width:16px;height:16px}
 .search-field:hover .csel-caret{color:var(--sky)}
 .csel.open .csel-caret{color:var(--sky);transform:rotate(180deg)}
+/* position/top/left/width are set inline by JS (position:fixed, computed from
+   the trigger button's rect) — the hero's overflow:hidden would otherwise
+   clip an absolutely-positioned list before it ever reaches the viewport edge */
 .csel-list{
-  position:absolute;top:calc(100% + 14px);left:-1.1em;z-index:30;list-style:none;
-  min-width:calc(100% + 2.2em);max-height:280px;overflow-y:auto;
+  z-index:250;list-style:none;max-height:280px;overflow-y:auto;
   background:#fff;border:1px solid var(--line);border-radius:16px;padding:8px;
   box-shadow:var(--shadow-lg);animation:cselIn .18s var(--ease) both;
 }
