@@ -83,6 +83,9 @@
    PROJECTS GRID
    ============================================================ */
 .projects-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:30px;padding-bottom:40px}
+/* the [hidden] attr must win over display:grid above, or the grid never hides
+   when Map view is selected (both grid + map would show — "no difference") */
+.projects-grid[hidden]{display:none}
 .pcard{
   position:relative;background:#fff;border-radius:var(--r);overflow:hidden;border:1px solid var(--line);
   box-shadow:var(--shadow-sm);transition:transform .5s var(--ease),box-shadow .5s var(--ease);
@@ -338,8 +341,14 @@
 .cf-chip.active{background:var(--black);color:#fff;border-color:var(--black)}
 .cf-consent{display:flex;gap:.6rem;align-items:flex-start;margin-bottom:1.4rem;font-size:.88rem;color:var(--ink-soft)}
 .cf-consent input{margin-top:.2rem;accent-color:var(--sky);width:16px;height:16px;flex:none}
+.cf-actions{display:flex;gap:.7rem;flex-wrap:wrap;align-items:stretch}
 .cf-submit{width:100%}
+.cf-actions .cf-submit{flex:1 1 200px;width:auto}
 .cf-submit svg{width:19px;height:19px}
+.cf-whatsapp{flex:0 0 auto;gap:.55rem;background:#25d366;color:#fff;border:none;min-width:150px}
+.cf-whatsapp:hover{background:#1ebe5b;transform:translateY(-2px)}
+.cf-whatsapp svg{width:20px;height:20px}
+@media(max-width:460px){.cf-actions .cf-submit,.cf-whatsapp{flex:1 1 100%}}
 .cf-success{margin-top:1rem;color:var(--sky-deep);font-weight:600;font-size:.95rem;text-align:center}
 .cf-error{margin-top:1rem;color:#c0392b;font-weight:600;font-size:.95rem;text-align:center}
 

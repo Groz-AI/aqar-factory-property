@@ -23,11 +23,11 @@ window.FALLBACK = {
   ],
 
   cities: [
-    { name:"Dubai", country:"United Arab Emirates", image:"1512453979798-5ea266f8880c", unit_count:"1,240 Units", size:"big" },
-    { name:"New York", country:"United States", image:"1496442226666-8d4d0e62e6e9", unit_count:"980 Units", size:"normal" },
-    { name:"London", country:"United Kingdom", image:"1513635269975-59663e0ac1ad", unit_count:"760 Units", size:"normal" },
-    { name:"Singapore", country:"Singapore", image:"1525625293386-3f8f99389edd", unit_count:"540 Units", size:"normal" },
-    { name:"Tokyo", country:"Japan", image:"1540959733332-eab4deabeeaf", unit_count:"615 Units", size:"wide" }
+    { name:"Dubai", country:"United Arab Emirates", image:"1512453979798-5ea266f8880c", size:"big" },
+    { name:"New York", country:"United States", image:"1496442226666-8d4d0e62e6e9", size:"normal" },
+    { name:"London", country:"United Kingdom", image:"1513635269975-59663e0ac1ad", size:"normal" },
+    { name:"Singapore", country:"Singapore", image:"1525625293386-3f8f99389edd", size:"normal" },
+    { name:"Tokyo", country:"Japan", image:"1540959733332-eab4deabeeaf", size:"wide" }
   ],
 
   testimonials: [

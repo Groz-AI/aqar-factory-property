@@ -135,7 +135,6 @@
       columns: [
         { key: 'image', label: '', type: 'thumb' },
         { key: 'name', label: 'Name', type: 'name', sub: 'country' },
-        { key: 'unit_count', label: 'Units' },
         { key: 'size', label: 'Tile' },
         { key: 'published', label: 'Status', type: 'pill' }
       ],
@@ -143,8 +142,7 @@
         { key: 'name', label: 'Name', type: 'text', required: true, half: true },
         { key: 'country', label: 'Country', type: 'text', half: true },
         { key: 'image', label: 'Image', type: 'image' },
-        { key: 'unit_count', label: 'Unit count (display)', type: 'text', half: true, hint: 'e.g. 1,240 Units' },
-        { key: 'size', label: 'Tile size', type: 'select', options: ['normal', 'wide', 'big'], half: true },
+        { key: 'size', label: 'Tile size', type: 'select', options: ['normal', 'wide', 'big'], half: true, hint: 'controls the tile size in the homepage “By Cities” grid' },
         { key: 'sort_order', label: 'Sort order', type: 'number', half: true },
         { key: 'published', label: 'Published', type: 'bool', half: true }
       ]
