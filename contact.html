@@ -83,6 +83,22 @@
 
     <!-- right: form -->
     <div class="contact-form-wrap reveal">
+      <div class="quick-contact">
+        <p class="qc-title">Prefer talking right now?</p>
+        <div class="qc-btns">
+          <a href="tel:+97145550100" class="qc-btn qc-call" id="qcCallBtn">
+            <span class="qc-ring" aria-hidden="true"></span>
+            <svg viewBox="0 0 24 24" fill="none"><path d="M5 4h4l2 5-3 2a12 12 0 0 0 5 5l2-3 5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+            <span>Call us now</span>
+          </a>
+          <a href="https://wa.me/97145550100" target="_blank" rel="noopener" class="qc-btn qc-wa" id="qcWaBtn">
+            <span class="qc-ring" aria-hidden="true"></span>
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.5 14.4c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.96-.94 1.16-.17.2-.35.22-.64.08-.3-.15-1.26-.47-2.4-1.48-.89-.79-1.49-1.77-1.66-2.07-.17-.3-.02-.46.13-.6.13-.14.3-.35.44-.53.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.67-1.62-.92-2.22-.24-.58-.49-.5-.67-.5l-.57-.01c-.2 0-.52.07-.79.37-.27.3-1.04 1.02-1.04 2.48s1.06 2.88 1.21 3.08c.15.2 2.1 3.2 5.08 4.49.71.3 1.26.49 1.69.62.71.23 1.35.2 1.87.12.57-.08 1.76-.72 2.01-1.42.25-.7.25-1.28.17-1.42-.07-.13-.27-.2-.56-.35zM12.04 21.5h-.01a9.4 9.4 0 0 1-4.79-1.31l-.35-.2-3.56.93.95-3.48-.22-.36a9.38 9.38 0 0 1 14.56-11.6 9.32 9.32 0 0 1 2.75 6.64c0 5.18-4.22 9.38-9.4 9.38zm7.98-17.38A11.28 11.28 0 0 0 2.03 17.9L.5 23.5l5.73-1.5a11.26 11.26 0 0 0 5.81 1.6h.01c6.22 0 11.28-5.06 11.28-11.28 0-3.02-1.17-5.85-3.3-7.98z"/></svg>
+            <span>WhatsApp us</span>
+          </a>
+        </div>
+        <p class="qc-divider"><span>or send us a message</span></p>
+      </div>
       <form class="contact-form" id="contactForm" novalidate>
         <h3>Send us a message</h3>
         <div class="cf-row">
@@ -133,15 +149,9 @@
           <input type="checkbox" required />
           <span>I agree to be contacted about my enquiry and have read the privacy policy.</span>
         </label>
-        <div class="cf-actions">
-          <button type="submit" class="btn btn-dark cf-submit">Send message
-            <svg viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </button>
-          <button type="button" class="btn cf-whatsapp" id="waBtn" aria-label="Send this message on WhatsApp">
-            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.5 14.4c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.96-.94 1.16-.17.2-.35.22-.64.08-.3-.15-1.26-.47-2.4-1.48-.89-.79-1.49-1.77-1.66-2.07-.17-.3-.02-.46.13-.6.13-.14.3-.35.44-.53.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.67-1.62-.92-2.22-.24-.58-.49-.5-.67-.5l-.57-.01c-.2 0-.52.07-.79.37-.27.3-1.04 1.02-1.04 2.48s1.06 2.88 1.21 3.08c.15.2 2.1 3.2 5.08 4.49.71.3 1.26.49 1.69.62.71.23 1.35.2 1.87.12.57-.08 1.76-.72 2.01-1.42.25-.7.25-1.28.17-1.42-.07-.13-.27-.2-.56-.35zM12.04 21.5h-.01a9.4 9.4 0 0 1-4.79-1.31l-.35-.2-3.56.93.95-3.48-.22-.36a9.38 9.38 0 0 1 14.56-11.6 9.32 9.32 0 0 1 2.75 6.64c0 5.18-4.22 9.38-9.4 9.38zm7.98-17.38A11.28 11.28 0 0 0 2.03 17.9L.5 23.5l5.73-1.5a11.26 11.26 0 0 0 5.81 1.6h.01c6.22 0 11.28-5.06 11.28-11.28 0-3.02-1.17-5.85-3.3-7.98z"/></svg>
-            WhatsApp
-          </button>
-        </div>
+        <button type="submit" class="btn btn-dark cf-submit">Send message
+          <svg viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
         <p class="cf-success" id="cfSuccess" hidden>Thanks — your message is on its way. We'll be in touch within one business day.</p>
         <p class="cf-error" id="cfError" hidden>Sorry, we couldn't send your message just now. Please try again, or email us directly.</p>
       </form>
@@ -157,33 +167,6 @@
         title="Realteek office location"
         src="https://www.openstreetmap.org/export/embed.html?bbox=55.130%2C25.070%2C55.160%2C25.090&amp;layer=mapnik&amp;marker=25.080%2C55.145"
         loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
-    </div>
-  </div>
-</section>
-
-<!-- OFFICES -->
-<section class="section contact-offices">
-  <div class="container">
-    <div class="dev-head reveal" style="text-align:center;max-width:640px;margin-inline:auto">
-      <p class="eyebrow center-eyebrow"><span class="dot"></span>Find a desk near you</p>
-      <h2 class="display-head center">Our <em>offices</em></h2>
-    </div>
-    <div class="office-grid" data-brand-offices>
-      <article class="office-card reveal">
-        <h3>Dubai · HQ</h3>
-        <p>Level 18, Marina Gate Tower<br/>Dubai Marina, UAE</p>
-        <a href="tel:+97145550100" class="office-link">+971 4 555 0100</a>
-      </article>
-      <article class="office-card reveal">
-        <h3>London</h3>
-        <p>22 Curzon Street, Mayfair<br/>London W1J, United Kingdom</p>
-        <a href="tel:+442075550140" class="office-link">+44 20 7555 0140</a>
-      </article>
-      <article class="office-card reveal">
-        <h3>Singapore</h3>
-        <p>One Raffles Place, #44-01<br/>Singapore 048616</p>
-        <a href="tel:+6562550180" class="office-link">+65 6255 0180</a>
-      </article>
     </div>
   </div>
 </section>
@@ -269,43 +252,16 @@
   /* WhatsApp — compose the same message and open a chat with the agency.
      Number comes from the editable company profile (WhatsApp / phone),
      falling back to the phone shown on the page. */
-  var waBtn=document.getElementById('waBtn');
-  var waNumber='';
+  var qcCallBtn=document.getElementById('qcCallBtn');
+  var qcWaBtn=document.getElementById('qcWaBtn');
   if(window.store&&window.store.getCompany){
     window.store.getCompany().then(function(c){
-      waNumber=String((c&&(c.phoneSecondary||c.phone))||'').replace(/\D/g,'');
+      var waNumber=String((c&&(c.phoneSecondary||c.phone))||'').replace(/\D/g,'');
+      var callNumber=String((c&&c.phone)||'').replace(/[^\d+]/g,'');
+      if(callNumber&&qcCallBtn)qcCallBtn.href='tel:'+callNumber;
+      if(waNumber&&qcWaBtn)qcWaBtn.href='https://wa.me/'+waNumber;
     }).catch(function(){});
   }
-  if(waBtn&&form)waBtn.addEventListener('click',function(){
-    if(!form.checkValidity()){form.reportValidity();return;}
-    var val=function(n){var el=form.querySelector('[name="'+n+'"]');return el?el.value.trim():'';};
-    var chip=document.querySelector('#cfChips .cf-chip.active');
-    var budget=chip?chip.getAttribute('data-v'):'';
-    var num=waNumber;
-    if(!num){
-      var tel=document.querySelector('[data-brand="phone"]')||document.querySelector('a[href^="tel:"]');
-      num=tel?String(tel.getAttribute('href')||tel.textContent).replace(/\D/g,''):'';
-    }
-    var lines=[
-      "Hi Realteek, I'd like to enquire.",'',
-      'Name: '+(val('first')+' '+val('last')).trim(),
-      'Email: '+val('email'),
-      val('phone')?'Phone: '+val('phone'):'',
-      'Interested in: '+val('interest'),
-      budget?'Budget: '+budget:'','',
-      val('message')
-    ].filter(function(l){return l!=='';});
-    var text=encodeURIComponent(lines.join('\n'));
-    /* also log the lead to the backend (best effort) so it still lands in Inquiries */
-    try{
-      if(window.store&&window.store.submitInquiry)window.store.submitInquiry({
-        first:val('first'),last:val('last'),email:val('email'),phone:val('phone'),
-        interest:val('interest'),budget:budget,message:val('message')
-      });
-    }catch(_){}
-    if(num)window.open('https://wa.me/'+num+'?text='+text,'_blank');
-    else window.location.href='https://wa.me/?text='+text; /* no number set → let user pick a contact */
-  });
 })();
 </script>
 </body>
