@@ -223,15 +223,34 @@ function initCustomSelect(root) {
   const list = root.querySelector('.csel-list');
   const escHTML = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-  // the hero section uses overflow:hidden (for its background/starfield fx),
-  // which would clip an absolutely-positioned list — so the open list is
-  // repositioned to the viewport (position:fixed) instead, escaping that clip
+  // Move the list to <body>. The search bar uses backdrop-filter for its
+  // frosted-glass look, and per spec backdrop-filter (like filter/transform)
+  // creates a new containing block for position:fixed descendants — so left
+  // in place, "fixed" here would silently position relative to the search
+  // bar instead of the viewport. Reparenting avoids that entirely.
+  document.body.appendChild(list);
+
+  // Flips upward and clamps height to whichever side of the button has more
+  // room, so the list never renders past the viewport edge.
   function position() {
     const r = btn.getBoundingClientRect();
+    const margin = 10;
+    const spaceBelow = window.innerHeight - r.bottom - margin;
+    const spaceAbove = r.top - margin;
+    const openUp = spaceBelow < 160 && spaceAbove > spaceBelow;
+
     list.style.position = 'fixed';
-    list.style.top = (r.bottom + 10) + 'px';
     list.style.left = r.left + 'px';
     list.style.width = Math.max(r.width, 220) + 'px';
+    if (openUp) {
+      list.style.top = '';
+      list.style.bottom = (window.innerHeight - r.top + margin) + 'px';
+      list.style.maxHeight = Math.max(120, Math.min(280, spaceAbove)) + 'px';
+    } else {
+      list.style.bottom = '';
+      list.style.top = (r.bottom + margin) + 'px';
+      list.style.maxHeight = Math.max(120, Math.min(280, spaceBelow)) + 'px';
+    }
   }
   function close() {
     list.hidden = true;
@@ -265,11 +284,15 @@ function initCustomSelect(root) {
     select(li);
     close();
   });
-  document.addEventListener('click', e => { if (!root.contains(e.target)) close(); });
+  // the list lives at <body> level now (see above), not inside root, so an
+  // "outside click" check has to test both
+  document.addEventListener('click', e => { if (!root.contains(e.target) && !list.contains(e.target)) close(); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
-  // fixed-position list won't track the page scrolling under it — simplest
-  // correct behavior is to close it rather than let it drift out of place
-  window.addEventListener('scroll', () => { if (!list.hidden) close(); }, { passive: true, capture: true });
+  // reposition (not close) on scroll — a fixed-position list won't track the
+  // button under it otherwise. This also matters because focusing/clicking
+  // the trigger button can itself cause a native scroll-into-view, which
+  // would otherwise close the dropdown the instant it opens.
+  window.addEventListener('scroll', () => { if (!list.hidden) position(); }, { passive: true, capture: true });
   window.addEventListener('resize', () => { if (!list.hidden) position(); });
 
   return {
