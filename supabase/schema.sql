@@ -287,6 +287,30 @@ create policy "admin delete inquiries" on public.inquiries
   for delete using (public.is_admin());
 
 -- ============================================================
+-- NEWSLETTER — footer signup-form subscribers
+-- Anyone may subscribe (anon insert); only admins can read/manage.
+-- ============================================================
+create table if not exists public.newsletter_subscribers (
+  id         uuid primary key default gen_random_uuid(),
+  email      text not null unique,
+  created_at timestamptz default now()
+);
+
+alter table public.newsletter_subscribers enable row level security;
+
+drop policy if exists "public subscribe" on public.newsletter_subscribers;
+create policy "public subscribe" on public.newsletter_subscribers
+  for insert with check (true);
+
+drop policy if exists "admin read subscribers" on public.newsletter_subscribers;
+create policy "admin read subscribers" on public.newsletter_subscribers
+  for select using (public.is_admin());
+
+drop policy if exists "admin delete subscribers" on public.newsletter_subscribers;
+create policy "admin delete subscribers" on public.newsletter_subscribers
+  for delete using (public.is_admin());
+
+-- ============================================================
 -- REALTIME — let the public site receive live updates when an
 -- admin edits content (branding, listings, projects, etc.)
 -- ============================================================

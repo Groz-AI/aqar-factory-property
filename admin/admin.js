@@ -279,6 +279,7 @@
     if (view === 'overview') { renderOverview(); pa.style.display = 'none'; }
     else if (view === 'content') { renderContent(); pa.style.display = 'none'; }
     else if (view === 'inquiries') { renderInquiries(); pa.style.display = 'none'; }
+    else if (view === 'newsletter') { renderNewsletter(); pa.style.display = 'none'; }
     else if (view === 'settings') { renderSettings(); pa.style.display = 'none'; }
     else if (RESOURCES[view]) {
       const r = RESOURCES[view];
@@ -305,6 +306,12 @@
       const badge = $('.badge[data-count="inquiries"]');
       if (badge) badge.textContent = count || 0;
     } catch (_) { /* inquiries table may not exist yet */ }
+    // newsletter: badge shows total subscriber count
+    try {
+      const { count } = await sb.from('newsletter_subscribers').select('id', { count: 'exact', head: true });
+      const badge = $('.badge[data-count="newsletter"]');
+      if (badge) badge.textContent = count || 0;
+    } catch (_) { /* table may not exist yet */ }
   }
 
   // ============================================================
@@ -1139,6 +1146,58 @@
     paintInquiries();
     refreshCounts();
     toast('Inquiry deleted');
+  }
+
+  // ============================================================
+  // NEWSLETTER (footer signup-form subscribers)
+  // ============================================================
+  async function renderNewsletter() {
+    $('#viewTitle').textContent = 'Newsletter';
+    $('#viewSub').textContent = 'Emails collected from the footer signup form';
+    $('#content').innerHTML = `<div class="panel">
+      <div class="panel-head"><button class="btn btn-ghost btn-sm" id="copyEmailsBtn">Copy all emails</button></div>
+      <div id="nlWrap"><div class="empty-row"><span class="spinner" style="border-color:rgba(0,0,0,.15);border-top-color:var(--sky)"></span></div></div>
+    </div>`;
+    const { data, error } = await sb.from('newsletter_subscribers').select('*').order('created_at', { ascending: false });
+    if (error) {
+      $('#nlWrap').innerHTML = `<div class="empty-row">Couldn’t load subscribers: ${esc(error.message)}<br><span class="field-hint">If you haven’t yet, run the newsletter section of <code>supabase/schema.sql</code> in your Supabase SQL editor.</span></div>`;
+      return;
+    }
+    state.cache.newsletter = data || [];
+    paintNewsletter();
+    $('#copyEmailsBtn').addEventListener('click', () => {
+      const emails = (state.cache.newsletter || []).map(r => r.email).join(', ');
+      if (!emails) { toast('No subscribers yet', 'err'); return; }
+      navigator.clipboard.writeText(emails).then(
+        () => toast('Emails copied to clipboard'),
+        () => toast('Could not copy — select and copy manually', 'err')
+      );
+    });
+  }
+
+  function paintNewsletter() {
+    const rows = state.cache.newsletter || [];
+    if (!rows.length) { $('#nlWrap').innerHTML = `<div class="empty-row">No subscribers yet. Signups from any page's footer will appear here.</div>`; return; }
+    const body = rows.map(r => {
+      const when = r.created_at ? new Date(r.created_at).toLocaleString() : '';
+      return `<tr>
+        <td><a href="mailto:${esc(r.email)}">${esc(r.email)}</a></td>
+        <td style="color:var(--ink-soft);font-size:.85rem">${esc(when)}</td>
+        <td><div class="row-actions"><button class="icon-btn del" data-del="${r.id}" title="Delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button></div></td>
+      </tr>`;
+    }).join('');
+    $('#nlWrap').innerHTML = `<table class="tbl"><thead><tr><th>Email</th><th>Subscribed</th><th></th></tr></thead><tbody>${body}</tbody></table>`;
+    $$('[data-del]', $('#nlWrap')).forEach(b => b.addEventListener('click', () => deleteSubscriber(b.dataset.del)));
+  }
+
+  async function deleteSubscriber(id) {
+    if (!confirm('Remove this subscriber? This can’t be undone.')) return;
+    const { error } = await sb.from('newsletter_subscribers').delete().eq('id', id);
+    if (error) { toast(error.message, 'err'); return; }
+    state.cache.newsletter = (state.cache.newsletter || []).filter(x => x.id !== id);
+    paintNewsletter();
+    refreshCounts();
+    toast('Subscriber removed');
   }
 
   // ---------- icons ----------

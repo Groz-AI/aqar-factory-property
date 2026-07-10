@@ -88,6 +88,17 @@
     }
   }
 
+  // ---------- newsletter (footer signup form) ----------
+  async function submitNewsletter(email) {
+    if (!sb) return { error: { message: 'No backend configured' } };
+    try {
+      const { error } = await sb.from('newsletter_subscribers').insert([{ email }]);
+      return { error: error || null };
+    } catch (e) {
+      return { error: { message: (e && e.message) || String(e) } };
+    }
+  }
+
   // ---------- live sync ----------
   // Local mode: the "database" is localStorage; when the admin (in another
   // tab) writes a change, mirror it onto any open public page immediately.
@@ -125,6 +136,7 @@
     getCategories:   () => fetchTable('categories', DEFAULT_CATS),
     getContent,
     getCompany,
-    submitInquiry
+    submitInquiry,
+    submitNewsletter
   };
 })();
