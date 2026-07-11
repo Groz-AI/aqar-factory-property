@@ -129,7 +129,11 @@ button{font-family:inherit;cursor:pointer}
 .drawer-foot{padding:16px 26px;border-top:1px solid var(--line);display:flex;gap:.7rem;justify-content:flex-end}
 .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .field-hint{font-size:.78rem;color:var(--ink-soft);margin-top:4px}
-.switch{position:relative;display:inline-flex;align-items:center;gap:.6rem;cursor:pointer;font-weight:500}
+/* .field label{display:block} (0,1,1) otherwise beats this (0,1,0) since the
+   toggle is a <label class="switch"> inside a .field — collapsing the track
+   span's width/height (inline elements ignore them) and leaving its
+   absolutely-positioned thumb floating loose over the label text */
+label.switch{position:relative;display:inline-flex;align-items:center;gap:.6rem;cursor:pointer;font-weight:500}
 /* visually-hidden (not display:none) so the shared .field input border/
    padding/radius rules can never bleed through and render the native
    checkbox on top of the custom track */
