@@ -27,10 +27,10 @@ button{font-family:inherit;cursor:pointer}
 .login-card .muted{color:var(--ink-soft);font-size:.92rem;margin-bottom:26px}
 .field{margin-bottom:16px}
 .field label{display:block;font-size:.82rem;font-weight:600;color:var(--ink-soft);margin-bottom:6px}
-.field input,.field select,.field textarea{
+.field input:not([type="checkbox"]),.field select,.field textarea{
   width:100%;border:1px solid var(--line);border-radius:11px;padding:.8em 1em;font-family:inherit;font-size:.95rem;
   background:#fff;color:var(--ink);outline:none;transition:.2s}
-.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--sky);box-shadow:0 0 0 4px var(--sky-soft)}
+.field input:not([type="checkbox"]):focus,.field select:focus,.field textarea:focus{border-color:var(--sky);box-shadow:0 0 0 4px var(--sky-soft)}
 .field textarea{resize:vertical;min-height:90px;line-height:1.55}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:.5em;font-weight:600;font-size:.95rem;
   border:none;border-radius:11px;padding:.85em 1.4em;transition:.25s var(--ease)}
@@ -129,8 +129,11 @@ button{font-family:inherit;cursor:pointer}
 .drawer-foot{padding:16px 26px;border-top:1px solid var(--line);display:flex;gap:.7rem;justify-content:flex-end}
 .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .field-hint{font-size:.78rem;color:var(--ink-soft);margin-top:4px}
-.switch{display:inline-flex;align-items:center;gap:.6rem;cursor:pointer;font-weight:500}
-.switch input{display:none}
+.switch{position:relative;display:inline-flex;align-items:center;gap:.6rem;cursor:pointer;font-weight:500}
+/* visually-hidden (not display:none) so the shared .field input border/
+   padding/radius rules can never bleed through and render the native
+   checkbox on top of the custom track */
+.switch input{position:absolute;width:1px;height:1px;margin:-1px;padding:0;border:0;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
 /* a near-transparent var(--line) fill made the "off" state nearly invisible
    against the white drawer — use a clearly visible gray + border instead */
 .switch .track{width:42px;height:24px;border-radius:999px;background:#ccd3da;border:1px solid #b9c2cb;position:relative;transition:.25s;flex:none}
