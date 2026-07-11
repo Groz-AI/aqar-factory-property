@@ -36,7 +36,7 @@
 
 <!-- DETAIL HERO -->
 <section class="detail-hero" id="detailHero">
-  <div class="detail-hero-img" id="heroImg"></div>
+  <div class="detail-hero-img" id="heroImg" data-gallery></div>
   <div class="container">
     <div class="detail-badges" id="badges"></div>
     <h1 id="projName">Project</h1>
@@ -68,11 +68,19 @@
     <!-- SIDEBAR -->
     <aside class="detail-aside">
       <div class="fact-card">
-        <div class="price" id="price"><small>Starting from</small></div>
+        <div class="price" id="price" hidden><small>Starting from</small></div>
         <dl class="fact-list" id="factList"></dl>
         <a href="contact.html" class="btn btn-dark">Request details</a>
         <a href="contact.html" class="btn btn-ghost" style="box-shadow:none;border:1px solid var(--line)">Book a viewing</a>
+        <a href="#" target="_blank" rel="noopener" class="btn btn-ghost" id="brochureBtn" hidden style="box-shadow:none;border:1px solid var(--line)">
+          <svg viewBox="0 0 24 24" fill="none" width="18" height="18" style="margin-right:.4em;vertical-align:-3px"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 19h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Download brochure (PDF)
+        </a>
         <div class="dev-line"><span class="av" id="devAv">R</span><div>Developed by<br><b id="devName">—</b></div></div>
+        <div class="consultants-line" id="consultants" hidden>
+          <p class="consultants-label">Executive Consultants</p>
+          <ul class="consultants-list" id="consultantsList"></ul>
+        </div>
       </div>
     </aside>
   </div>

@@ -26,6 +26,7 @@
       about: r.about || [], amenities: r.amenities || [], developer: r.developer,
       gallery: r.gallery || [], coords: [r.lat || 0, r.lng || 0],
       priceValue: Number(r.price_value) || 0, areaValue: Number(r.area_value) || 0, isRental: !!r.is_rental,
+      brochurePdf: r.brochure_pdf || '', consultants: Array.isArray(r.consultants) ? r.consultants : [],
       stats: { price: r.price, units: r.units, floors: r.floors, area: r.area, handover: r.handover }
     };
   }

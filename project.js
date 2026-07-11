@@ -8,13 +8,48 @@ const pinSVG = `<svg viewBox="0 0 24 24" fill="none"><path d="M12 21s7-6.3 7-11a
 const checkSVG = `<svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 const arrowSVG = `<svg viewBox="0 0 24 24" fill="none"><path d="M7 17 17 7M9 7h8v8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 const statusClass = s => (s || '').toLowerCase().replace(/[^a-z]/g, '-');
+const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+/* ---------- animated cover: cross-fades through the project's own gallery ---------- */
+function projectImages(p) {
+  const imgs = (p.gallery || []).filter(Boolean);
+  return imgs.length ? imgs.slice(0, 6) : [p.cover].filter(Boolean);
+}
+function cycleGalleries(scopeSel, hoverSel, baseInterval) {
+  document.querySelectorAll(scopeSel + ' [data-gallery]').forEach((box, idx) => {
+    const slides = box.querySelectorAll('.pg-slide');
+    const dots = box.querySelectorAll('.pg-dots i');
+    if (slides.length < 2) return;
+    let i = 0;
+    const advance = () => {
+      slides[i].classList.remove('active');
+      if (dots[i]) dots[i].classList.remove('on');
+      i = (i + 1) % slides.length;
+      slides[i].classList.add('active');
+      if (dots[i]) dots[i].classList.add('on');
+    };
+    const run = (ms) => { if (box._tid) clearInterval(box._tid); box._tid = setInterval(advance, ms); };
+    run(baseInterval + idx * 350);
+    const host = box.closest(hoverSel);
+    if (host) {
+      host.addEventListener('mouseenter', () => { advance(); run(1800); });
+      host.addEventListener('mouseleave', () => { run(baseInterval + idx * 350); });
+    }
+  });
+}
 
 let ALL = [];
 let project = null;
 
 function populate() {
   document.title = `${project.name} — Realteek`;
-  document.getElementById('heroImg').style.backgroundImage = `url('${U(project.cover, 1600)}')`;
+
+  const heroImg = document.getElementById('heroImg');
+  if (heroImg._tid) clearInterval(heroImg._tid);
+  const heroImgs = projectImages(project);
+  heroImg.innerHTML = heroImgs.map((g, n) =>
+    `<div class="pg-slide${n === 0 ? ' active' : ''}" style="background-image:url('${U(g, 1600)}')"></div>`).join('');
+
   document.getElementById('projName').textContent = project.name;
   document.getElementById('crumbName').textContent = project.name;
   document.getElementById('projLoc').innerHTML = `${pinSVG}${project.location || ''}`;
@@ -29,7 +64,10 @@ function populate() {
     `<div class="amenity"><span class="ic">${checkSVG}</span>${a}</div>`).join('');
 
   const st = project.stats || {};
-  document.getElementById('price').innerHTML = `<small>Starting from</small>${st.price || ''}`;
+  const priceEl = document.getElementById('price');
+  if (st.price) { priceEl.innerHTML = `<small>Starting from</small>${st.price}`; priceEl.hidden = false; }
+  else { priceEl.hidden = true; }
+
   const facts = [
     ['Status', project.status],
     ['Handover', st.handover],
@@ -45,11 +83,26 @@ function populate() {
   document.getElementById('devName').textContent = project.developer || '';
   document.getElementById('devAv').textContent = (project.developer || '·').charAt(0);
 
+  const brochureBtn = document.getElementById('brochureBtn');
+  if (project.brochurePdf) { brochureBtn.href = project.brochurePdf; brochureBtn.hidden = false; }
+  else { brochureBtn.hidden = true; }
+
+  const consultants = (project.consultants || []).filter(c => c && (c.name || c.logo));
+  const consultantsWrap = document.getElementById('consultants');
+  if (consultants.length) {
+    document.getElementById('consultantsList').innerHTML = consultants.map(c => `
+      <li>${c.logo ? `<img src="${U(c.logo, 100)}" alt="">` : ''}<span>${esc(c.name || '')}</span></li>`).join('');
+    consultantsWrap.hidden = false;
+  } else {
+    consultantsWrap.hidden = true;
+  }
+
   const galleryEl = document.getElementById('gallery');
   galleryEl.innerHTML = (project.gallery || []).map((g, i) =>
     `<figure data-idx="${i}"><img src="${U(g, 800)}" alt="${project.name} photo ${i + 1}" loading="lazy" /></figure>`).join('');
 
   renderRelated();
+  cycleGalleries('#detailHero', '.detail-hero', 4200);
   window.scrollTo(0, 0);
 }
 
@@ -86,16 +139,25 @@ document.addEventListener('keydown', e => {
 
 /* ---- related projects ---- */
 function renderRelated() {
+  const grid = document.getElementById('related');
+  grid.querySelectorAll('[data-gallery]').forEach(b => { if (b._tid) clearInterval(b._tid); });
   const related = ALL
     .filter(p => p.id !== project.id)
     .sort((a, b) => (b.city === project.city) - (a.city === project.city) || (b.category === project.category) - (a.category === project.category))
     .slice(0, 3);
-  document.getElementById('related').innerHTML = related.map(p => `
+  grid.innerHTML = related.map(p => {
+    const imgs = projectImages(p);
+    const slides = imgs.map((g, n) =>
+      `<div class="pg-slide${n === 0 ? ' active' : ''}" style="background-image:url('${U(g, 800)}')"></div>`).join('');
+    const dots = imgs.length > 1
+      ? `<div class="pg-dots">${imgs.map((_, n) => `<i class="${n === 0 ? 'on' : ''}"></i>`).join('')}</div>` : '';
+    return `
     <a class="pcard" href="project.html?id=${encodeURIComponent(p.id)}">
-      <div class="pcard-img">
-        <img src="${U(p.cover, 800)}" alt="${p.name}" loading="lazy" />
+      <div class="pcard-img" data-gallery>
+        ${slides}<div class="pg-shade"></div>
         <span class="pcard-status ${statusClass(p.status)}"><i></i>${p.status || ''}</span>
         <span class="pcard-cat">${p.category || ''}</span>
+        ${dots}
       </div>
       <div class="pcard-body">
         <h3>${p.name}</h3>
@@ -103,7 +165,9 @@ function renderRelated() {
         <p class="pcard-tag">${p.tagline || ''}</p>
         <div class="pcard-foot"><span class="pcard-price">${(p.stats || {}).price || ''}</span><span class="arrow">${arrowSVG}</span></div>
       </div>
-    </a>`).join('');
+    </a>`;
+  }).join('');
+  cycleGalleries('#related', '.pcard', 4000);
 }
 
 /* ---- nav ---- */

@@ -148,6 +148,17 @@ button{font-family:inherit;cursor:pointer}
 .add-img{width:84px;height:64px;border-radius:10px;border:1.5px dashed var(--line);background:var(--paper);color:var(--ink-soft);display:grid;place-items:center;font-size:24px}
 .add-img:hover{border-color:var(--sky);color:var(--sky)}
 
+/* PDF field */
+.pdf-prev{width:84px;height:64px;border-radius:10px;background:var(--paper);border:1px solid var(--line);flex:none;display:flex;align-items:center;justify-content:center;text-align:center;font-size:.78rem;color:var(--ink-soft);padding:6px}
+.pdf-prev a{color:var(--sky-deep);font-weight:600}
+
+/* executive consultants field */
+.consultants-edit{display:flex;flex-direction:column;gap:8px;margin-top:6px}
+.consultant-row{display:flex;align-items:center;gap:10px;padding:10px;border:1px solid var(--line);border-radius:10px}
+.consultant-logo-prev{width:44px;height:44px;border-radius:8px;object-fit:contain;background:var(--paper);border:1px solid var(--line);flex:none;padding:4px}
+.consultant-row input[type="text"]{flex:1;border:1px solid var(--line);border-radius:8px;padding:.55em .8em;font-family:inherit;font-size:.92rem;background:#fff;color:var(--ink);outline:none}
+.consultant-row input[type="text"]:focus{border-color:var(--sky);box-shadow:0 0 0 3px var(--sky-soft)}
+
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;
   padding:.9em 1.4em;border-radius:12px;font-size:.92rem;font-weight:500;opacity:0;transition:.3s;z-index:60;box-shadow:var(--shadow)}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}

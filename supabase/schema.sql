@@ -70,6 +70,8 @@ create table if not exists public.projects (
   lat         double precision,
   lng         double precision,
   gallery     text[] default '{}',
+  brochure_pdf text,                               -- PDF brochure URL (Storage or external link)
+  consultants jsonb default '[]'::jsonb,           -- [{name, logo}] shown in the sidebar
   sort_order  int default 0,
   published   boolean default true,
   created_at  timestamptz default now(),
@@ -105,6 +107,8 @@ alter table public.projects   add column if not exists city_id    uuid reference
 alter table public.properties add column if not exists project_id uuid references public.projects(id) on delete set null;
 alter table public.properties add column if not exists city_id    uuid references public.cities(id) on delete set null;
 alter table public.cities     drop column if exists unit_count;   -- replaced by a live computed count on the site
+alter table public.projects   add column if not exists brochure_pdf text;                    -- PDF brochure URL (Storage or external link)
+alter table public.projects   add column if not exists consultants  jsonb default '[]'::jsonb; -- [{name, logo}] shown in the sidebar
 
 -- carry over the old text-based project link, if this install still has it
 do $$

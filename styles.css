@@ -76,6 +76,9 @@ em{font-style:normal}
   transition:transform .35s var(--ease),box-shadow .35s var(--ease),background .25s,color .25s,border-color .25s;
   white-space:nowrap;
 }
+/* the [hidden] attr must win over display:inline-flex above, or a button
+   toggled hidden via JS stays visible (same class of bug as .projects-grid) */
+.btn[hidden]{display:none}
 .btn-dark{background:var(--black);color:#fff}
 .btn-dark:hover{transform:translateY(-3px);box-shadow:0 16px 30px -12px rgba(10,14,20,.6)}
 .btn-light{background:#fff;color:var(--ink)}

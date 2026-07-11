@@ -93,6 +93,8 @@
         { key: 'is_rental', label: 'Rental listing', type: 'bool', half: true },
         { key: 'lat', label: 'Latitude', type: 'number', half: true },
         { key: 'lng', label: 'Longitude', type: 'number', half: true },
+        { key: 'brochure_pdf', label: 'Brochure (PDF)', type: 'pdf', hint: 'Shown as a "Download brochure" button on the project page — leave empty to hide it' },
+        { key: 'consultants', label: 'Executive Consultants', type: 'consultants', hint: 'Shown in the project page sidebar — leave empty to hide the section' },
         { key: 'sort_order', label: 'Sort order', type: 'number', half: true },
         { key: 'published', label: 'Published', type: 'bool', half: true }
       ]
@@ -467,6 +469,8 @@
     r.fields.forEach(f => {
       if (f.type === 'image') wireImage('f_' + f.key, row ? row[f.key] : '');
       if (f.type === 'gallery') wireGallery('f_' + f.key, f.key, (row && row[f.key]) || []);
+      if (f.type === 'pdf') wirePdf('f_' + f.key, row ? row[f.key] : '');
+      if (f.type === 'consultants') wireConsultants('f_' + f.key, f.key, (row && row[f.key]) || []);
     });
 
     $('#drawerSave').onclick = () => saveForm(view);
@@ -524,6 +528,26 @@
         <input type="file" id="${id}_file" accept="image/*" multiple style="display:none">
         ${hint}</div>`;
     }
+    if (f.type === 'pdf') {
+      return `<div class="field"><label>${esc(f.label)}</label>
+        <div class="img-field">
+          <div class="pdf-prev" id="${id}_prev">${val ? `<a href="${esc(val)}" target="_blank" rel="noopener">View current PDF</a>` : 'No file uploaded'}</div>
+          <div class="img-controls">
+            <input type="text" id="${id}" value="${esc(val || '')}" placeholder="PDF URL">
+            <div class="upload-row">
+              <button type="button" class="btn btn-ghost btn-sm" id="${id}_btn">Upload…</button>
+              <input type="file" id="${id}_file" accept="application/pdf" style="display:none">
+            </div>
+          </div>
+        </div>${hint}</div>`;
+    }
+    if (f.type === 'consultants') {
+      return `<div class="field"><label>${esc(f.label)}</label>
+        <div class="consultants-edit" id="${id}_wrap"></div>
+        <button type="button" class="btn btn-ghost btn-sm" id="${id}_add" style="margin-top:8px">+ Add consultant</button>
+        <input type="file" id="${id}_file" accept="image/*" style="display:none">
+        ${hint}</div>`;
+    }
     // text / number
     const t = f.type === 'number' ? 'number' : 'text';
     const step = f.type === 'number' ? ' step="any"' : '';
@@ -572,17 +596,68 @@
     paint();
   }
 
-  async function uploadFile(f) {
+  // ---------- PDF field wiring ----------
+  function wirePdf(id, initial) {
+    const input = $('#' + id), prev = $('#' + id + '_prev'), btn = $('#' + id + '_btn'), file = $('#' + id + '_file');
+    if (!input) return;
+    const updatePrev = (url) => { prev.innerHTML = url ? `<a href="${esc(url)}" target="_blank" rel="noopener">View current PDF</a>` : 'No file uploaded'; };
+    input.addEventListener('input', () => updatePrev(input.value));
+    btn.addEventListener('click', () => file.click());
+    file.addEventListener('change', async () => {
+      if (!file.files[0]) return;
+      pendingUploads++;
+      btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>';
+      const url = await uploadFile(file.files[0], 'pdf');
+      pendingUploads--;
+      btn.disabled = false; btn.textContent = 'Upload…';
+      if (url) { input.value = url; updatePrev(url); toast('PDF uploaded — remember to Save'); }
+    });
+  }
+
+  // ---------- executive consultants field wiring (repeatable name + logo rows) ----------
+  function wireConsultants(id, stateKey, initial) {
+    uploads[stateKey] = Array.isArray(initial) ? initial.map(c => ({ name: (c && c.name) || '', logo: (c && c.logo) || '' })) : [];
+    const key = stateKey;
+    const wrap = $('#' + id + '_wrap'), addBtn = $('#' + id + '_add'), file = $('#' + id + '_file');
+    if (!wrap) return;
+    let uploadTarget = null;
+    const paint = () => {
+      wrap.innerHTML = uploads[key].map((c, i) => `
+        <div class="consultant-row" data-i="${i}">
+          <img class="consultant-logo-prev" src="${esc(imgUrl(c.logo, 100))}" alt="">
+          <input type="text" placeholder="Consultant name" value="${esc(c.name)}" data-cname="${i}">
+          <button type="button" class="btn btn-ghost btn-sm" data-clogo="${i}">Logo…</button>
+          <button type="button" class="icon-btn del" data-crm="${i}" title="Remove"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>
+        </div>`).join('');
+      $$('[data-cname]', wrap).forEach(inp => inp.addEventListener('input', () => { uploads[key][+inp.dataset.cname].name = inp.value; }));
+      $$('[data-clogo]', wrap).forEach(b => b.addEventListener('click', () => { uploadTarget = +b.dataset.clogo; file.click(); }));
+      $$('[data-crm]', wrap).forEach(b => b.addEventListener('click', () => { uploads[key].splice(+b.dataset.crm, 1); paint(); }));
+    };
+    addBtn.addEventListener('click', () => { uploads[key].push({ name: '', logo: '' }); paint(); });
+    file.addEventListener('change', async () => {
+      if (!file.files[0] || uploadTarget == null) return;
+      pendingUploads++;
+      const url = await uploadFile(file.files[0], 'image');
+      pendingUploads--;
+      file.value = '';
+      if (url) { uploads[key][uploadTarget].logo = url; paint(); toast('Logo uploaded — remember to Save'); }
+    });
+    paint();
+  }
+
+  async function uploadFile(f, kind) {
+    kind = kind || 'image';
     if (!f) return null;
-    // guard: only images, and keep them a sane size
-    if (f.type && !/^image\//.test(f.type)) { toast('Please choose an image file', 'err'); return null; }
-    if (f.size > 12 * 1024 * 1024) { toast('Image is larger than 12 MB — please pick a smaller one', 'err'); return null; }
+    // guard: right file type, and keep it a sane size
+    if (kind === 'image' && f.type && !/^image\//.test(f.type)) { toast('Please choose an image file', 'err'); return null; }
+    if (kind === 'pdf' && f.type && f.type !== 'application/pdf') { toast('Please choose a PDF file', 'err'); return null; }
+    if (f.size > 12 * 1024 * 1024) { toast('File is larger than 12 MB — please pick a smaller one', 'err'); return null; }
     try {
       const ext = (f.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
       const path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
       const { error } = await sb.storage.from('media').upload(path, f, { cacheControl: '3600', upsert: false, contentType: f.type || undefined });
       if (error) {
-        console.error('Image upload failed:', error);
+        console.error('Upload failed:', error);
         const m = String(error.message || error.error || '').toLowerCase();
         let msg = error.message || 'Upload failed';
         if (m.includes('bucket not found')) msg = 'Storage bucket "media" is missing. In Supabase → Storage, create a public bucket named "media" (or run supabase/fix-storage-and-admin.sql).';
@@ -594,7 +669,7 @@
       if (!data || !data.publicUrl) { toast('Uploaded, but could not resolve the public URL', 'err'); return null; }
       return data.publicUrl;
     } catch (e) {
-      console.error('Image upload exception:', e);
+      console.error('Upload exception:', e);
       toast('Upload failed: ' + (e.message || e), 'err');
       return null;
     }
@@ -608,6 +683,7 @@
       const node = $('#f_' + f.key);
       if (f.type === 'bool') { out[f.key] = node.checked; continue; }
       if (f.type === 'gallery') { out[f.key] = uploads[f.key] || []; continue; }
+      if (f.type === 'consultants') { out[f.key] = (uploads[f.key] || []).filter(c => c.name || c.logo); continue; }
       let v = node ? node.value : '';
       if (f.type === 'number') { out[f.key] = v === '' ? null : Number(v); continue; }
       // an empty selection on a reference field (city/project) means "unlinked" —

@@ -343,30 +343,16 @@ function wireSearchForm() {
 /* ============================================================
    CITIES
    ============================================================ */
-// a unit's city comes from its linked project when it has one, else its own city_id
-function resolveCityId(p, projectsByDbId) {
-  if (p.project_id) {
-    const proj = projectsByDbId[p.project_id];
-    if (proj) return proj.cityId || null;
-  }
-  return p.city_id || null;
-}
-
-function renderCities(cities, props, projectList) {
+function renderCities(cities, projectList) {
   const wrap = document.getElementById('cityGrid');
   if (!wrap || !cities.length) return;
-  const projectsByDbId = {};
-  (projectList || []).forEach(pr => { if (pr.dbId) projectsByDbId[pr.dbId] = pr; });
   const counts = {};
-  (props || []).forEach(p => {
-    const cid = resolveCityId(p, projectsByDbId);
-    if (cid) counts[cid] = (counts[cid] || 0) + 1;
-  });
+  (projectList || []).forEach(pr => { if (pr.cityId) counts[pr.cityId] = (counts[pr.cityId] || 0) + 1; });
   wrap.innerHTML = cities.map(c => {
     const size = c.size === 'big' ? ' big' : c.size === 'wide' ? ' wide' : '';
     const w = size ? 900 : 700;
     const n = counts[c.id] || 0;
-    const label = n === 1 ? '1 Unit' : `${n.toLocaleString()} Units`;
+    const label = n === 1 ? '1 Project' : `${n.toLocaleString()} Projects`;
     return `<article class="city-card${size} reveal" style="--img:url('${IMG(c.image, w)}')">
       <div class="city-meta"><h3>${c.name}</h3><p>${c.country || ''}</p></div>
       <span class="city-count">${label}</span>
@@ -742,7 +728,7 @@ function wireReveals() {
     renderSearchFacets(cities || [], cats || []);
     initHeroTyping();
     renderProperties();
-    renderCities(cities || [], properties, allProjects);
+    renderCities(cities || [], allProjects);
     initHeroGallery(cities || [], content);
     renderProjects(projects || []);
     renderDevelopers(devs || []);

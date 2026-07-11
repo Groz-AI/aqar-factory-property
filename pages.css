@@ -93,8 +93,9 @@
 }
 .pcard:hover{transform:translateY(-8px);box-shadow:var(--shadow-md)}
 .pcard-img{position:relative;aspect-ratio:3/2;overflow:hidden}
-.pcard-img img{width:100%;height:100%;object-fit:cover;transition:transform .8s var(--ease)}
-.pcard:hover .pcard-img img{transform:scale(1.07)}
+/* animated cover — cross-fades through the project's gallery, reusing the
+   .pg-slide/.pg-dots pattern already used on the homepage's property cards */
+.pcard:hover .pg-slide.active{transform:scale(1.16)}
 .pcard-status{
   position:absolute;top:14px;left:14px;display:inline-flex;align-items:center;gap:.4em;
   background:rgba(255,255,255,.92);backdrop-filter:blur(6px);color:var(--ink);
@@ -145,7 +146,10 @@
    PROJECT DETAIL
    ============================================================ */
 .detail-hero{position:relative;height:62vh;min-height:440px;overflow:hidden;display:flex;align-items:flex-end}
-.detail-hero-img{position:absolute;inset:0;background-size:cover;background-position:center;transform:scale(1.04)}
+/* holds cross-fading .pg-slide children (cycles through the project's
+   gallery) instead of a single static background image */
+.detail-hero-img{position:absolute;inset:0;overflow:hidden}
+.detail-hero-img .pg-slide{transition:opacity 1.2s var(--ease),transform 8s linear}
 .detail-hero::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(8,16,28,.25) 0%,rgba(8,16,28,0) 35%,rgba(8,16,28,.78) 100%)}
 .detail-hero .container{position:relative;z-index:1;padding-bottom:46px;color:#fff;width:min(var(--container),92vw)}
 .detail-badges{display:flex;gap:.6rem;margin-bottom:1.1rem;flex-wrap:wrap}
@@ -163,7 +167,8 @@
 
 /* amenities */
 .amenity-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-top:1.4rem}
-.amenity{display:flex;align-items:center;gap:.8rem;background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 18px;font-weight:500;font-size:.95rem}
+.amenity{display:flex;align-items:center;gap:.8rem;background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 18px;font-weight:500;font-size:.95rem;transition:box-shadow .25s var(--ease),transform .25s var(--ease)}
+.amenity:hover{box-shadow:var(--shadow-md);transform:translateY(-2px)}
 .amenity .ic{width:34px;height:34px;border-radius:9px;background:var(--sky-soft);color:var(--sky-deep);display:grid;place-items:center;flex:none}
 .amenity .ic svg{width:18px;height:18px}
 
@@ -191,6 +196,13 @@
 .dev-line{display:flex;align-items:center;gap:.7rem;margin-top:22px;padding-top:18px;border-top:1px solid var(--line);font-size:.9rem;color:var(--ink-soft)}
 .dev-line b{color:var(--ink);font-family:"Bricolage Grotesque",sans-serif}
 .dev-line .av{width:38px;height:38px;border-radius:10px;background:var(--sky-soft);color:var(--sky-deep);display:grid;place-items:center;font-weight:700;font-family:"Bricolage Grotesque"}
+
+/* executive consultants — shown in the sidebar fact-card, only when set */
+.consultants-line{margin-top:22px;padding-top:18px;border-top:1px solid var(--line)}
+.consultants-label{font-size:.76rem;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-soft);font-weight:700;margin-bottom:.9rem}
+.consultants-list{list-style:none;display:flex;flex-direction:column;gap:.7rem}
+.consultants-list li{display:flex;align-items:center;gap:.7rem;font-size:.92rem;font-weight:600;color:var(--ink)}
+.consultants-list img{width:36px;height:36px;border-radius:9px;object-fit:contain;background:var(--paper);border:1px solid var(--line);flex:none;padding:4px}
 
 /* related */
 .related{background:linear-gradient(180deg,#fff,var(--paper));padding:80px 0}

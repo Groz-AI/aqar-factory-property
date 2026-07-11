@@ -17,6 +17,34 @@ const viewToggle = document.getElementById('viewToggle');
 const pinSVG = `<svg viewBox="0 0 24 24" fill="none"><path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11Z" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="10" r="2.4" stroke="currentColor" stroke-width="1.5"/></svg>`;
 const arrowSVG = `<svg viewBox="0 0 24 24" fill="none"><path d="M7 17 17 7M9 7h8v8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 
+/* ---------- animated cover: cross-fades through the project's own gallery ---------- */
+function projectImages(p) {
+  const imgs = (p.gallery || []).filter(Boolean);
+  return imgs.length ? imgs.slice(0, 6) : [p.cover].filter(Boolean);
+}
+function cycleGalleries(scopeSel, hoverSel, baseInterval) {
+  document.querySelectorAll(scopeSel + ' [data-gallery]').forEach((box, idx) => {
+    const slides = box.querySelectorAll('.pg-slide');
+    const dots = box.querySelectorAll('.pg-dots i');
+    if (slides.length < 2) return;
+    let i = 0;
+    const advance = () => {
+      slides[i].classList.remove('active');
+      if (dots[i]) dots[i].classList.remove('on');
+      i = (i + 1) % slides.length;
+      slides[i].classList.add('active');
+      if (dots[i]) dots[i].classList.add('on');
+    };
+    const run = (ms) => { if (box._tid) clearInterval(box._tid); box._tid = setInterval(advance, ms); };
+    run(baseInterval + idx * 350);
+    const host = box.closest(hoverSel);
+    if (host) {
+      host.addEventListener('mouseenter', () => { advance(); run(1800); });
+      host.addEventListener('mouseleave', () => { run(baseInterval + idx * 350); });
+    }
+  });
+}
+
 let state = { cat: 'all', city: 'all', q: '', sort: 'featured', view: 'list' };
 
 /* build category chips + city dropdown from the loaded dataset */
@@ -34,12 +62,18 @@ const statusClass = s => (s || '').toLowerCase().replace(/[^a-z]/g, '-');
 
 function cardHTML(p){
   const stats = p.stats || {};
+  const imgs = projectImages(p);
+  const slides = imgs.map((g, n) =>
+    `<div class="pg-slide${n === 0 ? ' active' : ''}" style="background-image:url('${U(g, 800)}')"></div>`).join('');
+  const dots = imgs.length > 1
+    ? `<div class="pg-dots">${imgs.map((_, n) => `<i class="${n === 0 ? 'on' : ''}"></i>`).join('')}</div>` : '';
   return `
   <a class="pcard" href="project.html?id=${encodeURIComponent(p.id)}">
-    <div class="pcard-img">
-      <img src="${U(p.cover, 800)}" alt="${p.name || ''}" loading="lazy" />
+    <div class="pcard-img" data-gallery>
+      ${slides}<div class="pg-shade"></div>
       <span class="pcard-status ${statusClass(p.status)}"><i></i>${p.status || ''}</span>
       <span class="pcard-cat">${p.category || ''}</span>
+      ${dots}
     </div>
     <div class="pcard-body">
       <h3>${p.name || ''}</h3>
@@ -75,6 +109,8 @@ function getFiltered(){
 
 function render(){
   const list = getFiltered();
+  // clear any running gallery timers before replacing the cards
+  grid.querySelectorAll('[data-gallery]').forEach(b => { if (b._tid) clearInterval(b._tid); });
   grid.innerHTML = list.map(cardHTML).join('');
   [...grid.children].forEach((el, i) => el.style.animationDelay = `${i * 50}ms`);
   resCount.textContent = list.length;
@@ -82,6 +118,7 @@ function render(){
   resetBtn.hidden = !(state.cat !== 'all' || state.city !== 'all' || state.q || state.sort !== 'featured');
   searchClear.hidden = !state.q;
   if(state.view === 'map') renderMap(list);
+  cycleGalleries('#projectsGrid', '.pcard', 4000);
 }
 
 /* ---------- map (Leaflet) ---------- */
