@@ -131,9 +131,11 @@ button{font-family:inherit;cursor:pointer}
 .field-hint{font-size:.78rem;color:var(--ink-soft);margin-top:4px}
 .switch{display:inline-flex;align-items:center;gap:.6rem;cursor:pointer;font-weight:500}
 .switch input{display:none}
-.switch .track{width:42px;height:24px;border-radius:999px;background:var(--line);position:relative;transition:.25s}
-.switch .track::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:.25s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
-.switch input:checked + .track{background:var(--ok)}
+/* a near-transparent var(--line) fill made the "off" state nearly invisible
+   against the white drawer — use a clearly visible gray + border instead */
+.switch .track{width:42px;height:24px;border-radius:999px;background:#ccd3da;border:1px solid #b9c2cb;position:relative;transition:.25s;flex:none}
+.switch .track::after{content:"";position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;transition:.25s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.switch input:checked + .track{background:var(--ok);border-color:var(--ok)}
 .switch input:checked + .track::after{transform:translateX(18px)}
 
 /* image / gallery field */

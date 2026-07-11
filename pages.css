@@ -149,7 +149,7 @@
 /* holds cross-fading .pg-slide children (cycles through the project's
    gallery) instead of a single static background image */
 .detail-hero-img{position:absolute;inset:0;overflow:hidden}
-.detail-hero-img .pg-slide{transition:opacity 1.2s var(--ease),transform 8s linear}
+.detail-hero-img .pg-slide{transition:opacity 2.2s var(--ease),transform 12s linear}
 .detail-hero::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(8,16,28,.25) 0%,rgba(8,16,28,0) 35%,rgba(8,16,28,.78) 100%)}
 .detail-hero .container{position:relative;z-index:1;padding-bottom:46px;color:#fff;width:min(var(--container),92vw)}
 .detail-badges{display:flex;gap:.6rem;margin-bottom:1.1rem;flex-wrap:wrap}

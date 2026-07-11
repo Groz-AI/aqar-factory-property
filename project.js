@@ -102,7 +102,7 @@ function populate() {
     `<figure data-idx="${i}"><img src="${U(g, 800)}" alt="${project.name} photo ${i + 1}" loading="lazy" /></figure>`).join('');
 
   renderRelated();
-  cycleGalleries('#detailHero', '.detail-hero', 4200);
+  cycleGalleries('#detailHero', '.detail-hero', 7000);
   window.scrollTo(0, 0);
 }
 

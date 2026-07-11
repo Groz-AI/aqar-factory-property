@@ -651,7 +651,8 @@
     // guard: right file type, and keep it a sane size
     if (kind === 'image' && f.type && !/^image\//.test(f.type)) { toast('Please choose an image file', 'err'); return null; }
     if (kind === 'pdf' && f.type && f.type !== 'application/pdf') { toast('Please choose a PDF file', 'err'); return null; }
-    if (f.size > 12 * 1024 * 1024) { toast('File is larger than 12 MB — please pick a smaller one', 'err'); return null; }
+    const maxMB = kind === 'pdf' ? 50 : 12;
+    if (f.size > maxMB * 1024 * 1024) { toast(`File is larger than ${maxMB} MB — please pick a smaller one`, 'err'); return null; }
     try {
       const ext = (f.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
       const path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
