@@ -67,12 +67,15 @@ function cardHTML(p){
     `<div class="pg-slide${n === 0 ? ' active' : ''}" style="background-image:url('${U(g, 800)}')"></div>`).join('');
   const dots = imgs.length > 1
     ? `<div class="pg-dots">${imgs.map((_, n) => `<i class="${n === 0 ? 'on' : ''}"></i>`).join('')}</div>` : '';
+  const devLogo = p.developerLogo
+    ? `<span class="pcard-dev-logo"><img src="${U(p.developerLogo, 100)}" alt="${p.developer || ''}" title="${p.developer || ''}"></span>` : '';
   return `
   <a class="pcard" href="project.html?id=${encodeURIComponent(p.id)}">
     <div class="pcard-img" data-gallery>
       ${slides}<div class="pg-shade"></div>
       <span class="pcard-status ${statusClass(p.status)}"><i></i>${p.status || ''}</span>
       <span class="pcard-cat">${p.category || ''}</span>
+      ${devLogo}
       ${dots}
     </div>
     <div class="pcard-body">

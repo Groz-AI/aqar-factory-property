@@ -387,6 +387,22 @@ em{font-style:normal}
 .unit-modal-close svg{width:16px;height:16px}
 .unit-modal-scroll{overflow-y:auto;flex:1}
 
+/* ============================================================
+   CITY PROJECTS MODAL — reuses the .unit-modal shell above
+   ============================================================ */
+.city-modal-head{padding:28px 60px 18px 28px;border-bottom:1px solid var(--line)}
+.city-modal-head h3{font-family:"Bricolage Grotesque",sans-serif;font-size:1.5rem;font-weight:700;letter-spacing:-.01em}
+.city-modal-head p{color:var(--ink-soft);font-size:.92rem;margin-top:.3rem}
+.city-modal-projects{padding:20px 24px;display:flex;flex-direction:column;gap:12px}
+.cmp-item{display:flex;gap:14px;align-items:center;text-decoration:none;color:var(--ink);border:1px solid var(--line);border-radius:16px;padding:10px;transition:box-shadow .25s var(--ease),transform .25s var(--ease)}
+.cmp-item:hover{box-shadow:var(--shadow-md);transform:translateY(-2px);border-color:transparent}
+.cmp-item img{width:76px;height:60px;border-radius:10px;object-fit:cover;flex:none;background:var(--paper)}
+.cmp-item-body{flex:1;min-width:0}
+.cmp-item-body h4{font-family:"Bricolage Grotesque",sans-serif;font-size:1rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cmp-item-body p{color:var(--ink-soft);font-size:.85rem;margin-top:.15rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cmp-item-price{font-family:"Fraunces",serif;font-style:italic;color:var(--sky-deep);font-weight:600;font-size:.95rem;flex:none;padding-left:8px}
+.city-modal-empty{padding:40px 24px;text-align:center;color:var(--ink-soft)}
+
 .um-gallery{position:relative;height:280px;flex:none;background:var(--paper)}
 .um-badge{
   position:absolute;top:16px;left:16px;z-index:1;background:#fff;color:var(--ink);

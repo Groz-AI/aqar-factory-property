@@ -23,7 +23,7 @@
       cityId: r.city_id || null,
       name: r.name, category: r.category, city: r.city, location: r.location,
       country: r.country, year: r.year, status: r.status, tagline: r.tagline, cover: r.cover,
-      about: r.about || [], amenities: r.amenities || [], developer: r.developer,
+      about: r.about || [], amenities: r.amenities || [], developer: r.developer, developerLogo: r.developer_logo || '',
       gallery: r.gallery || [], coords: [r.lat || 0, r.lng || 0],
       priceValue: Number(r.price_value) || 0, areaValue: Number(r.area_value) || 0, isRental: !!r.is_rental,
       brochurePdf: r.brochure_pdf || '', consultants: Array.isArray(r.consultants) ? r.consultants : [],

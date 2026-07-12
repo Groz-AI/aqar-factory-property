@@ -106,6 +106,8 @@
 .pcard-status.ongoing i{background:var(--gold)}
 .pcard-status.off-plan i{background:var(--sky)}
 .pcard-cat{position:absolute;bottom:14px;left:14px;background:var(--black);color:#fff;font-size:.72rem;font-weight:600;letter-spacing:.04em;padding:.45em .9em;border-radius:999px}
+.pcard-dev-logo{position:absolute;top:14px;right:14px;z-index:2;width:38px;height:38px;border-radius:10px;background:#fff;padding:5px;display:grid;place-items:center;box-shadow:0 4px 14px -4px rgba(12,22,32,.35)}
+.pcard-dev-logo img{width:100%;height:100%;object-fit:contain}
 .pcard-body{padding:22px 24px 24px;display:flex;flex-direction:column;flex:1}
 .pcard-body h3{font-family:"Bricolage Grotesque",sans-serif;font-size:1.3rem;font-weight:700;letter-spacing:-.01em}
 .pcard-loc{display:flex;align-items:center;gap:.4rem;color:var(--sky-deep);font-size:.86rem;margin:.45rem 0 .7rem}
@@ -196,6 +198,8 @@
 .dev-line{display:flex;align-items:center;gap:.7rem;margin-top:22px;padding-top:18px;border-top:1px solid var(--line);font-size:.9rem;color:var(--ink-soft)}
 .dev-line b{color:var(--ink);font-family:"Bricolage Grotesque",sans-serif}
 .dev-line .av{width:38px;height:38px;border-radius:10px;background:var(--sky-soft);color:var(--sky-deep);display:grid;place-items:center;font-weight:700;font-family:"Bricolage Grotesque"}
+.dev-line .av.has-logo{background:#fff;border:1px solid var(--line);padding:5px}
+.dev-line .av.has-logo img{width:100%;height:100%;object-fit:contain}
 
 /* executive consultants — shown in the sidebar fact-card, only when set */
 .consultants-line{margin-top:22px;padding-top:18px;border-top:1px solid var(--line)}

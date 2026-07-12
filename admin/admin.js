@@ -78,6 +78,7 @@
         { key: 'location', label: 'Location / address', type: 'text' },
         { key: 'tagline', label: 'Tagline', type: 'text' },
         { key: 'developer', label: 'Developer', type: 'text', half: true },
+        { key: 'developer_logo', label: 'Developer logo', type: 'image', half: true, hint: 'Shown on the project card and sidebar' },
         { key: 'year', label: 'Year', type: 'number', half: true },
         { key: 'cover', label: 'Cover image', type: 'image' },
         { key: 'gallery', label: 'Gallery', type: 'gallery' },

@@ -81,7 +81,14 @@ function populate() {
     .filter(([, v]) => v)
     .map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('');
   document.getElementById('devName').textContent = project.developer || '';
-  document.getElementById('devAv').textContent = (project.developer || '·').charAt(0);
+  const devAv = document.getElementById('devAv');
+  if (project.developerLogo) {
+    devAv.innerHTML = `<img src="${U(project.developerLogo, 80)}" alt="${project.developer || ''}">`;
+    devAv.classList.add('has-logo');
+  } else {
+    devAv.textContent = (project.developer || '·').charAt(0);
+    devAv.classList.remove('has-logo');
+  }
 
   const brochureBtn = document.getElementById('brochureBtn');
   if (project.brochurePdf) { brochureBtn.href = project.brochurePdf; brochureBtn.hidden = false; }
@@ -151,12 +158,15 @@ function renderRelated() {
       `<div class="pg-slide${n === 0 ? ' active' : ''}" style="background-image:url('${U(g, 800)}')"></div>`).join('');
     const dots = imgs.length > 1
       ? `<div class="pg-dots">${imgs.map((_, n) => `<i class="${n === 0 ? 'on' : ''}"></i>`).join('')}</div>` : '';
+    const devLogo = p.developerLogo
+      ? `<span class="pcard-dev-logo"><img src="${U(p.developerLogo, 100)}" alt="${p.developer || ''}" title="${p.developer || ''}"></span>` : '';
     return `
     <a class="pcard" href="project.html?id=${encodeURIComponent(p.id)}">
       <div class="pcard-img" data-gallery>
         ${slides}<div class="pg-shade"></div>
         <span class="pcard-status ${statusClass(p.status)}"><i></i>${p.status || ''}</span>
         <span class="pcard-cat">${p.category || ''}</span>
+        ${devLogo}
         ${dots}
       </div>
       <div class="pcard-body">

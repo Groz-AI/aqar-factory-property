@@ -59,6 +59,7 @@ create table if not exists public.projects (
   about       text[] default '{}',
   amenities   text[] default '{}',
   developer   text,
+  developer_logo text,                             -- developer's logo, shown on the project card
   price       text,                               -- display string, e.g. "EGP 3.2M"
   units       text,
   floors      text,
@@ -109,6 +110,7 @@ alter table public.properties add column if not exists city_id    uuid reference
 alter table public.cities     drop column if exists unit_count;   -- replaced by a live computed count on the site
 alter table public.projects   add column if not exists brochure_pdf text;                    -- PDF brochure URL (Storage or external link)
 alter table public.projects   add column if not exists consultants  jsonb default '[]'::jsonb; -- [{name, logo}] shown in the sidebar
+alter table public.projects   add column if not exists developer_logo text;                  -- developer's logo, shown on the project card
 
 -- carry over the old text-based project link, if this install still has it
 do $$
