@@ -517,6 +517,7 @@
             <input type="text" id="${id}" value="${esc(val || '')}" placeholder="Unsplash id or image URL">
             <div class="upload-row">
               <button type="button" class="btn btn-ghost btn-sm" id="${id}_btn">Upload…</button>
+              <button type="button" class="btn btn-ghost btn-sm" id="${id}_pick">Choose existing…</button>
               <input type="file" id="${id}_file" accept="image/*" style="display:none">
             </div>
           </div>
@@ -536,6 +537,7 @@
             <input type="text" id="${id}" value="${esc(val || '')}" placeholder="PDF URL">
             <div class="upload-row">
               <button type="button" class="btn btn-ghost btn-sm" id="${id}_btn">Upload…</button>
+              <button type="button" class="btn btn-ghost btn-sm" id="${id}_pick">Choose existing…</button>
               <input type="file" id="${id}_file" accept="application/pdf" style="display:none">
             </div>
           </div>
@@ -556,10 +558,11 @@
 
   // ---------- image field wiring ----------
   function wireImage(id, initial) {
-    const input = $('#' + id), prev = $('#' + id + '_prev'), btn = $('#' + id + '_btn'), file = $('#' + id + '_file');
+    const input = $('#' + id), prev = $('#' + id + '_prev'), btn = $('#' + id + '_btn'), pick = $('#' + id + '_pick'), file = $('#' + id + '_file');
     if (!input) return;
     input.addEventListener('input', () => { prev.src = imgUrl(input.value, 200); });
     btn.addEventListener('click', () => file.click());
+    if (pick) pick.addEventListener('click', () => openMediaPicker('image', (url) => { input.value = url; prev.src = url; toast('Image selected — remember to Save'); }));
     file.addEventListener('change', async () => {
       if (!file.files[0]) return;
       pendingUploads++;
@@ -580,8 +583,14 @@
     const paint = () => {
       wrap.innerHTML = uploads[key].map((ref, i) =>
         `<div class="g-item"><img src="${esc(imgUrl(ref, 200))}" alt=""><button type="button" data-rm="${i}">×</button></div>`
-      ).join('') + `<button type="button" class="add-img" id="${id}_add">+</button>`;
+      ).join('')
+        + `<button type="button" class="add-img" id="${id}_add" title="Upload new">+</button>`
+        + `<button type="button" class="add-img add-img-pick" id="${id}_pick" title="Choose an existing file">
+             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+             Choose
+           </button>`;
       $('#' + id + '_add').addEventListener('click', () => file.click());
+      $('#' + id + '_pick').addEventListener('click', () => openMediaPicker('image', (url) => { uploads[key].push(url); paint(); }));
       $$('[data-rm]', wrap).forEach(b => b.addEventListener('click', () => { uploads[key].splice(+b.dataset.rm, 1); paint(); }));
     };
     file.addEventListener('change', async () => {
@@ -598,11 +607,12 @@
 
   // ---------- PDF field wiring ----------
   function wirePdf(id, initial) {
-    const input = $('#' + id), prev = $('#' + id + '_prev'), btn = $('#' + id + '_btn'), file = $('#' + id + '_file');
+    const input = $('#' + id), prev = $('#' + id + '_prev'), btn = $('#' + id + '_btn'), pick = $('#' + id + '_pick'), file = $('#' + id + '_file');
     if (!input) return;
     const updatePrev = (url) => { prev.innerHTML = url ? `<a href="${esc(url)}" target="_blank" rel="noopener">View current PDF</a>` : 'No file uploaded'; };
     input.addEventListener('input', () => updatePrev(input.value));
     btn.addEventListener('click', () => file.click());
+    if (pick) pick.addEventListener('click', () => openMediaPicker('pdf', (url) => { input.value = url; updatePrev(url); toast('PDF selected — remember to Save'); }));
     file.addEventListener('change', async () => {
       if (!file.files[0]) return;
       pendingUploads++;
@@ -624,13 +634,17 @@
     const paint = () => {
       wrap.innerHTML = uploads[key].map((c, i) => `
         <div class="consultant-row" data-i="${i}">
-          <img class="consultant-logo-prev" src="${esc(imgUrl(c.logo, 100))}" alt="">
+          <img class="consultant-logo-prev" src="${esc(imgUrl(c.logo, 100))}" alt="" title="Click to choose an existing logo" data-cpick="${i}">
           <input type="text" placeholder="Consultant name" value="${esc(c.name)}" data-cname="${i}">
-          <button type="button" class="btn btn-ghost btn-sm" data-clogo="${i}">Logo…</button>
+          <button type="button" class="btn btn-ghost btn-sm" data-clogo="${i}">Upload…</button>
           <button type="button" class="icon-btn del" data-crm="${i}" title="Remove"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>
         </div>`).join('');
       $$('[data-cname]', wrap).forEach(inp => inp.addEventListener('input', () => { uploads[key][+inp.dataset.cname].name = inp.value; }));
       $$('[data-clogo]', wrap).forEach(b => b.addEventListener('click', () => { uploadTarget = +b.dataset.clogo; file.click(); }));
+      $$('[data-cpick]', wrap).forEach(img => img.addEventListener('click', () => {
+        const i = +img.dataset.cpick;
+        openMediaPicker('image', (url) => { uploads[key][i].logo = url; paint(); });
+      }));
       $$('[data-crm]', wrap).forEach(b => b.addEventListener('click', () => { uploads[key].splice(+b.dataset.crm, 1); paint(); }));
     };
     addBtn.addEventListener('click', () => { uploads[key].push({ name: '', logo: '' }); paint(); });
@@ -687,6 +701,63 @@
       toast('Upload failed: ' + (e.message || e), 'err');
       return null;
     }
+  }
+
+  // ---------- media picker — reuse an already-uploaded file instead of re-uploading it ----------
+  let mp = null; // lazily-created { overlay, grid, search }
+  function ensureMediaPicker() {
+    if (mp) return mp;
+    const el = document.createElement('div');
+    el.className = 'mp-overlay';
+    el.innerHTML = `
+      <div class="mp-modal">
+        <div class="mp-head"><b class="bricolage">Choose an existing file</b><button type="button" class="icon-btn" id="mpClose">×</button></div>
+        <div class="mp-search"><input type="search" id="mpSearch" placeholder="Search filenames…"></div>
+        <div class="mp-grid" id="mpGrid"></div>
+      </div>`;
+    document.body.appendChild(el);
+    const close = () => el.classList.remove('open');
+    el.addEventListener('click', e => { if (e.target === el) close(); });
+    el.querySelector('#mpClose').addEventListener('click', close);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+    mp = { overlay: el, grid: el.querySelector('#mpGrid'), search: el.querySelector('#mpSearch'), close };
+    return mp;
+  }
+
+  async function openMediaPicker(kind, onSelect) {
+    const els = ensureMediaPicker();
+    els.overlay.classList.add('open');
+    els.search.value = '';
+    els.grid.innerHTML = `<div class="empty-row"><span class="spinner" style="border-color:rgba(0,0,0,.15);border-top-color:var(--sky)"></span></div>`;
+
+    const { data, error } = await sb.storage.from('media').list('', { limit: 300, sortBy: { column: 'created_at', order: 'desc' } });
+    if (error) { els.grid.innerHTML = `<div class="empty-row">Couldn’t load files: ${esc(error.message)}</div>`; return; }
+
+    const imgExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'avif'];
+    const files = (data || []).filter(f => f.name && !f.name.startsWith('.')).filter(f => {
+      const ext = (f.name.split('.').pop() || '').toLowerCase();
+      return kind === 'pdf' ? ext === 'pdf' : imgExts.includes(ext);
+    });
+
+    const paintList = (list) => {
+      if (!list.length) { els.grid.innerHTML = `<div class="empty-row">No ${kind === 'pdf' ? 'PDFs' : 'images'} uploaded yet — upload one first, then it'll show up here to reuse.</div>`; return; }
+      els.grid.innerHTML = list.map(f => {
+        const url = sb.storage.from('media').getPublicUrl(f.name).data.publicUrl;
+        if (kind === 'pdf') {
+          return `<button type="button" class="mp-item mp-pdf" data-url="${esc(url)}" title="${esc(f.name)}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 2h9l5 5v15H6z"/><path d="M15 2v5h5"/></svg>
+            <span>${esc(f.name.length > 22 ? f.name.slice(0, 19) + '…' : f.name)}</span>
+          </button>`;
+        }
+        return `<button type="button" class="mp-item" data-url="${esc(url)}" title="${esc(f.name)}"><img src="${esc(url)}" alt="" loading="lazy"></button>`;
+      }).join('');
+      $$('.mp-item', els.grid).forEach(b => b.addEventListener('click', () => { onSelect(b.dataset.url); els.close(); }));
+    };
+    paintList(files);
+    els.search.oninput = () => {
+      const q = els.search.value.trim().toLowerCase();
+      paintList(!q ? files : files.filter(f => f.name.toLowerCase().includes(q)));
+    };
   }
 
   // ---------- collect + save ----------

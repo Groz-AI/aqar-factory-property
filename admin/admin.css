@@ -156,6 +156,23 @@ label.switch{position:relative;display:inline-flex;align-items:center;gap:.6rem;
 .gallery-edit .g-item button{position:absolute;top:3px;right:3px;width:20px;height:20px;border-radius:50%;background:rgba(8,12,18,.7);color:#fff;border:none;display:grid;place-items:center;font-size:12px}
 .add-img{width:84px;height:64px;border-radius:10px;border:1.5px dashed var(--line);background:var(--paper);color:var(--ink-soft);display:grid;place-items:center;font-size:24px}
 .add-img:hover{border-color:var(--sky);color:var(--sky)}
+.add-img-pick{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:11px;font-weight:600;line-height:1.2;text-align:center;padding:4px}
+.add-img-pick svg{width:18px;height:18px}
+
+/* media picker — reuse an already-uploaded file instead of re-uploading it */
+.mp-overlay{position:fixed;inset:0;background:rgba(8,12,18,.55);backdrop-filter:blur(2px);opacity:0;visibility:hidden;transition:.25s;z-index:70;display:grid;place-items:center;padding:24px}
+.mp-overlay.open{opacity:1;visibility:visible}
+.mp-modal{background:#fff;border-radius:16px;width:min(680px,92vw);max-height:82vh;display:flex;flex-direction:column;box-shadow:var(--shadow)}
+.mp-head{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--line)}
+.mp-search{padding:12px 20px;border-bottom:1px solid var(--line)}
+.mp-search input{width:100%;border:1px solid var(--line);border-radius:10px;padding:.6em .9em;font:inherit;outline:none}
+.mp-search input:focus{border-color:var(--sky)}
+.mp-grid{padding:16px 20px;overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:10px}
+.mp-item{cursor:pointer;border:1px solid var(--line);border-radius:10px;overflow:hidden;aspect-ratio:1;background:var(--paper);padding:0;transition:.2s}
+.mp-item:hover{border-color:var(--sky);transform:scale(1.04)}
+.mp-item img{width:100%;height:100%;object-fit:cover;display:block}
+.mp-pdf{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:8px;font-size:.68rem;color:var(--ink-soft);text-align:center;word-break:break-word}
+.mp-pdf svg{width:26px;height:26px;color:var(--sky-deep)}
 
 /* PDF field */
 .pdf-prev{width:84px;height:64px;border-radius:10px;background:var(--paper);border:1px solid var(--line);flex:none;display:flex;align-items:center;justify-content:center;text-align:center;font-size:.78rem;color:var(--ink-soft);padding:6px}
@@ -164,7 +181,8 @@ label.switch{position:relative;display:inline-flex;align-items:center;gap:.6rem;
 /* executive consultants field */
 .consultants-edit{display:flex;flex-direction:column;gap:8px;margin-top:6px}
 .consultant-row{display:flex;align-items:center;gap:10px;padding:10px;border:1px solid var(--line);border-radius:10px}
-.consultant-logo-prev{width:44px;height:44px;border-radius:8px;object-fit:contain;background:var(--paper);border:1px solid var(--line);flex:none;padding:4px}
+.consultant-logo-prev{width:44px;height:44px;border-radius:8px;object-fit:contain;background:var(--paper);border:1px solid var(--line);flex:none;padding:4px;cursor:pointer;transition:border-color .2s}
+.consultant-logo-prev:hover{border-color:var(--sky)}
 .consultant-row input[type="text"]{flex:1;border:1px solid var(--line);border-radius:8px;padding:.55em .8em;font-family:inherit;font-size:.92rem;background:#fff;color:var(--ink);outline:none}
 .consultant-row input[type="text"]:focus{border-color:var(--sky);box-shadow:0 0 0 3px var(--sky-soft)}
 
