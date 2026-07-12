@@ -7,21 +7,6 @@
 window.FALLBACK = {
   projects: window.PROJECTS || [],
 
-  properties: [
-    { name:"Tropical Oasis", location:"Seminyak, Bali", description:"Private pool, lush gardens, modern amenities", price:"EGP 2,450,000", categories:["villas","luxury"], badge:"For Sale", image:"1600596542815-ffad4c1539a9", beds:5, baths:4, area:"480 m²" },
-    { name:"Bali Cliff Retreat", location:"Uluwatu, Bali", description:"Panoramic ocean views, spacious living areas", price:"EGP 850,000", categories:["villas"], badge:"For Sale", image:"1613490493576-7fde63acd811", beds:4, baths:3, area:"320 m²" },
-    { name:"Metro Skyline Loft", location:"Jakarta, Indonesia", description:"Contemporary design, floor-to-ceiling windows", price:"EGP 215,000", categories:["apartments","studio"], badge:"For Sale", image:"1545324418-cc1a3fa10c00", beds:2, baths:2, area:"95 m²" },
-    { name:"The Glass Pavilion", location:"Dubai Marina, UAE", description:"Minimalist architecture, infinity-edge pool", price:"EGP 3,200,000", categories:["villas","luxury"], badge:"For Sale", image:"1600585154340-be6161a56a0c", beds:6, baths:5, area:"610 m²" },
-    { name:"Heritage Townhouse", location:"London, United Kingdom", description:"Restored façade, three storeys, private courtyard", price:"EGP 1,180,000", categories:["townhouses","duplex"], badge:"For Sale", image:"1568605114967-8130f3a36994", beds:4, baths:3, area:"240 m²" },
-    { name:"Meridian Office Suite", location:"Singapore CBD", description:"Grade-A workspace, column-free, rooftop terrace", price:"EGP 1,850,000", categories:["offices","retail"], badge:"For Sale", image:"1497366216548-37526070297c", beds:0, baths:2, area:"180 m²" },
-    { name:"Ocean View Villa", location:"Patong Beach, Phuket", description:"A stunning villa with breathtaking views", price:"EGP 2,450,000", categories:["villas","luxury"], badge:"For Sale", image:"1499793983690-e29da59ef1c2", beds:5, baths:4, area:"440 m²" },
-    { name:"Lakeside Studio", location:"Batam, Indonesia", description:"Tranquil setting, beautiful landscaping, outdoor deck", price:"EGP 148,000", categories:["studio","apartments"], badge:"For Sale", image:"1502672260266-1c1ef2d93688", beds:1, baths:1, area:"42 m²" },
-    { name:"Beachfront Paradise", location:"Seminyak, Bali", description:"Direct beach access, ideal for water activities", price:"EGP 770,000", categories:["villas","luxury"], badge:"For Sale", image:"1600210492486-724fe5c67fb0", beds:4, baths:4, area:"360 m²" },
-    { name:"The Commerce Hub", location:"New York, USA", description:"Prime retail frontage on a pedestrian boulevard", price:"EGP 2,400,000", categories:["retail","offices"], badge:"For Sale", image:"1441986300917-64674bd600d8", beds:0, baths:2, area:"210 m²" },
-    { name:"Duplex on the Park", location:"Paris, France", description:"Two-level living, balcony, treetop outlook", price:"EGP 1,540,000", categories:["duplex","apartments"], badge:"For Sale", image:"1502005229762-cf1b2da7c5d6", beds:3, baths:2, area:"165 m²" },
-    { name:"Azure Penthouse", location:"Miami, USA", description:"Wraparound terrace, private elevator, sea vistas", price:"EGP 4,100,000", categories:["apartments","luxury"], badge:"For Sale", image:"1493809842364-78817add7ffb", beds:4, baths:4, area:"300 m²" }
-  ],
-
   cities: [
     { name:"Dubai", country:"United Arab Emirates", image:"1512453979798-5ea266f8880c", size:"big" },
     { name:"New York", country:"United States", image:"1496442226666-8d4d0e62e6e9", size:"normal" },
@@ -92,15 +77,3 @@ window.FALLBACK = {
     }
   }
 };
-
-/* give every listing a small image gallery (cover + two interiors),
-   so the home page cards swipe and the seeded data carries galleries too */
-(function () {
-  const pool = [
-    "1505691938895-1758d7feb511", "1560448204-e02f11c3d0e2", "1556912173-3bb406ef7e77",
-    "1600210492493-0946911123ea", "1600607687939-ce8a6c25118c", "1583847268964-b28dc8f51f92"
-  ];
-  (window.FALLBACK.properties || []).forEach((p, i) => {
-    if (!p.images) p.images = [p.image, pool[i % pool.length], pool[(i + 2) % pool.length]].filter(Boolean);
-  });
-})();

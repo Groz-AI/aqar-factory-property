@@ -205,12 +205,32 @@ function resetAll(){
 resetBtn.addEventListener('click', resetAll);
 document.getElementById('emptyReset').addEventListener('click', resetAll);
 
+/* apply ?city=&cat= handed off from the home page hero search, if present */
+function applyURLParams() {
+  const params = new URLSearchParams(location.search);
+  const city = params.get('city');
+  const cat = params.get('cat');
+  if (city && [...citySelect.options].some(o => o.value === city)) {
+    state.city = city;
+    citySelect.value = city;
+  }
+  if (cat) {
+    const chip = catChips.querySelector(`[data-cat="${CSS.escape(cat)}"]`);
+    if (chip) {
+      state.cat = cat;
+      catChips.querySelector('.active')?.classList.remove('active');
+      chip.classList.add('active');
+    }
+  }
+}
+
 /* ---------- boot: load projects from the data layer ---------- */
 (async function () {
   try { P = await window.store.getProjects(); }
   catch (e) { P = window.PROJECTS || []; }
   if (!P || !P.length) P = window.PROJECTS || [];
   buildFacets();
+  applyURLParams();
   render();
 })();
 

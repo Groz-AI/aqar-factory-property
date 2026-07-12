@@ -48,6 +48,7 @@ create table if not exists public.projects (
   slug        text unique not null,
   name        text not null,
   category    text not null default 'Residential',
+  unit_types  text[] default '{}',                -- unit types available, e.g. Villas, Apartments, Duplex
   city        text not null,                      -- display fallback; city_id is the real link
   city_id     uuid references public.cities(id) on delete set null,
   location    text,
@@ -79,50 +80,14 @@ create table if not exists public.projects (
   updated_at  timestamptz default now()
 );
 
--- Featured units / listings ("Discover Handpicked Homes") — each optionally
--- belongs to a project (which supplies its city) or, if standalone, a city directly
-create table if not exists public.properties (
-  id          uuid primary key default gen_random_uuid(),
-  name        text not null,
-  location    text,
-  description text,
-  price       text,
-  categories  text[] default '{}',                -- villas, apartments, offices...
-  badge       text,                               -- For Sale | New Listing | Exclusive
-  image       text,
-  images      text[] default '{}',                -- gallery (cover is `image`)
-  beds        int default 0,
-  baths       int default 0,
-  area        text,
-  project_id  uuid references public.projects(id) on delete set null,
-  city_id     uuid references public.cities(id) on delete set null,
-  sort_order  int default 0,
-  published   boolean default true,
-  created_at  timestamptz default now(),
-  updated_at  timestamptz default now()
-);
-
 -- ---------- migrate an existing install to the relational schema above ----------
 -- (all no-ops on a brand new database; safe to re-run any time)
 alter table public.projects   add column if not exists city_id    uuid references public.cities(id) on delete set null;
-alter table public.properties add column if not exists project_id uuid references public.projects(id) on delete set null;
-alter table public.properties add column if not exists city_id    uuid references public.cities(id) on delete set null;
 alter table public.cities     drop column if exists unit_count;   -- replaced by a live computed count on the site
 alter table public.projects   add column if not exists brochure_pdf text;                    -- PDF brochure URL (Storage or external link)
 alter table public.projects   add column if not exists consultants  jsonb default '[]'::jsonb; -- [{name, logo}] shown in the sidebar
 alter table public.projects   add column if not exists developer_logo text;                  -- developer's logo, shown on the project card
-
--- carry over the old text-based project link, if this install still has it
-do $$
-begin
-  update public.properties p
-     set project_id = pr.id
-    from public.projects pr
-   where p.project_slug = pr.slug
-     and p.project_id is null;
-exception when undefined_column then null; -- project_slug never existed on this install
-end $$;
-alter table public.properties drop column if exists project_slug;
+alter table public.projects   add column if not exists unit_types  text[] default '{}';      -- unit types available, e.g. Villas, Apartments, Duplex
 
 -- best-effort backfill: link existing rows to a city by matching their free text
 update public.projects pr
@@ -131,16 +96,11 @@ update public.projects pr
  where pr.city_id is null
    and lower(trim(pr.city)) = lower(trim(c.name));
 
-update public.properties p
-   set city_id = c.id
-  from public.cities c
- where p.city_id is null
-   and p.project_id is null
-   and p.location ilike '%' || c.name || '%';
-
 create index if not exists idx_projects_city_id    on public.projects(city_id);
-create index if not exists idx_properties_project_id on public.properties(project_id);
-create index if not exists idx_properties_city_id    on public.properties(city_id);
+
+-- the old standalone units/listings module — no longer part of the site
+drop table if exists public.properties cascade;
+drop table if exists public.categories cascade;
 
 -- Testimonials
 create table if not exists public.testimonials (
@@ -167,17 +127,6 @@ create table if not exists public.developers (
   updated_at  timestamptz default now()
 );
 
--- Home filter categories ("Discover Handpicked Homes")
-create table if not exists public.categories (
-  id          uuid primary key default gen_random_uuid(),
-  label       text not null,                      -- chip label, e.g. "Luxury Villas"
-  filter      text not null,                      -- key matched against listing categories, e.g. "luxury"
-  sort_order  int default 0,
-  published   boolean default true,
-  created_at  timestamptz default now(),
-  updated_at  timestamptz default now()
-);
-
 -- Editable singletons: hero text, stats, CTA, section headings…
 create table if not exists public.content_blocks (
   key        text primary key,                    -- 'hero' | 'stats' | 'cta' ...
@@ -189,7 +138,7 @@ create table if not exists public.content_blocks (
 do $$
 declare t text;
 begin
-  foreach t in array array['projects','properties','cities','testimonials','developers','categories','content_blocks']
+  foreach t in array array['projects','cities','testimonials','developers','content_blocks']
   loop
     execute format(
       'drop trigger if exists trg_touch_%1$s on public.%1$s;
@@ -205,7 +154,7 @@ end $$;
 do $$
 declare t text;
 begin
-  foreach t in array array['projects','properties','cities','testimonials','developers','categories']
+  foreach t in array array['projects','cities','testimonials','developers']
   loop
     execute format('alter table public.%I enable row level security;', t);
 
@@ -323,7 +272,7 @@ create policy "admin delete subscribers" on public.newsletter_subscribers
 do $$
 declare t text;
 begin
-  foreach t in array array['content_blocks','projects','properties','cities','testimonials','developers','categories']
+  foreach t in array array['content_blocks','projects','cities','testimonials','developers']
   loop
     begin
       execute format('alter publication supabase_realtime add table public.%I;', t);

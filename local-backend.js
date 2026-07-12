@@ -45,7 +45,7 @@
     const projects = (F.projects || []).map((p, i) => {
       const city = findCity(p.city);
       return {
-        id: uuid(), slug: p.id, name: p.name, category: p.category, city: p.city,
+        id: uuid(), slug: p.id, name: p.name, category: p.category, unit_types: p.unitTypes || [], city: p.city,
         city_id: city ? city.id : null,
         location: p.location, country: p.country, year: p.year, status: p.status,
         tagline: p.tagline, cover: p.cover, about: p.about || [], amenities: p.amenities || [],
@@ -58,20 +58,6 @@
         sort_order: i, published: true
       };
     });
-
-    // properties: link to a city by matching their free-text location, when possible
-    // (project_id is intentionally left unset — that's an optional link admins add by hand)
-    const properties = (F.properties || []).map((x, i) => {
-      const city = findCity(x.location);
-      return { id: uuid(), sort_order: i, published: true, city_id: city ? city.id : null, ...x };
-    });
-
-    // categories that drive the home "Discover Handpicked Homes" filter
-    const categories = [
-      ['villas', 'Villas'], ['apartments', 'Apartments'], ['duplex', 'Duplex Homes'],
-      ['townhouses', 'Townhouses'], ['studio', 'Studio Apartments'], ['luxury', 'Luxury Villas'],
-      ['retail', 'Retail Spaces'], ['offices', 'Offices']
-    ].map(([filter, label], i) => ({ id: uuid(), filter, label, sort_order: i, published: true }));
 
     const content = F.content || {};
     const content_blocks = Object.keys(content).map(key => ({ key, value: content[key] }));
@@ -86,11 +72,9 @@
 
     return {
       projects,
-      properties,
       cities,
       testimonials: withMeta(F.testimonials),
       developers:   withMeta(F.developers),
-      categories,
       content_blocks,
       media: {}
     };

@@ -33,9 +33,8 @@ it, so connecting is just pasting two keys and running one SQL file.
 ### 2. Create the tables, security rules and storage
 1. In the dashboard, open **SQL Editor → New query**.
 2. Paste the entire contents of [`supabase/schema.sql`](supabase/schema.sql) and click **Run**.
-   This creates every table (projects, listings, cities, categories, testimonials,
-   developers, content blocks), the row-level-security policies, and the public
-   `media` image bucket.
+   This creates every table (projects, cities, testimonials, developers, content
+   blocks), the row-level-security policies, and the public `media` image bucket.
 
 ### 3. Add your keys to the app
 1. In Supabase: **Project Settings → API**.
@@ -64,7 +63,7 @@ it, so connecting is just pasting two keys and running one SQL file.
 1. Open the site's admin at `admin/login.html` and sign in with the user above.
 2. Go to **Account & settings → Import starter data**. This fills every table
    with the bundled demo content. Now edit anything, upload images, change hero
-   images, add categories — it all saves to Supabase and appears on the live site.
+   images, add projects — it all saves to Supabase and appears on the live site.
 
 You can change your admin **email and password** any time from
 **Account & settings** in the dashboard.
@@ -88,7 +87,7 @@ Supabase pauses a **free** project after ~7 days of no activity. Two safety nets
    That's it — it runs every 3 days and resets the inactivity timer.
 
 If you don't use GitHub, any free uptime pinger (e.g. cron-job.org, UptimeRobot)
-hitting `https://<your-project>.supabase.co/rest/v1/categories?select=id&limit=1`
+hitting `https://<your-project>.supabase.co/rest/v1/cities?select=id&limit=1`
 with header `apikey: <anon key>` every few days does the same job.
 
 ---

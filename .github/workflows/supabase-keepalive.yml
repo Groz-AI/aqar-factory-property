@@ -21,7 +21,7 @@ jobs:
             exit 0
           fi
           code=$(curl -s -o /dev/null -w "%{http_code}" \
-            "${{ secrets.SUPABASE_URL }}/rest/v1/categories?select=id&limit=1" \
+            "${{ secrets.SUPABASE_URL }}/rest/v1/cities?select=id&limit=1" \
             -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}")
           echo "Supabase responded with HTTP $code"
           # 2xx keeps the project active; anything else fails the run so you get notified

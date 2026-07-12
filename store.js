@@ -19,9 +19,9 @@
   function mapProject(r) {
     return {
       id: r.slug || r.id,
-      dbId: r.id,          // the real uuid primary key — used to match properties.project_id
+      dbId: r.id,          // the real uuid primary key
       cityId: r.city_id || null,
-      name: r.name, category: r.category, city: r.city, location: r.location,
+      name: r.name, category: r.category, unitTypes: r.unit_types || [], city: r.city, location: r.location,
       country: r.country, year: r.year, status: r.status, tagline: r.tagline, cover: r.cover,
       about: r.about || [], amenities: r.amenities || [], developer: r.developer, developerLogo: r.developer_logo || '',
       gallery: r.gallery || [], coords: [r.lat || 0, r.lng || 0],
@@ -70,13 +70,6 @@
 
   const getCompany = () => getBlock('company', (F.content && F.content.company) || {});
 
-  const DEFAULT_CATS = [
-    { filter: 'villas', label: 'Villas' }, { filter: 'apartments', label: 'Apartments' },
-    { filter: 'duplex', label: 'Duplex Homes' }, { filter: 'townhouses', label: 'Townhouses' },
-    { filter: 'studio', label: 'Studio Apartments' }, { filter: 'luxury', label: 'Luxury Villas' },
-    { filter: 'retail', label: 'Retail Spaces' }, { filter: 'offices', label: 'Offices' }
-  ];
-
   // ---------- inquiries (contact form) ----------
   async function submitInquiry(payload) {
     if (!sb) return { error: { message: 'No backend configured' } };
@@ -114,7 +107,7 @@
   // supabase_realtime publication — see schema.sql).
   if (cloud && sb && typeof sb.channel === 'function') {
     try {
-      const TABLES = ['content_blocks', 'projects', 'properties', 'cities', 'testimonials', 'developers', 'categories'];
+      const TABLES = ['content_blocks', 'projects', 'cities', 'testimonials', 'developers'];
       let reloadT;
       const ch = sb.channel('realteek-public');
       TABLES.forEach(table => {
@@ -130,11 +123,9 @@
   window.store = {
     configured,
     getProjects:     () => fetchTable('projects', F.projects || [], mapProject),
-    getProperties:   () => fetchTable('properties', F.properties || []),
     getCities:       () => fetchTable('cities', F.cities || []),
     getTestimonials: () => fetchTable('testimonials', F.testimonials || []),
     getDevelopers:   () => fetchTable('developers', F.developers || []),
-    getCategories:   () => fetchTable('categories', DEFAULT_CATS),
     getContent,
     getCompany,
     submitInquiry,

@@ -1,13 +1,14 @@
 /* ============================================================
-   REALTEEK AI — floating property matchmaker
+   REALTEEK AI — floating project matchmaker
    A self-contained widget with two ways to get matched:
-     1. A guided quick-reply flow (type -> city -> budget) that
-        scores real listings from window.store with a transparent,
-        deterministic matching engine — instant, no API calls.
-     2. A free-text box wired to a real AI (Gemini, via the
-        /api/ai-chat serverless proxy) that can hold an open-ended
-        conversation, grounded in the site's live listings so it
-        only ever recommends real properties.
+     1. A guided quick-reply flow (project category -> unit type ->
+        city -> budget) that scores real projects from window.store
+        with a transparent, deterministic matching engine — instant,
+        no API calls.
+     2. A free-text box wired to a real AI (via the /api/ai-chat
+        serverless proxy) that can hold an open-ended conversation,
+        grounded in the site's live projects so it only ever
+        recommends real developments.
    ============================================================ */
 (function () {
   'use strict';
@@ -41,11 +42,11 @@
   const root = document.createElement('div');
   root.className = 'ai-widget';
   root.innerHTML = `
-    <div class="ai-panel" id="aiPanel" aria-hidden="true" role="dialog" aria-label="Realteek AI property matchmaker">
+    <div class="ai-panel" id="aiPanel" aria-hidden="true" role="dialog" aria-label="Realteek AI project matchmaker">
       <div class="ai-panel-head">
         <div class="ai-panel-id">
           <span class="ai-avatar">${sparkSVG}</span>
-          <div><b>Realteek AI</b><small>Your property matchmaker</small></div>
+          <div><b>Realteek AI</b><small>Your project matchmaker</small></div>
         </div>
         <button class="ai-panel-close" id="aiPanelClose" aria-label="Close">${closeSVG}</button>
       </div>
@@ -73,8 +74,8 @@
   const sendBtn = root.querySelector('#aiInputSend');
 
   let started = false;
-  let answers = { type: null, typeLabel: '', city: '', budget: null };
-  let dataset = { properties: [], categories: [], cities: [], companyName: '' };
+  let answers = { category: null, unitType: null, city: '', budget: null };
+  let dataset = { projects: [], cities: [], companyName: '' };
   let chatHistory = []; // { role: 'user'|'model', text } — free-text AI conversation memory
 
   // ---------- keep the fab clear of the hero search bar at any viewport size ----------
@@ -180,31 +181,37 @@
     const S = window.store;
     if (!S) return;
     try {
-      const [props, cats, cities, content] = await Promise.all([
-        S.getProperties ? S.getProperties() : [],
-        S.getCategories ? S.getCategories() : [],
+      const [projects, cities, content] = await Promise.all([
+        S.getProjects ? S.getProjects() : [],
         S.getCities ? S.getCities() : [],
         S.getContent ? S.getContent() : {}
       ]);
-      dataset.properties = props || [];
-      dataset.categories = cats || [];
+      dataset.projects = projects || [];
       dataset.cities = cities || [];
       dataset.companyName = (content && content.company && content.company.name) || '';
     } catch (_) { /* keep empty dataset, matching just falls back gracefully */ }
   }
 
-  // ---------- free-text chat with the real AI (Gemini, via /api/ai-chat) ----------
-  function slimProperties() {
-    return dataset.properties.slice(0, 30).map(p => ({
-      name: p.name, price: p.price, location: p.location,
-      categories: p.categories, beds: p.beds, baths: p.baths, badge: p.badge
+  function projectCategories() {
+    return [...new Set(dataset.projects.map(p => p.category).filter(Boolean))];
+  }
+  function projectUnitTypes() {
+    return [...new Set(dataset.projects.flatMap(p => p.unitTypes || []).filter(Boolean))];
+  }
+
+  // ---------- free-text chat with the real AI (via /api/ai-chat) ----------
+  function slimProjects() {
+    return dataset.projects.slice(0, 30).map(p => ({
+      name: p.name, price: p.stats && p.stats.price, location: p.location || p.city,
+      category: p.category, unitTypes: p.unitTypes, tagline: p.tagline,
+      about: (p.about && p.about[0]) || ''
     }));
   }
 
   async function sendFreeText(message) {
     addMessage(message, 'user');
     chatHistory.push({ role: 'user', text: message });
-    if (!dataset.properties.length) await loadData();
+    if (!dataset.projects.length) await loadData();
 
     const typing = showTyping();
     let reply = "Sorry, I'm having trouble connecting right now. Please try again shortly.";
@@ -218,8 +225,9 @@
           context: {
             companyName: dataset.companyName,
             cities: dataset.cities.map(c => c.name),
-            categories: dataset.categories.map(c => c.label),
-            properties: slimProperties()
+            categories: projectCategories(),
+            unitTypes: projectUnitTypes(),
+            projects: slimProjects()
           }
         })
       });
@@ -232,8 +240,8 @@
     chatHistory.push({ role: 'model', text: reply });
     body.scrollTop = body.scrollHeight;
 
-    // if the AI named an exact listing, surface it as a clickable match card too
-    const named = dataset.properties.filter(p => p.name && reply.includes(p.name));
+    // if the AI named an exact project, surface it as a clickable match card too
+    const named = dataset.projects.filter(p => p.name && reply.includes(p.name));
     if (named.length) renderMatchCards(named.slice(0, 3));
   }
 
@@ -256,16 +264,25 @@
   });
 
   async function boot() {
-    await botSay("Hi! I'm Realteek AI — answer a few quick questions and I'll match you with the best-fit homes, or just type your own question below anytime.", 500);
+    await botSay("Hi! I'm Realteek AI — answer a few quick questions and I'll match you with the best-fit projects, or just type your own question below anytime.", 500);
     await loadData();
-    askType();
+    askCategory();
   }
 
-  function askType() {
+  function askCategory() {
     const opts = [{ label: 'Any type', value: 'all' }]
-      .concat(dataset.categories.map(c => ({ label: c.label, value: c.filter })));
-    botSay('What kind of property are you looking for?', 500).then(() => setChips(opts, opt => {
-      answers.type = opt.value; answers.typeLabel = opt.label;
+      .concat(projectCategories().map(c => ({ label: c, value: c })));
+    botSay('What type of project are you looking for?', 500).then(() => setChips(opts, opt => {
+      answers.category = opt.value;
+      askUnitType();
+    }));
+  }
+
+  function askUnitType() {
+    const opts = [{ label: 'Any unit type', value: 'all' }]
+      .concat(projectUnitTypes().map(u => ({ label: u, value: u })));
+    botSay('Got it. Any particular unit type — villas, apartments, duplex…?', 500).then(() => setChips(opts, opt => {
+      answers.unitType = opt.value;
       askCity();
     }));
   }
@@ -287,12 +304,13 @@
     }));
   }
 
-  function scoreProperty(p, a) {
+  function scoreProject(p, a) {
     let score = 0;
-    if (a.type && a.type !== 'all') score += (p.categories || []).includes(a.type) ? 4 : 0;
-    if (a.city) score += (p.location || '').toLowerCase().includes(a.city.toLowerCase()) ? 4 : 0;
+    if (a.category && a.category !== 'all') score += p.category === a.category ? 4 : 0;
+    if (a.unitType && a.unitType !== 'all') score += (p.unitTypes || []).includes(a.unitType) ? 4 : 0;
+    if (a.city) score += (p.city || p.location || '').toLowerCase().includes(a.city.toLowerCase()) ? 4 : 0;
     if (a.budget) {
-      const price = parsePrice(p.price);
+      const price = parsePrice(p.stats && p.stats.price);
       if (price >= a.budget.min && price < a.budget.max) score += 3;
       else if (price > 0) {
         const span = (a.budget.max === Infinity ? a.budget.min : a.budget.max - a.budget.min) || 1;
@@ -308,17 +326,18 @@
     const wrap = document.createElement('div');
     wrap.style.cssText = 'display:flex;flex-direction:column;gap:8px;align-self:stretch';
     list.forEach(p => {
-      const card = document.createElement('button');
-      card.type = 'button';
+      const stats = p.stats || {};
+      const card = document.createElement('a');
+      card.href = `project.html?id=${encodeURIComponent(p.id)}`;
       card.className = 'ai-match';
       card.innerHTML = `
-        <img src="${IMG(p.image, 160)}" alt="" loading="lazy">
+        <img src="${IMG(p.cover, 160)}" alt="" loading="lazy">
         <div class="ai-match-body">
           <h4>${p.name || ''}</h4>
-          <p>${p.location || ''}</p>
-          <b>${p.price || ''}</b>
+          <p>${p.location || p.city || ''}</p>
+          <b>${stats.price || ''}</b>
         </div>`;
-      card.addEventListener('click', () => jumpToProperty(p.name));
+      card.addEventListener('click', closePanel);
       wrap.appendChild(card);
     });
     body.appendChild(wrap);
@@ -328,51 +347,27 @@
   async function showResults() {
     clearFoot();
     await botSay('Let me find your best matches…', 700);
-    const scored = dataset.properties
-      .map(p => ({ p, s: scoreProperty(p, answers) }))
-      .sort((a, b) => b.s - a.s || parsePrice(b.p.price) - parsePrice(a.p.price));
+    const scored = dataset.projects
+      .map(p => ({ p, s: scoreProject(p, answers) }))
+      .sort((a, b) => b.s - a.s || parsePrice(b.p.stats && b.p.stats.price) - parsePrice(a.p.stats && a.p.stats.price));
     const top = scored.slice(0, 3);
     const anyReal = top.some(x => x.s > 0);
 
     await botSay(anyReal
       ? "Here's what I found for you ✨"
-      : "I don't have an exact match for that combination, but here are some homes you might love:", 550);
+      : "I don't have an exact match for that combination, but here are some projects you might love:", 550);
 
-    if (!top.length) addMessage('No listings are published yet — check back soon!', 'bot');
+    if (!top.length) addMessage('No projects are published yet — check back soon!', 'bot');
     else renderMatchCards(top.map(x => x.p));
 
     setChips(
       [{ label: 'Start over', value: 'restart' }, { label: 'Talk to an advisor', value: 'advisor' }],
       opt => {
         if (opt.value === 'advisor') { window.location.href = 'contact.html'; return; }
-        answers = { type: null, typeLabel: '', city: '', budget: null };
+        answers = { category: null, unitType: null, city: '', budget: null };
         body.innerHTML = '';
-        askType();
+        askCategory();
       }
     );
-  }
-
-  function jumpToProperty(name) {
-    closePanel();
-    // clear any active category/city filter so the matched card is guaranteed visible
-    const chips = document.getElementById('chips');
-    if (chips) {
-      chips.querySelector('.active')?.classList.remove('active');
-      chips.querySelector('[data-filter="all"]')?.classList.add('active');
-    }
-    if (typeof window.renderProperties === 'function') window.renderProperties('all');
-    else if (typeof renderProperties === 'function') renderProperties('all');
-
-    requestAnimationFrame(() => {
-      const grid = document.getElementById('propertyGrid');
-      const card = grid && Array.from(grid.querySelectorAll('.card')).find(c => c.dataset.pname === name);
-      if (card) {
-        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        card.classList.add('ai-highlight');
-        setTimeout(() => card.classList.remove('ai-highlight'), 1900);
-      } else {
-        document.getElementById('homes')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-    });
   }
 })();

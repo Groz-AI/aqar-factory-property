@@ -11,12 +11,8 @@ const IMG = (ref, w = 800) =>
   `https://images.unsplash.com/photo-${ref}?auto=format&fit=crop&w=${w}&q=80`;
 
 /* ---------- inline icons ---------- */
-const heartSVG = `<svg viewBox="0 0 24 24" fill="none"><path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.5-7 10-7 10Z" stroke="currentColor" stroke-width="1.6"/></svg>`;
-const pinSVG = `<svg viewBox="0 0 24 24" fill="none"><path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11Z" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="10" r="2.4" stroke="currentColor" stroke-width="1.5"/></svg>`;
-const bedSVG = `<svg viewBox="0 0 24 24" fill="none"><path d="M3 18v-5h18v5M3 13V8a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v5M7 11h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>`;
-const bathSVG = `<svg viewBox="0 0 24 24" fill="none"><path d="M4 12h16v3a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4v-3ZM6 12V6a2 2 0 0 1 4 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>`;
-const areaSVG = `<svg viewBox="0 0 24 24" fill="none"><path d="M4 4h16v16H4zM4 10h16M10 4v16" stroke="currentColor" stroke-width="1.4"/></svg>`;
 const starSVG = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.6 1.4 6.8L12 17.8 5.9 20.4l1.4-6.8L2.2 9l6.9-.7L12 2Z"/></svg>`;
+const closeSVG = `<svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`;
 
 const emLast = (s) => {
   const w = String(s || '').trim().split(/\s+/);
@@ -25,194 +21,7 @@ const emLast = (s) => {
   return `${w.join(' ')} <em>${last}</em>`;
 };
 
-/* ============================================================
-   PROPERTIES (Handpicked Homes)
-   ============================================================ */
-let properties = [];
 let allProjects = [];
-let activeCatFilter = 'all';
-let activeCityQuery = '';
-const grid = document.getElementById('propertyGrid');
-
-/* shared interior shots to enrich single-image listings into a small gallery */
-const INTERIOR_POOL = [
-  '1505691938895-1758d7feb511', '1560448204-e02f11c3d0e2', '1556912173-3bb406ef7e77',
-  '1600210492493-0946911123ea', '1600607687939-ce8a6c25118c', '1583847268964-b28dc8f51f92'
-];
-function propImages(p, idx) {
-  if (p.images && p.images.length) return p.images.slice(0, 5).filter(Boolean);
-  const a = INTERIOR_POOL[idx % INTERIOR_POOL.length];
-  const b = INTERIOR_POOL[(idx + 2) % INTERIOR_POOL.length];
-  return [p.image, a, b].filter(Boolean);
-}
-
-function cardHTML(p, i) {
-  const cats = p.categories || [];
-  const loc = p.location || '';
-  const desc = p.description || '';
-  const specs = [];
-  if (p.beds) specs.push(`<span>${bedSVG}${p.beds}</span>`);
-  if (p.baths) specs.push(`<span>${bathSVG}${p.baths}</span>`);
-  if (p.area) specs.push(`<span>${areaSVG}${p.area}</span>`);
-  const imgs = propImages(p, i);
-  const slides = imgs.map((g, n) =>
-    `<div class="pg-slide${n === 0 ? ' active' : ''}" style="background-image:url('${IMG(g)}')"></div>`).join('');
-  const dots = imgs.length > 1
-    ? `<div class="pg-dots">${imgs.map((_, n) => `<i class="${n === 0 ? 'on' : ''}"></i>`).join('')}</div>` : '';
-  return `
-  <article class="card" data-cat="${cats.join(' ')}" data-pname="${p.name || ''}" style="animation-delay:${i * 60}ms">
-    <div class="card-img" data-gallery>
-      ${slides}<div class="pg-shade"></div>
-      <span class="card-badge">${p.badge || ''}</span>
-      <button class="card-fav" aria-label="Save">${heartSVG}</button>
-      ${dots}
-    </div>
-    <div class="card-body">
-      <h3>${p.name}</h3>
-      <p class="card-loc">${pinSVG}${loc}</p>
-      <p class="card-desc">${desc}</p>
-      <div class="card-foot">
-        <span class="card-price">${p.price || ''}</span>
-        <div class="card-specs">${specs.join('')}</div>
-      </div>
-    </div>
-  </article>`;
-}
-
-function renderProperties(filter = activeCatFilter) {
-  activeCatFilter = filter;
-  // clear any running gallery timers before replacing the cards
-  grid.querySelectorAll('[data-gallery]').forEach(b => { if (b._tid) clearInterval(b._tid); });
-  let list = filter === 'all' ? properties : properties.filter(p => (p.categories || []).includes(filter));
-  if (activeCityQuery) {
-    const q = activeCityQuery.toLowerCase();
-    list = list.filter(p => (p.location || '').toLowerCase().includes(q));
-  }
-  grid.innerHTML = list.length ? list.map((p, i) => cardHTML(p, i)).join('')
-    : `<p style="grid-column:1/-1;text-align:center;color:var(--ink-soft);padding:40px 0">No properties match that search. Try a different location or property type.</p>`;
-  grid.querySelectorAll('.card-fav').forEach(b => b.addEventListener('click', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    b.classList.toggle('on');
-    b.style.background = b.classList.contains('on') ? 'var(--sky)' : '';
-    b.style.color = b.classList.contains('on') ? '#fff' : '';
-  }));
-  grid.querySelectorAll('.card').forEach((cardEl, i) => {
-    cardEl.setAttribute('tabindex', '0');
-    cardEl.setAttribute('role', 'button');
-    cardEl.setAttribute('aria-label', `View details for ${list[i].name || 'this property'}`);
-    cardEl.addEventListener('click', (e) => {
-      if (e.target.closest('.card-fav')) return;
-      openUnitModal(list[i]);
-    });
-    cardEl.addEventListener('keydown', (e) => {
-      if ((e.key === 'Enter' || e.key === ' ') && !e.target.closest('.card-fav')) {
-        e.preventDefault();
-        openUnitModal(list[i]);
-      }
-    });
-  });
-  cycleGalleries('#propertyGrid', '.card', 3600);
-}
-
-/* ============================================================
-   UNIT DETAIL MODAL — scrollable pop-up opened from a property card
-   ============================================================ */
-const closeSVG = `<svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`;
-
-let unitModalOverlay = null;
-let unitModalBody = null;
-
-function ensureUnitModal() {
-  if (unitModalOverlay) return;
-  const el = document.createElement('div');
-  el.className = 'unit-modal-overlay';
-  el.id = 'unitModalOverlay';
-  el.innerHTML = `
-    <div class="unit-modal" role="dialog" aria-modal="true" aria-label="Property details">
-      <button class="unit-modal-close" id="unitModalClose" aria-label="Close">${closeSVG}</button>
-      <div class="unit-modal-scroll" id="unitModalBody"></div>
-    </div>`;
-  document.body.appendChild(el);
-  unitModalOverlay = el;
-  unitModalBody = el.querySelector('#unitModalBody');
-  el.addEventListener('click', e => { if (e.target === el) closeUnitModal(); });
-  el.querySelector('#unitModalClose').addEventListener('click', closeUnitModal);
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeUnitModal(); });
-}
-
-function unitModalHTML(p) {
-  const imgs = propImages(p, 0);
-  const slides = imgs.map((g, n) =>
-    `<div class="pg-slide${n === 0 ? ' active' : ''}" style="background-image:url('${IMG(g, 1000)}')"></div>`).join('');
-  const dots = imgs.length > 1
-    ? `<div class="pg-dots">${imgs.map((_, n) => `<i class="${n === 0 ? 'on' : ''}"></i>`).join('')}</div>` : '';
-  const specs = [];
-  if (p.beds) specs.push(`<div class="um-spec">${bedSVG}<span>${p.beds} Beds</span></div>`);
-  if (p.baths) specs.push(`<div class="um-spec">${bathSVG}<span>${p.baths} Baths</span></div>`);
-  if (p.area) specs.push(`<div class="um-spec">${areaSVG}<span>${p.area}</span></div>`);
-  const tags = (p.categories || []).map(c => `<span class="um-tag">${c}</span>`).join('');
-  const linkedProject = p.project_id ? allProjects.find(pr => pr.dbId === p.project_id) : null;
-  const projectCTA = linkedProject
-    ? `<a href="project.html?id=${encodeURIComponent(linkedProject.id)}" class="btn btn-dark">Go to ${linkedProject.name}</a>`
-    : `<a href="projects.html" class="btn btn-dark">Go to Projects Page</a>`;
-
-  return `
-    <div class="um-gallery" data-gallery>
-      ${slides}<div class="pg-shade"></div>
-      ${p.badge ? `<span class="um-badge">${p.badge}</span>` : ''}
-      ${dots}
-    </div>
-    <div class="um-details">
-      <h3>${p.name || ''}</h3>
-      <p class="um-loc">${pinSVG}${p.location || ''}</p>
-      ${specs.length ? `<div class="um-specs">${specs.join('')}</div>` : ''}
-      ${p.price ? `<p class="um-price">${p.price}</p>` : ''}
-      ${p.description ? `<p class="um-desc">${p.description}</p>` : ''}
-      ${tags ? `<div class="um-tags">${tags}</div>` : ''}
-      <div class="um-actions">
-        ${projectCTA}
-        <a href="contact.html" class="btn btn-ghost">Enquire About This Property</a>
-      </div>
-    </div>`;
-}
-
-function openUnitModal(p) {
-  if (!p) return;
-  ensureUnitModal();
-  unitModalBody.innerHTML = unitModalHTML(p);
-  unitModalOverlay.classList.add('open');
-  document.body.style.overflow = 'hidden';
-  cycleGalleries('#unitModalOverlay', '.um-gallery', 3800);
-}
-
-function closeUnitModal() {
-  if (!unitModalOverlay) return;
-  unitModalOverlay.classList.remove('open');
-  document.body.style.overflow = '';
-}
-
-/* ---------- filter chips ---------- */
-function renderChips(categories) {
-  const chips = document.getElementById('chips');
-  if (!chips || !categories || !categories.length) return;
-  chips.innerHTML =
-    `<button class="chip active" data-filter="all">All</button>` +
-    categories.map(c => `<button class="chip" data-filter="${c.filter}">${c.label}</button>`).join('');
-}
-
-function wireChips() {
-  const chips = document.getElementById('chips');
-  chips.addEventListener('click', e => {
-    const chip = e.target.closest('.chip');
-    if (!chip) return;
-    chips.querySelector('.active')?.classList.remove('active');
-    chip.classList.add('active');
-    renderProperties(chip.dataset.filter);
-  });
-  document.getElementById('filterNext').addEventListener('click', () => chips.scrollBy({ left: 260, behavior: 'smooth' }));
-  document.getElementById('filterPrev').addEventListener('click', () => chips.scrollBy({ left: -260, behavior: 'smooth' }));
-}
 
 /* ---------- custom dropdown (replaces native <select> so the open list can
    actually be styled — browsers render native option popups unstyleable) ---------- */
@@ -307,16 +116,17 @@ function initCustomSelect(root) {
   };
 }
 
-/* ---------- hero search bar (buy-only: location + property type) ---------- */
+/* ---------- hero search bar (location + project category → projects.html) ---------- */
 let searchCitySelect, searchTypeSelect;
-function renderSearchFacets(cities, categories) {
+function renderSearchFacets(cities, projects) {
   searchCitySelect = searchCitySelect || initCustomSelect(document.getElementById('searchCity'));
   searchTypeSelect = searchTypeSelect || initCustomSelect(document.getElementById('searchType'));
   if (searchCitySelect && cities && cities.length) {
     searchCitySelect.setOptions([{ value: '', label: 'All locations' }].concat(cities.map(c => ({ value: c.name, label: c.name }))));
   }
-  if (searchTypeSelect && categories && categories.length) {
-    searchTypeSelect.setOptions([{ value: 'all', label: 'All property types' }].concat(categories.map(c => ({ value: c.filter, label: c.label }))));
+  if (searchTypeSelect && projects && projects.length) {
+    const cats = [...new Set(projects.map(p => p.category).filter(Boolean))];
+    searchTypeSelect.setOptions([{ value: 'all', label: 'All project types' }].concat(cats.map(c => ({ value: c, label: c }))));
   }
 }
 
@@ -326,17 +136,12 @@ function wireSearchForm() {
   form.addEventListener('submit', e => {
     e.preventDefault();
     const city = searchCitySelect ? searchCitySelect.value : '';
-    const type = searchTypeSelect ? searchTypeSelect.value : 'all';
-
-    activeCityQuery = city;
-    const chips = document.getElementById('chips');
-    if (chips) {
-      const match = chips.querySelector(`[data-filter="${type}"]`) || chips.querySelector('[data-filter="all"]');
-      chips.querySelector('.active')?.classList.remove('active');
-      match?.classList.add('active');
-    }
-    renderProperties(type);
-    document.getElementById('homes')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const cat = searchTypeSelect ? searchTypeSelect.value : 'all';
+    const params = new URLSearchParams();
+    if (city) params.set('city', city);
+    if (cat && cat !== 'all') params.set('cat', cat);
+    const qs = params.toString();
+    window.location.href = 'projects.html' + (qs ? '?' + qs : '');
   });
 }
 
@@ -780,17 +585,13 @@ function wireReveals() {
 (async function init() {
   const S = window.store;
   try {
-    const [props, cities, projects, devs, testis, content, cats] = await Promise.all([
-      S.getProperties(), S.getCities(), S.getProjects(), S.getDevelopers(), S.getTestimonials(), S.getContent(),
-      S.getCategories ? S.getCategories() : Promise.resolve([])
+    const [cities, projects, devs, testis, content] = await Promise.all([
+      S.getCities(), S.getProjects(), S.getDevelopers(), S.getTestimonials(), S.getContent()
     ]);
-    properties = props || [];
     allProjects = projects || [];
     applyContent(content);
-    renderChips(cats || []);
-    renderSearchFacets(cities || [], cats || []);
+    renderSearchFacets(cities || [], allProjects);
     initHeroTyping();
-    renderProperties();
     renderCities(cities || [], allProjects);
     initHeroGallery(cities || [], content);
     renderProjects(projects || []);
@@ -800,7 +601,6 @@ function wireReveals() {
     console.error('Realteek: data load failed', e);
   }
   initStarfields();
-  wireChips();
   wireSearchForm();
   wireReveals();
 })();

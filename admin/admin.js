@@ -68,6 +68,7 @@
         { key: 'name', label: 'Name', type: 'text', required: true, half: true },
         { key: 'slug', label: 'Slug (URL id)', type: 'text', required: true, half: true, hint: 'lowercase, dashes — e.g. azure-residences' },
         { key: 'category', label: 'Category', type: 'select', options: ['Residential', 'Commercial', 'Mixed-use', 'Hospitality', 'Retail', 'Office'], half: true },
+        { key: 'unit_types', label: 'Unit types available', type: 'tags', hint: 'e.g. Villas, Apartments, Duplex, Townhouses, Studio — powers the hero search and the AI matchmaker' },
         { key: 'status', label: 'Status', type: 'select', options: ['Completed', 'Ongoing', 'Off-plan'], half: true },
         {
           key: 'city_id', label: 'City', type: 'select', required: true, half: true,
@@ -98,41 +99,6 @@
         { key: 'consultants', label: 'Executive Consultants', type: 'consultants', hint: 'Shown in the project page sidebar — leave empty to hide the section' },
         { key: 'sort_order', label: 'Sort order', type: 'number', half: true },
         { key: 'published', label: 'Published', type: 'bool', half: true }
-      ]
-    },
-    properties: {
-      label: 'Listings', singular: 'Listing', table: 'properties', icon: 'home',
-      columns: [
-        { key: 'image', label: '', type: 'thumb' },
-        { key: 'name', label: 'Name', type: 'name', sub: 'location' },
-        { key: 'price', label: 'Price' },
-        { key: 'badge', label: 'Badge' },
-        { key: 'published', label: 'Status', type: 'pill' }
-      ],
-      fields: [
-        { key: 'name', label: 'Name', type: 'text', required: true },
-        { key: 'location', label: 'Location', type: 'text' },
-        { key: 'description', label: 'Description', type: 'textarea' },
-        { key: 'image', label: 'Cover image', type: 'image' },
-        { key: 'images', label: 'Gallery', type: 'gallery' },
-        { key: 'price', label: 'Price', type: 'text', half: true },
-        { key: 'badge', label: 'Badge', type: 'select', options: ['For Sale', 'New Listing', 'Exclusive'], half: true },
-        { key: 'categories', label: 'Categories', type: 'tags', hint: 'villas, apartments, offices…' },
-        { key: 'beds', label: 'Beds', type: 'number', half: true },
-        { key: 'baths', label: 'Baths', type: 'number', half: true },
-        { key: 'area', label: 'Area', type: 'text', half: true },
-        {
-          key: 'project_id', label: 'Linked project (optional)', type: 'select', half: true,
-          options: [{ value: '', label: '— No linked project —' }],
-          hint: 'The homepage popup links to this project\'s page instead of the general Projects page, and this listing counts toward the project\'s city.'
-        },
-        {
-          key: 'city_id', label: 'City (optional)', type: 'select', half: true,
-          options: [{ value: '', label: '— No linked city —' }],
-          hint: 'Only used when there\'s no linked project above. Powers the "By Cities" unit counts on the homepage.'
-        },
-        { key: 'sort_order', label: 'Sort order', type: 'number', half: true },
-        { key: 'published', label: 'Published', type: 'bool' }
       ]
     },
     cities: {
@@ -169,20 +135,6 @@
         { key: 'rating', label: 'Rating (1–5)', type: 'number', half: true },
         { key: 'sort_order', label: 'Sort order', type: 'number', half: true },
         { key: 'published', label: 'Published', type: 'bool' }
-      ]
-    },
-    categories: {
-      label: 'Categories', singular: 'Category', table: 'categories', icon: 'grid',
-      columns: [
-        { key: 'label', label: 'Label', type: 'name', sub: 'filter' },
-        { key: 'filter', label: 'Filter key' },
-        { key: 'published', label: 'Status', type: 'pill' }
-      ],
-      fields: [
-        { key: 'label', label: 'Label', type: 'text', required: true, half: true, hint: 'shown on the chip — e.g. Luxury Villas' },
-        { key: 'filter', label: 'Filter key', type: 'text', required: true, half: true, hint: 'lowercase, matches a listing category — e.g. luxury' },
-        { key: 'sort_order', label: 'Sort order', type: 'number', half: true },
-        { key: 'published', label: 'Published', type: 'bool', half: true }
       ]
     },
     developers: {
@@ -335,7 +287,6 @@
       <div class="panel"><div class="panel-head"><b class="bricolage" style="font-size:1.05rem">Quick actions</b></div>
         <div style="padding:20px;display:flex;gap:.7rem;flex-wrap:wrap">
           <button class="btn btn-sky btn-sm" data-jump="projects">Manage projects</button>
-          <button class="btn btn-ghost btn-sm" data-jump="properties">Manage listings</button>
           <button class="btn btn-ghost btn-sm" data-jump="content">Edit site content</button>
           <button class="btn btn-ghost btn-sm" data-jump="settings">Setup &amp; seed data</button>
         </div></div>`;
@@ -419,7 +370,6 @@
   let uploads = {};   // transient per-form state for arrays/gallery
   let pendingUploads = 0; // in-flight image uploads — block saves until they finish
   let dynamicCitiesList = [];   // { id, name } — cached whenever a City picker is populated
-  let dynamicProjectsList = []; // { id, name } — cached whenever the Project picker is populated
 
   async function openForm(view, row) {
     const r = RESOURCES[view];
@@ -429,30 +379,15 @@
     const body = $('#drawerBody');
     body.innerHTML = '';
 
-    // Projects and Listings both link to a City; Listings can also link to a Project.
-    // Populate those dropdowns from the live tables right before rendering the form
-    // (fetched in parallel — the Listings form needs both, so this halves its wait).
-    const needsCities = view === 'properties' || view === 'projects';
-    const needsProjects = view === 'properties';
-    const safeFetch = (q) => q.then(res => res, () => ({ data: [] }));
-    const [citiesRes, projectsRes] = await Promise.all([
-      needsCities ? safeFetch(sb.from('cities').select('id,name').order('name', { ascending: true })) : null,
-      needsProjects ? safeFetch(sb.from('projects').select('id,name').order('name', { ascending: true })) : null
-    ]);
-    if (needsCities) {
-      dynamicCitiesList = (citiesRes && citiesRes.data) || [];
+    // Projects link to a City — populate that dropdown from the live table
+    // right before rendering the form.
+    if (view === 'projects') {
+      const { data } = await sb.from('cities').select('id,name').order('name', { ascending: true }).then(res => res, () => ({ data: [] }));
+      dynamicCitiesList = data || [];
       const cityField = r.fields.find(f => f.key === 'city_id');
       if (cityField) {
         cityField.options = [{ value: '', label: '— No linked city —' }]
           .concat(dynamicCitiesList.map(c => ({ value: c.id, label: c.name })));
-      }
-    }
-    if (needsProjects) {
-      dynamicProjectsList = (projectsRes && projectsRes.data) || [];
-      const projectField = r.fields.find(f => f.key === 'project_id');
-      if (projectField) {
-        projectField.options = [{ value: '', label: '— No linked project —' }]
-          .concat(dynamicProjectsList.map(p => ({ value: p.id, label: p.name })));
       }
     }
 
@@ -814,20 +749,12 @@
     renderList(view);
   }
 
-  // deleting a City/Project doesn't fail if other rows link to it (the FK is
+  // deleting a City doesn't fail if projects link to it (the FK is
   // ON DELETE SET NULL) — warn first so that unlinking isn't a silent surprise
   async function linkedChildrenWarning(view, id) {
     if (view === 'cities') {
-      const [{ count: pc }, { count: uc }] = await Promise.all([
-        sb.from('projects').select('id', { count: 'exact', head: true }).eq('city_id', id),
-        sb.from('properties').select('id', { count: 'exact', head: true }).eq('city_id', id)
-      ]);
-      const total = (pc || 0) + (uc || 0);
-      return total > 0 ? `\n\n${total} project(s)/listing(s) are linked to this city — they'll be kept, just unlinked from it.` : '';
-    }
-    if (view === 'projects') {
-      const { count } = await sb.from('properties').select('id', { count: 'exact', head: true }).eq('project_id', id);
-      return count > 0 ? `\n\n${count} listing(s) are linked to this project — they'll be kept, just unlinked from it.` : '';
+      const { count } = await sb.from('projects').select('id', { count: 'exact', head: true }).eq('city_id', id);
+      return count > 0 ? `\n\n${count} project(s) are linked to this city — they'll be kept, just unlinked from it.` : '';
     }
     return '';
   }
@@ -1127,7 +1054,7 @@
     try {
       // projects (public shape → DB columns)
       await seedTable('projects', (FALLBACK.projects || []).map((p, i) => ({
-        slug: p.id, name: p.name, category: p.category, city: p.city, location: p.location,
+        slug: p.id, name: p.name, category: p.category, unit_types: p.unitTypes || [], city: p.city, location: p.location,
         country: p.country, year: p.year, status: p.status, tagline: p.tagline, cover: p.cover,
         about: p.about || [], amenities: p.amenities || [], developer: p.developer, gallery: p.gallery || [],
         price: p.stats && p.stats.price, units: p.stats && p.stats.units, floors: p.stats && p.stats.floors,
@@ -1137,17 +1064,9 @@
         sort_order: i, published: true
       })), 'slug', note);
 
-      await seedTable('properties', (FALLBACK.properties || []).map((x, i) => ({ ...x, sort_order: i, published: true })), null, note);
       await seedTable('cities', (FALLBACK.cities || []).map((x, i) => ({ ...x, sort_order: i, published: true })), null, note);
       await seedTable('testimonials', (FALLBACK.testimonials || []).map((x, i) => ({ ...x, sort_order: i, published: true })), null, note);
       await seedTable('developers', (FALLBACK.developers || []).map((x, i) => ({ ...x, sort_order: i, published: true })), null, note);
-
-      const DEFAULT_CATS = [
-        ['villas', 'Villas'], ['apartments', 'Apartments'], ['duplex', 'Duplex Homes'],
-        ['townhouses', 'Townhouses'], ['studio', 'Studio Apartments'], ['luxury', 'Luxury Villas'],
-        ['retail', 'Retail Spaces'], ['offices', 'Offices']
-      ].map(([filter, label], i) => ({ filter, label, sort_order: i, published: true }));
-      await seedTable('categories', DEFAULT_CATS, null, note);
 
       // content blocks
       const content = FALLBACK.content || {};
@@ -1179,18 +1098,21 @@
     const note = (s) => { lines.push(s); log.textContent = lines.join('\n'); };
 
     try {
-      for (const table of ['projects', 'properties']) {
-        const { data, error } = await sb.from(table).select('id,price');
-        if (error) { note(`${table}: ${error.message}`); continue; }
+      const { data, error } = await sb.from('projects').select('id,price');
+      if (error) {
+        note(`projects: ${error.message}`);
+      } else {
         const toFix = (data || []).filter(row => typeof row.price === 'string' && row.price.trim().startsWith('$'));
-        if (!toFix.length) { note(`${table}: nothing to convert`); continue; }
-        let ok = 0, fail = 0;
-        for (const row of toFix) {
-          const price = row.price.replace(/^\s*\$/, 'EGP ');
-          const { error: upErr } = await sb.from(table).update({ price }).eq('id', row.id);
-          if (upErr) fail++; else ok++;
+        if (!toFix.length) { note('projects: nothing to convert'); }
+        else {
+          let ok = 0, fail = 0;
+          for (const row of toFix) {
+            const price = row.price.replace(/^\s*\$/, 'EGP ');
+            const { error: upErr } = await sb.from('projects').update({ price }).eq('id', row.id);
+            if (upErr) fail++; else ok++;
+          }
+          note(`projects: ${ok} price(s) converted${fail ? `, ${fail} failed` : ''}`);
         }
-        note(`${table}: ${ok} price(s) converted${fail ? `, ${fail} failed` : ''}`);
       }
       note('\nDone.');
       toast('Prices converted to EGP');
@@ -1201,8 +1123,8 @@
     btn.disabled = false; btn.textContent = 'Convert existing prices to EGP';
   }
 
-  // links any project/listing that still has a free-text city (no city_id yet)
-  // to a matching row in the Cities table — runs right after seeding so demo
+  // links any project that still has a free-text city (no city_id yet) to a
+  // matching row in the Cities table — runs right after seeding so demo
   // data is fully relational immediately, without needing to re-run schema.sql
   async function backfillCityLinks(note) {
     const { data: cities } = await sb.from('cities').select('id,name');
@@ -1219,15 +1141,7 @@
       const c = findCity(p.city);
       if (c) { await sb.from('projects').update({ city_id: c.id }).eq('id', p.id); projLinked++; }
     }
-
-    const { data: props } = await sb.from('properties').select('id,location,project_id,city_id');
-    let propLinked = 0;
-    for (const p of (props || [])) {
-      if (p.city_id || p.project_id) continue;
-      const c = findCity(p.location);
-      if (c) { await sb.from('properties').update({ city_id: c.id }).eq('id', p.id); propLinked++; }
-    }
-    note(`city links: ${projLinked} project(s), ${propLinked} listing(s) ✓`);
+    note(`city links: ${projLinked} project(s) ✓`);
   }
 
   async function seedTable(table, rows, conflictKey, note) {
