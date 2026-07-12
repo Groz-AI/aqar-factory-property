@@ -645,6 +645,15 @@
     paint();
   }
 
+  // guards any promise against hanging forever — a stalled/dropped upload
+  // connection would otherwise leave pendingUploads stuck above zero and
+  // permanently block Save with no way to recover short of reloading
+  function withTimeout(promise, ms, message) {
+    let timer;
+    const timeout = new Promise((_, reject) => { timer = setTimeout(() => reject(new Error(message)), ms); });
+    return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+  }
+
   async function uploadFile(f, kind) {
     kind = kind || 'image';
     if (!f) return null;
@@ -656,7 +665,11 @@
     try {
       const ext = (f.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
       const path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-      const { error } = await sb.storage.from('media').upload(path, f, { cacheControl: '3600', upsert: false, contentType: f.type || undefined });
+      const { error } = await withTimeout(
+        sb.storage.from('media').upload(path, f, { cacheControl: '3600', upsert: false, contentType: f.type || undefined }),
+        120000,
+        'Upload timed out — the file may be too large for your connection, or the storage bucket may have a lower size limit than this form allows.'
+      );
       if (error) {
         console.error('Upload failed:', error);
         const m = String(error.message || error.error || '').toLowerCase();
