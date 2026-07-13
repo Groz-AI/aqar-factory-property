@@ -903,8 +903,8 @@
         </div>${hint}</div>`;
     }
     if (f.type === 'textarea') return `<div class="field"><label for="${id}">${esc(f.label)}</label><textarea id="${id}">${esc(v)}</textarea>${hint}</div>`;
-    const t = f.type === 'number' ? 'number' : 'text';
-    return `<div class="field"><label for="${id}">${esc(f.label)}</label><input type="${t}" id="${id}" value="${esc(v)}">${hint}</div>`;
+    const inputType = f.type === 'number' ? 'number' : 'text';
+    return `<div class="field"><label for="${id}">${esc(f.label)}</label><input type="${inputType}" id="${id}" value="${esc(v)}">${hint}</div>`;
   }
 
   async function saveBlock(key) {
