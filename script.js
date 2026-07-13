@@ -14,6 +14,8 @@ const IMG = (ref, w = 800) =>
 const starSVG = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.6 1.4 6.8L12 17.8 5.9 20.4l1.4-6.8L2.2 9l6.9-.7L12 2Z"/></svg>`;
 const closeSVG = `<svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`;
 
+const escHTML = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
 const emLast = (s) => {
   const w = String(s || '').trim().split(/\s+/);
   if (w.length < 2) return `<em>${s || ''}</em>`;
@@ -240,6 +242,24 @@ function renderProjects(projects) {
       `<div class="pg-slide${i === 0 ? ' active' : ''}" style="background-image:url('${IMG(g, 900)}')"></div>`).join('');
     const dots = imgs.length > 1
       ? `<div class="pg-dots">${imgs.map((_, i) => `<i class="${i === 0 ? 'on' : ''}"></i>`).join('')}</div>` : '';
+
+    const devLine = p.developer ? `
+      <div class="project-dev">
+        <span class="av${p.developerLogo ? ' has-logo' : ''}">${p.developerLogo ? `<img src="${IMG(p.developerLogo, 80)}" alt="">` : escHTML((p.developer || '·').charAt(0))}</span>
+        <span>${window.t ? t('Developed by') : 'Developed by'} <b>${escHTML(p.developer)}</b></span>
+      </div>` : '';
+
+    const consultants = (p.consultants || []).filter(c => c && (c.name || c.logo));
+    const consultantsLine = consultants.length ? `
+      <div class="project-consultants">
+        <span class="pc-label">${window.t ? t('Executive Consultants') : 'Executive Consultants'}</span>
+        <div class="pc-avatars">${consultants.map(c => c.logo
+          ? `<img class="pc-avatar" src="${IMG(c.logo, 60)}" alt="" title="${escHTML(c.name || '')}">`
+          : `<span class="pc-avatar pc-avatar-fallback" title="${escHTML(c.name || '')}">${escHTML((c.name || '·').charAt(0))}</span>`
+        ).join('')}</div>
+        <span class="pc-names">${consultants.map(c => escHTML(c.name)).filter(Boolean).join(', ')}</span>
+      </div>` : '';
+
     return `
     <a class="project reveal" href="project.html?id=${encodeURIComponent(p.id)}">
       <div class="project-img" data-gallery>${slides}<div class="pg-shade"></div>${dots}</div>
@@ -247,6 +267,8 @@ function renderProjects(projects) {
         <span class="project-tag">${p.category || ''}</span>
         <h3>${p.name}</h3>
         <p>${p.tagline || ''}</p>
+        ${devLine}
+        ${consultantsLine}
         <div class="project-foot"><span>${p.city || p.location || ''}</span><span>${p.year || ''}</span></div>
       </div>
     </a>`;
