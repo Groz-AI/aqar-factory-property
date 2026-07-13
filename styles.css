@@ -494,12 +494,12 @@ em{font-style:normal}
 .logo-track{display:flex;width:max-content;animation:logoMarquee 34s linear infinite}
 .logo-wall:hover .logo-track{animation-play-state:paused}
 .logo{
-  flex:none;display:grid;place-items:center;padding:38px 44px;min-width:200px;
+  flex:none;display:grid;place-items:center;padding:20px 32px;min-width:200px;
   font-family:"Bricolage Grotesque",sans-serif;font-weight:700;font-size:1.35rem;color:var(--ink);
   letter-spacing:.01em;transition:.3s var(--ease);filter:grayscale(1);opacity:.5;
   border-right:1px solid var(--line);
 }
-.logo img{display:block}
+.logo img{display:block;max-height:64px;width:auto;max-width:180px;object-fit:contain}
 .logo:hover{filter:grayscale(0);opacity:1;color:var(--sky-deep)}
 @keyframes logoMarquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 

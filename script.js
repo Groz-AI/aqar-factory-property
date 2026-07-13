@@ -336,7 +336,7 @@ function renderDevelopers(devs) {
   const wrap = document.getElementById('logoWall');
   if (!wrap || !devs.length) return;
   const item = d => d.logo
-    ? `<div class="logo"><img src="${IMG(d.logo, 240)}" alt="${d.name}" loading="lazy" style="max-height:34px;width:auto"></div>`
+    ? `<div class="logo"><img src="${IMG(d.logo, 240)}" alt="${d.name}" loading="lazy"></div>`
     : `<div class="logo">${d.name}</div>`;
   // render the set twice so the -50% marquee loops seamlessly
   const set = devs.map(item).join('');
