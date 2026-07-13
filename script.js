@@ -122,11 +122,11 @@ function renderSearchFacets(cities, projects) {
   searchCitySelect = searchCitySelect || initCustomSelect(document.getElementById('searchCity'));
   searchTypeSelect = searchTypeSelect || initCustomSelect(document.getElementById('searchType'));
   if (searchCitySelect && cities && cities.length) {
-    searchCitySelect.setOptions([{ value: '', label: 'All locations' }].concat(cities.map(c => ({ value: c.name, label: c.name }))));
+    searchCitySelect.setOptions([{ value: '', label: t('All locations') }].concat(cities.map(c => ({ value: c.name, label: c.name }))));
   }
   if (searchTypeSelect && projects && projects.length) {
     const cats = [...new Set(projects.map(p => p.category).filter(Boolean))];
-    searchTypeSelect.setOptions([{ value: 'all', label: 'All project types' }].concat(cats.map(c => ({ value: c, label: c }))));
+    searchTypeSelect.setOptions([{ value: 'all', label: t('All project types') }].concat(cats.map(c => ({ value: c, label: c }))));
   }
 }
 
@@ -157,8 +157,8 @@ function renderCities(cities, projectList) {
     const size = c.size === 'big' ? ' big' : c.size === 'wide' ? ' wide' : '';
     const w = size ? 900 : 700;
     const n = counts[c.id] || 0;
-    const label = n === 1 ? '1 Project' : `${n.toLocaleString()} Projects`;
-    return `<article class="city-card${size} reveal" data-city-id="${c.id}" tabindex="0" role="button" aria-label="View projects in ${c.name}" style="--img:url('${IMG(c.image, w)}')">
+    const label = n === 1 ? t('1 Project') : `${n.toLocaleString()} ${t('Projects')}`;
+    return `<article class="city-card${size} reveal" data-city-id="${c.id}" tabindex="0" role="button" aria-label="${t('View projects in')} ${c.name}" style="--img:url('${IMG(c.image, w)}')">
       <div class="city-meta"><h3>${c.name}</h3><p>${c.country || ''}</p></div>
       <span class="city-count">${label}</span>
     </article>`;
@@ -186,7 +186,7 @@ function ensureCityModal() {
   el.className = 'unit-modal-overlay';
   el.id = 'cityModalOverlay';
   el.innerHTML = `
-    <div class="unit-modal city-modal" role="dialog" aria-modal="true" aria-label="Projects in this city">
+    <div class="unit-modal city-modal" role="dialog" aria-modal="true" aria-label="${t('Projects in this city')}">
       <button class="unit-modal-close" id="cityModalClose" aria-label="Close">${closeSVG}</button>
       <div class="unit-modal-scroll" id="cityModalBody"></div>
     </div>`;
@@ -209,14 +209,14 @@ function openCityModal(city, projects) {
       <span class="cmp-item-price">${stats.price || ''}</span>
     </a>`;
   }).join('');
-  const countLabel = projects.length === 1 ? '1 Project' : projects.length + ' Projects';
+  const countLabel = projects.length === 1 ? t('1 Project') : projects.length + ' ' + t('Projects');
   cityModalBody.innerHTML = `
     <div class="city-modal-head">
       <h3>${city.name}</h3>
       <p>${city.country ? city.country + ' · ' : ''}${countLabel}</p>
     </div>
     <div class="city-modal-projects">
-      ${projects.length ? rows : '<div class="city-modal-empty">No projects linked to this city yet.</div>'}
+      ${projects.length ? rows : `<div class="city-modal-empty">${t('No projects linked to this city yet.')}</div>`}
     </div>`;
   cityModalOverlay.classList.add('open');
   document.body.style.overflow = 'hidden';

@@ -10,6 +10,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Bricolage+Grotesque:opsz,wght@12..96,300..800&family=Hanken+Grotesk:wght@300..700&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="styles.css" />
 <link rel="stylesheet" href="pages.css" />
+<script src="i18n.js"></script>
 </head>
 <body class="page-body">
 
@@ -18,18 +19,19 @@
 <!-- HEADER -->
 <header class="site-header" id="header">
   <div class="container header-inner">
-    <a href="index.html" class="brand" aria-label="Realteek home">
+    <a href="index.html" class="brand" aria-label="Realteek home" data-i18n-aria>
       <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M4 28V13l8-6 8 6v15h-5v-8h-6v8H4Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M20 28V11l4-3 4 3v17" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></span>
       <span class="brand-name">Realteek</span>
     </a>
     <nav class="nav" id="nav">
-      <a href="index.html">Home</a>
-      <a href="projects.html">Projects</a>
-      <a href="about.html">About Us</a>
-      <a href="contact.html" class="active">Contact</a>
+      <a href="index.html" data-i18n>Home</a>
+      <a href="projects.html" data-i18n>Projects</a>
+      <a href="about.html" data-i18n>About Us</a>
+      <a href="contact.html" class="active" data-i18n>Contact</a>
     </nav>
     <div class="header-actions">
-      <button class="nav-toggle" id="navToggle" aria-label="Open menu"><span></span><span></span><span></span></button>
+      <button class="lang-switch" id="langSwitch" type="button"></button>
+      <button class="nav-toggle" id="navToggle" aria-label="Open menu" data-i18n-aria><span></span><span></span><span></span></button>
     </div>
   </div>
 </header>
@@ -37,10 +39,10 @@
 <!-- HERO -->
 <section class="subpage-hero" style="--bg:url('https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1700&q=80')">
   <div class="container subpage-hero-in">
-    <div class="breadcrumb light"><a href="index.html">Home</a><span>/</span><b>Contact</b></div>
-    <p class="sub-eyebrow">We reply within one business day</p>
-    <h1>Let's start a <em>conversation</em></h1>
-    <p class="sub-lead">Book a viewing, ask about a listing, or just tell us what you're looking for — a real advisor will get back to you, not a bot.</p>
+    <div class="breadcrumb light"><a href="index.html" data-i18n>Home</a><span>/</span><b data-i18n>Contact</b></div>
+    <p class="sub-eyebrow" data-i18n>We reply within one business day</p>
+    <h1 data-i18n-html="contact.hero.title">Let's start a <em>conversation</em></h1>
+    <p class="sub-lead" data-i18n>Book a viewing, ask about a listing, or just tell us what you're looking for — a real advisor will get back to you, not a bot.</p>
   </div>
 </section>
 
@@ -50,47 +52,47 @@
 
     <!-- left: info -->
     <aside class="contact-info reveal">
-      <p class="eyebrow"><span class="dot"></span>Reach us directly</p>
-      <h2 class="display-head">Prefer to skip<br/>the <em>form?</em></h2>
-      <p class="contact-info-lead">Our advisors are reachable however suits you best. We're happiest on a call, but we read every message.</p>
+      <p class="eyebrow"><span class="dot"></span><span data-i18n>Reach us directly</span></p>
+      <h2 class="display-head" data-i18n-html="contact.form.title">Prefer to skip<br/>the <em>form?</em></h2>
+      <p class="contact-info-lead" data-i18n>Our advisors are reachable however suits you best. We're happiest on a call, but we read every message.</p>
 
       <ul class="contact-cards">
         <li class="contact-card">
           <span class="cc-ic"><svg viewBox="0 0 24 24" fill="none"><path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11Z" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="10" r="2.5" stroke="currentColor" stroke-width="1.6"/></svg></span>
-          <div><h4>Visit the studio</h4><p data-brand="address">Level 18, Marina Gate Tower<br/>Dubai Marina, United Arab Emirates</p></div>
+          <div><h4 data-i18n>Visit the studio</h4><p data-brand="address">Level 18, Marina Gate Tower<br/>Dubai Marina, United Arab Emirates</p></div>
         </li>
         <li class="contact-card">
           <span class="cc-ic"><svg viewBox="0 0 24 24" fill="none"><path d="M5 4h4l2 5-3 2a12 12 0 0 0 5 5l2-3 5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></span>
-          <div><h4>Call or WhatsApp</h4><p><a href="tel:+97145550100" data-brand="phone">+971 4 555 0100</a><br/>Sun–Thu, 9:00 – 18:00 GST</p></div>
+          <div><h4 data-i18n>Call or WhatsApp</h4><p><a href="tel:+97145550100" data-brand="phone">+971 4 555 0100</a><br/><span data-i18n>Sun–Thu, 9:00 – 18:00 GST</span></p></div>
         </li>
         <li class="contact-card">
           <span class="cc-ic"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="m4 7 8 6 8-6" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></span>
-          <div><h4>Email us</h4><p><a href="mailto:hello@realteek.com" data-brand="email">hello@realteek.com</a><br/><a href="mailto:press@realteek.com" data-brand="emailSecondary">press@realteek.com</a></p></div>
+          <div><h4 data-i18n>Email us</h4><p><a href="mailto:hello@realteek.com" data-brand="email">hello@realteek.com</a><br/><a href="mailto:press@realteek.com" data-brand="emailSecondary">press@realteek.com</a></p></div>
         </li>
         <li class="contact-card">
           <span class="cc-ic"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/><path d="M12 7v5l3 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-          <div><h4>Office hours</h4><p data-brand="hours">Sunday – Thursday: 9am – 6pm<br/>Saturday: by appointment</p></div>
+          <div><h4 data-i18n>Office hours</h4><p data-brand="hours">Sunday – Thursday: 9am – 6pm<br/>Saturday: by appointment</p></div>
         </li>
       </ul>
 
       <div class="contact-socials">
-        <a href="#" aria-label="Instagram"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="5" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="1.6"/><circle cx="17.5" cy="6.5" r="1.1" fill="currentColor"/></svg></a>
-        <a href="#" aria-label="X"><svg viewBox="0 0 24 24" fill="none"><path d="M4 4l16 16M20 4L4 20" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></a>
-        <a href="#" aria-label="LinkedIn"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="3" stroke="currentColor" stroke-width="1.6"/><path d="M7 10v7M7 7v.01M11 17v-4a2 2 0 0 1 4 0v4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></a>
+        <a href="#" aria-label="Instagram" data-i18n-aria><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="5" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="1.6"/><circle cx="17.5" cy="6.5" r="1.1" fill="currentColor"/></svg></a>
+        <a href="#" aria-label="X" data-i18n-aria><svg viewBox="0 0 24 24" fill="none"><path d="M4 4l16 16M20 4L4 20" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></a>
+        <a href="#" aria-label="LinkedIn" data-i18n-aria><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="3" stroke="currentColor" stroke-width="1.6"/><path d="M7 10v7M7 7v.01M11 17v-4a2 2 0 0 1 4 0v4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></a>
       </div>
     </aside>
 
     <!-- right: form -->
     <div class="contact-form-wrap reveal">
       <div class="quick-contact">
-        <p class="qc-title">Prefer talking right now?</p>
+        <p class="qc-title" data-i18n>Prefer talking right now?</p>
         <div class="qc-btns">
           <a href="tel:+97145550100" class="qc-card qc-call" id="qcCallBtn">
             <span class="qc-icon">
               <span class="qc-ring" aria-hidden="true"></span>
               <svg viewBox="0 0 24 24" fill="none"><path d="M5 4h4l2 5-3 2a12 12 0 0 0 5 5l2-3 5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
             </span>
-            <span class="qc-text"><b>Call us now</b><small>Speak to an advisor directly</small></span>
+            <span class="qc-text"><b data-i18n>Call us now</b><small data-i18n>Speak to an advisor directly</small></span>
             <span class="qc-arrow"><svg viewBox="0 0 24 24" fill="none"><path d="M7 17 17 7M9 7h8v8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
           </a>
           <a href="https://wa.me/97145550100" target="_blank" rel="noopener" class="qc-card qc-wa" id="qcWaBtn">
@@ -98,47 +100,47 @@
               <span class="qc-ring" aria-hidden="true"></span>
               <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.5 14.4c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.96-.94 1.16-.17.2-.35.22-.64.08-.3-.15-1.26-.47-2.4-1.48-.89-.79-1.49-1.77-1.66-2.07-.17-.3-.02-.46.13-.6.13-.14.3-.35.44-.53.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.67-1.62-.92-2.22-.24-.58-.49-.5-.67-.5l-.57-.01c-.2 0-.52.07-.79.37-.27.3-1.04 1.02-1.04 2.48s1.06 2.88 1.21 3.08c.15.2 2.1 3.2 5.08 4.49.71.3 1.26.49 1.69.62.71.23 1.35.2 1.87.12.57-.08 1.76-.72 2.01-1.42.25-.7.25-1.28.17-1.42-.07-.13-.27-.2-.56-.35zM12.04 21.5h-.01a9.4 9.4 0 0 1-4.79-1.31l-.35-.2-3.56.93.95-3.48-.22-.36a9.38 9.38 0 0 1 14.56-11.6 9.32 9.32 0 0 1 2.75 6.64c0 5.18-4.22 9.38-9.4 9.38zm7.98-17.38A11.28 11.28 0 0 0 2.03 17.9L.5 23.5l5.73-1.5a11.26 11.26 0 0 0 5.81 1.6h.01c6.22 0 11.28-5.06 11.28-11.28 0-3.02-1.17-5.85-3.3-7.98z"/></svg>
             </span>
-            <span class="qc-text"><b>WhatsApp us</b><small>Usually replies in minutes</small></span>
+            <span class="qc-text"><b data-i18n>WhatsApp us</b><small data-i18n>Usually replies in minutes</small></span>
             <span class="qc-arrow"><svg viewBox="0 0 24 24" fill="none"><path d="M7 17 17 7M9 7h8v8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
           </a>
         </div>
-        <p class="qc-divider"><span>or send us a message</span></p>
+        <p class="qc-divider"><span data-i18n>or send us a message</span></p>
       </div>
       <form class="contact-form" id="contactForm" novalidate>
-        <h3>Send us a message</h3>
+        <h3 data-i18n>Send us a message</h3>
         <div class="cf-row">
           <label class="cf-field">
-            <span>First name</span>
+            <span data-i18n>First name</span>
             <input type="text" name="first" placeholder="Jane" required />
           </label>
           <label class="cf-field">
-            <span>Last name</span>
+            <span data-i18n>Last name</span>
             <input type="text" name="last" placeholder="Doe" required />
           </label>
         </div>
         <div class="cf-row">
           <label class="cf-field">
-            <span>Email</span>
+            <span data-i18n>Email</span>
             <input type="email" name="email" placeholder="jane@email.com" required />
           </label>
           <label class="cf-field">
-            <span>Phone <i>(optional)</i></span>
+            <span><span data-i18n>Phone</span> <i data-i18n>(optional)</i></span>
             <input type="tel" name="phone" placeholder="+971 50 000 0000" />
           </label>
         </div>
         <label class="cf-field">
-          <span>I'm interested in</span>
+          <span data-i18n>I'm interested in</span>
           <div class="cf-select">
             <select name="interest">
-              <option>Buying a property</option>
-              <option>Investment advice</option>
-              <option>Press &amp; partnerships</option>
-              <option>Something else</option>
+              <option data-i18n>Buying a property</option>
+              <option data-i18n>Investment advice</option>
+              <option data-i18n>Press &amp; partnerships</option>
+              <option data-i18n>Something else</option>
             </select>
           </div>
         </label>
         <div class="cf-budget">
-          <span class="cf-budget-label">Budget range</span>
+          <span class="cf-budget-label" data-i18n>Budget range</span>
           <div class="cf-chips" id="cfChips">
             <button type="button" class="cf-chip active" data-v="&lt; EGP 500k">&lt; EGP 500k</button>
             <button type="button" class="cf-chip" data-v="EGP 500k – 1M">EGP 500k – 1M</button>
@@ -147,18 +149,18 @@
           </div>
         </div>
         <label class="cf-field">
-          <span>Message</span>
-          <textarea name="message" rows="5" placeholder="Tell us about the home, office or space you have in mind…" required></textarea>
+          <span data-i18n>Message</span>
+          <textarea name="message" rows="5" placeholder="Tell us about the home, office or space you have in mind…" data-i18n-placeholder required></textarea>
         </label>
         <label class="cf-consent">
           <input type="checkbox" required />
-          <span>I agree to be contacted about my enquiry and have read the privacy policy.</span>
+          <span data-i18n>I agree to be contacted about my enquiry and have read the privacy policy.</span>
         </label>
-        <button type="submit" class="btn btn-dark cf-submit">Send message
+        <button type="submit" class="btn btn-dark cf-submit"><span data-i18n>Send message</span>
           <svg viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
-        <p class="cf-success" id="cfSuccess" hidden>Thanks — your message is on its way. We'll be in touch within one business day.</p>
-        <p class="cf-error" id="cfError" hidden>Sorry, we couldn't send your message just now. Please try again, or email us directly.</p>
+        <p class="cf-success" id="cfSuccess" hidden data-i18n>Thanks — your message is on its way. We'll be in touch within one business day.</p>
+        <p class="cf-error" id="cfError" hidden data-i18n>Sorry, we couldn't send your message just now. Please try again, or email us directly.</p>
       </form>
     </div>
   </div>
@@ -183,16 +185,16 @@
       <a href="index.html" class="brand brand--light"><span class="brand-mark"><svg viewBox="0 0 32 32" fill="none"><path d="M4 28V13l8-6 8 6v15h-5v-8h-6v8H4Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M20 28V11l4-3 4 3v17" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></span><span class="brand-name">Realteek</span></a>
       <p>Real estate done right — handpicked homes, offices and luxury units across the world's great cities.</p>
       <div class="socials">
-        <a href="#" aria-label="Instagram"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="5" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="1.6"/><circle cx="17.5" cy="6.5" r="1.1" fill="currentColor"/></svg></a>
-        <a href="#" aria-label="X"><svg viewBox="0 0 24 24" fill="none"><path d="M4 4l16 16M20 4L4 20" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></a>
-        <a href="#" aria-label="LinkedIn"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="3" stroke="currentColor" stroke-width="1.6"/><path d="M7 10v7M7 7v.01M11 17v-4a2 2 0 0 1 4 0v4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></a>
+        <a href="#" aria-label="Instagram" data-i18n-aria><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="5" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="1.6"/><circle cx="17.5" cy="6.5" r="1.1" fill="currentColor"/></svg></a>
+        <a href="#" aria-label="X" data-i18n-aria><svg viewBox="0 0 24 24" fill="none"><path d="M4 4l16 16M20 4L4 20" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></a>
+        <a href="#" aria-label="LinkedIn" data-i18n-aria><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="3" stroke="currentColor" stroke-width="1.6"/><path d="M7 10v7M7 7v.01M11 17v-4a2 2 0 0 1 4 0v4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></a>
       </div>
     </div>
-    <div class="footer-col"><h4>Explore</h4><a href="projects.html">Projects</a><a href="index.html#cities">Cities</a></div>
-    <div class="footer-col"><h4>Company</h4><a href="about.html">About Us</a><a href="projects.html">Projects</a><a href="index.html#developers">Partners</a><a href="contact.html">Contact</a><a href="admin/login.html">Login</a></div>
-    <div class="footer-col footer-news"><h4>Stay in the loop</h4><p>New listings, market notes and quiet off-market deals — once a month.</p><form class="news-form"><input type="email" placeholder="Your email" aria-label="Your email" /><button class="btn btn-dark" type="submit">Join</button></form></div>
+    <div class="footer-col"><h4 data-i18n>Explore</h4><a href="projects.html" data-i18n>Projects</a><a href="index.html#cities" data-i18n>Cities</a></div>
+    <div class="footer-col"><h4 data-i18n>Company</h4><a href="about.html" data-i18n>About Us</a><a href="projects.html" data-i18n>Projects</a><a href="index.html#developers" data-i18n>Partners</a><a href="contact.html" data-i18n>Contact</a><a href="admin/login.html" data-i18n>Login</a></div>
+    <div class="footer-col footer-news"><h4 data-i18n>Stay in the loop</h4><p data-i18n>New listings, market notes and quiet off-market deals — once a month.</p><form class="news-form"><input type="email" placeholder="Your email" aria-label="Your email" data-i18n-placeholder data-i18n-aria /><button class="btn btn-dark" type="submit" data-i18n>Join</button></form></div>
   </div>
-  <div class="container footer-bottom"><p>© 2026 Realteek. All rights reserved.</p><p>Privacy · Terms · Cookies</p></div>
+  <div class="container footer-bottom"><p>© 2026 Realteek. All rights reserved.</p><p data-i18n>Privacy · Terms · Cookies</p></div>
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -232,7 +234,7 @@
     var original=btn.innerHTML;
     var err=document.getElementById('cfError');
     err.hidden=true;
-    btn.disabled=true; btn.textContent='Sending…';
+    btn.disabled=true; btn.textContent=(window.t?window.t('Sending…'):'Sending…');
 
     var val=function(n){var el=form.querySelector('[name="'+n+'"]');return el?el.value.trim():'';};
     var chip=document.querySelector('#cfChips .cf-chip.active');
@@ -251,7 +253,7 @@
       return;
     }
     document.getElementById('cfSuccess').hidden=false;
-    btn.textContent='Sent ✓';
+    btn.textContent=(window.t?window.t('Sent ✓'):'Sent ✓');
     form.querySelectorAll('input,textarea,select,button').forEach(function(el){el.disabled=true;});
   });
 

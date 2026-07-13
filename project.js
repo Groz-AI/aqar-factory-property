@@ -65,7 +65,7 @@ function populate() {
 
   const st = project.stats || {};
   const priceEl = document.getElementById('price');
-  if (st.price) { priceEl.innerHTML = `<small>Starting from</small>${st.price}`; priceEl.hidden = false; }
+  if (st.price) { priceEl.innerHTML = `<small>${t('Starting from')}</small>${st.price}`; priceEl.hidden = false; }
   else { priceEl.hidden = true; }
 
   const facts = [
@@ -79,7 +79,7 @@ function populate() {
   ];
   document.getElementById('factList').innerHTML = facts
     .filter(([, v]) => v)
-    .map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('');
+    .map(([k, v]) => `<div><dt>${t(k)}</dt><dd>${v}</dd></div>`).join('');
   document.getElementById('devName').textContent = project.developer || '';
   const devAv = document.getElementById('devAv');
   if (project.developerLogo) {

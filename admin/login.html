@@ -8,27 +8,29 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Hanken+Grotesk:wght@400..700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="admin.css" />
+  <script src="../i18n.js"></script>
 </head>
 <body>
+  <button class="lang-switch admin-lang-switch" id="langSwitch" type="button"></button>
   <main class="login-screen">
     <div class="login-card">
       <div class="login-brand">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg>
         <span>Realteek</span>
       </div>
-      <h1>Welcome back</h1>
-      <p class="muted">Sign in to manage your listings, projects and site content.</p>
+      <h1 data-i18n>Welcome back</h1>
+      <p class="muted" data-i18n>Sign in to manage your listings, projects and site content.</p>
 
       <form id="loginForm" autocomplete="on">
         <div class="field">
-          <label for="email">Email address</label>
+          <label for="email" data-i18n>Email address</label>
           <input type="email" id="email" name="email" placeholder="you@example.com" required autocomplete="username" />
         </div>
         <div class="field">
-          <label for="password">Password</label>
+          <label for="password" data-i18n>Password</label>
           <input type="password" id="password" name="password" placeholder="••••••••" required autocomplete="current-password" />
         </div>
-        <button type="submit" class="btn btn-primary" id="loginBtn">Sign in</button>
+        <button type="submit" class="btn btn-primary" id="loginBtn" data-i18n>Sign in</button>
         <div class="form-msg" id="msg"></div>
       </form>
     </div>
@@ -46,10 +48,11 @@
     const btn  = document.getElementById('loginBtn');
     const msg  = document.getElementById('msg');
 
+    const t = window.t || ((s) => s);
     function show(text, kind) { msg.textContent = text; msg.className = 'form-msg ' + kind; }
 
     if (!cloud && !localMode) {
-      show('Supabase isn’t configured yet. Add your project URL and anon key in config.js, then run supabase/schema.sql.', 'err');
+      show(t('Supabase isn’t configured yet. Add your project URL and anon key in config.js, then run supabase/schema.sql.'), 'err');
       btn.disabled = true;
       btn.style.opacity = .6;
       return;
@@ -60,7 +63,7 @@
       const hint = document.createElement('p');
       hint.className = 'muted';
       hint.style.cssText = 'margin-top:14px;font-size:.85rem;padding:10px 12px;background:rgba(46,155,221,.08);border-radius:10px';
-      hint.innerHTML = 'Demo mode (no server). Sign in with<br><b>' + c.email + '</b> / <b>' + c.password + '</b>';
+      hint.innerHTML = t('Demo mode (no server). Sign in with') + '<br><b>' + c.email + '</b> / <b>' + c.password + '</b>';
       form.appendChild(hint);
       // prefill for convenience
       document.getElementById('email').value = c.email;
@@ -87,7 +90,7 @@
 
       const { data, error } = await sb.auth.signInWithPassword({ email, password });
       if (error) {
-        show(error.message || 'Sign in failed. Check your credentials.', 'err');
+        show(error.message || t('Sign in failed. Check your credentials.'), 'err');
         btn.disabled = false; btn.textContent = original;
         return;
       }
@@ -96,12 +99,12 @@
       const { data: isAdmin, error: rpcErr } = await sb.rpc('is_admin');
       if (rpcErr || !isAdmin) {
         await sb.auth.signOut();
-        show('This account doesn’t have admin access.', 'err');
+        show(t('This account doesn’t have admin access.'), 'err');
         btn.disabled = false; btn.textContent = original;
         return;
       }
 
-      show('Signed in. Redirecting…', 'ok');
+      show(t('Signed in. Redirecting…'), 'ok');
       location.replace('dashboard.html');
     });
   })();

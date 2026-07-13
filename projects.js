@@ -1,9 +1,8 @@
 /* ============================================================
-   REALTEEK — Projects listing: search · category · city · sort · map
+   REALTEEK — Projects listing: search · category · city · sort
    ============================================================ */
 let P = [];
 const grid = document.getElementById('projectsGrid');
-const mapWrap = document.getElementById('mapWrap');
 const emptyState = document.getElementById('emptyState');
 const resCount = document.getElementById('resCount');
 const catChips = document.getElementById('catChips');
@@ -12,7 +11,6 @@ const sortSelect = document.getElementById('sortSelect');
 const searchInput = document.getElementById('searchInput');
 const searchClear = document.getElementById('searchClear');
 const resetBtn = document.getElementById('resetBtn');
-const viewToggle = document.getElementById('viewToggle');
 
 const pinSVG = `<svg viewBox="0 0 24 24" fill="none"><path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11Z" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="10" r="2.4" stroke="currentColor" stroke-width="1.5"/></svg>`;
 const arrowSVG = `<svg viewBox="0 0 24 24" fill="none"><path d="M7 17 17 7M9 7h8v8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
@@ -45,13 +43,13 @@ function cycleGalleries(scopeSel, hoverSel, baseInterval) {
   });
 }
 
-let state = { cat: 'all', city: 'all', q: '', sort: 'featured', view: 'list' };
+let state = { cat: 'all', city: 'all', q: '', sort: 'featured' };
 
 /* build category chips + city dropdown from the loaded dataset */
 function buildFacets() {
   const categories = ['all', ...new Set(P.map(p => p.category))];
   catChips.innerHTML = categories.map((c, i) =>
-    `<button class="chip ${i === 0 ? 'active' : ''}" data-cat="${c}">${c === 'all' ? 'All' : c}</button>`
+    `<button class="chip ${i === 0 ? 'active' : ''}" data-cat="${c}">${c === 'all' ? t('All') : c}</button>`
   ).join('');
   const cities = [...new Set(P.map(p => p.city))].sort();
   citySelect.insertAdjacentHTML('beforeend',
@@ -120,59 +118,8 @@ function render(){
   emptyState.hidden = list.length !== 0;
   resetBtn.hidden = !(state.cat !== 'all' || state.city !== 'all' || state.q || state.sort !== 'featured');
   searchClear.hidden = !state.q;
-  if(state.view === 'map') renderMap(list);
   cycleGalleries('#projectsGrid', '.pcard', 4000);
 }
-
-/* ---------- map (Leaflet) ---------- */
-let map, markerLayer;
-function ensureMap(){
-  if(map || !window.L) return;
-  map = L.map('map', { scrollWheelZoom: false, zoomControl: true }).setView([25, 30], 2);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-    attribution: '&copy; OpenStreetMap &copy; CARTO', maxZoom: 19, subdomains: 'abcd'
-  }).addTo(map);
-  markerLayer = L.layerGroup().addTo(map);
-}
-function renderMap(list){
-  ensureMap();
-  if(!map) return;
-  setTimeout(() => map.invalidateSize(), 50);
-  markerLayer.clearLayers();
-  const pts = [];
-  list.forEach(p => {
-    const stats = p.stats || {};
-    const icon = L.divIcon({
-      className: 'rt-pin',
-      html: `<span>${stats.price || ''}</span>`,
-      iconSize: [60, 28], iconAnchor: [30, 32]
-    });
-    const m = L.marker(p.coords, { icon }).addTo(markerLayer);
-    m.bindPopup(
-      `<a class="map-pop" href="project.html?id=${encodeURIComponent(p.id)}">
-        <img src="${U(p.cover, 320)}" alt="${p.name || ''}" />
-        <strong>${p.name || ''}</strong>
-        <span>${p.location || ''}</span>
-        <b>${stats.price || ''}</b>
-      </a>`, { closeButton: true, minWidth: 200 }
-    );
-    pts.push(p.coords);
-  });
-  if(pts.length) map.fitBounds(pts, { padding: [60, 60], maxZoom: 12 });
-}
-
-/* ---------- view toggle ---------- */
-viewToggle.addEventListener('click', e => {
-  const btn = e.target.closest('.vt-btn');
-  if(!btn) return;
-  viewToggle.querySelector('.active')?.classList.remove('active');
-  btn.classList.add('active');
-  state.view = btn.dataset.view;
-  const mapView = state.view === 'map';
-  grid.hidden = mapView;
-  mapWrap.hidden = !mapView;
-  if(mapView) render();
-});
 
 /* ---------- events ---------- */
 catChips.addEventListener('click', e => {

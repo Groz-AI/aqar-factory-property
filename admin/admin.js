@@ -42,11 +42,11 @@
   // ---------- toast ----------
   let toastT;
   function toast(msg, kind) {
-    const t = $('#toast');
-    t.textContent = msg;
-    t.className = 'toast show' + (kind === 'err' ? ' err' : '');
+    const toastEl = $('#toast');
+    toastEl.textContent = msg;
+    toastEl.className = 'toast show' + (kind === 'err' ? ' err' : '');
     clearTimeout(toastT);
-    toastT = setTimeout(() => { t.className = 'toast'; }, 2800);
+    toastT = setTimeout(() => { toastEl.className = 'toast'; }, 2800);
   }
 
   // ============================================================
@@ -55,100 +55,100 @@
   // ============================================================
   const RESOURCES = {
     projects: {
-      label: 'Projects', singular: 'Project', table: 'projects', icon: 'building',
+      label: t('Projects'), singular: t('Project'), table: 'projects', icon: 'building',
       columns: [
         { key: 'cover', label: '', type: 'thumb' },
-        { key: 'name', label: 'Name', type: 'name', sub: 'tagline' },
-        { key: 'category', label: 'Category' },
-        { key: 'city', label: 'City' },
-        { key: 'status', label: 'Status' },
-        { key: 'published', label: 'Status', type: 'pill' }
+        { key: 'name', label: t('Name'), type: 'name', sub: 'tagline' },
+        { key: 'category', label: t('Category') },
+        { key: 'city', label: t('City') },
+        { key: 'status', label: t('Status') },
+        { key: 'published', label: t('Status'), type: 'pill' }
       ],
       fields: [
-        { key: 'name', label: 'Name', type: 'text', required: true, half: true },
-        { key: 'slug', label: 'Slug (URL id)', type: 'text', required: true, half: true, hint: 'lowercase, dashes — e.g. azure-residences' },
-        { key: 'category', label: 'Category', type: 'select', options: ['Residential', 'Commercial', 'Mixed-use', 'Hospitality', 'Retail', 'Office'], half: true },
-        { key: 'unit_types', label: 'Unit types available', type: 'tags', hint: 'e.g. Villas, Apartments, Duplex, Townhouses, Studio — powers the hero search and the AI matchmaker' },
-        { key: 'status', label: 'Status', type: 'select', options: ['Completed', 'Ongoing', 'Off-plan'], half: true },
+        { key: 'name', label: t('Name'), type: 'text', required: true, half: true },
+        { key: 'slug', label: t('Slug (URL id)'), type: 'text', required: true, half: true, hint: t('lowercase, dashes — e.g. azure-residences') },
+        { key: 'category', label: t('Category'), type: 'select', options: ['Residential', 'Commercial', 'Mixed-use', 'Hospitality', 'Retail', 'Office'], half: true },
+        { key: 'unit_types', label: t('Unit types available'), type: 'tags', hint: t('e.g. Villas, Apartments, Duplex, Townhouses, Studio — powers the hero search and the AI matchmaker') },
+        { key: 'status', label: t('Status'), type: 'select', options: ['Completed', 'Ongoing', 'Off-plan'], half: true },
         {
-          key: 'city_id', label: 'City', type: 'select', required: true, half: true,
-          options: [{ value: '', label: '— No linked city —' }],
-          hint: 'Add cities under the Cities section first. This also fills the project\'s display city name.'
+          key: 'city_id', label: t('City'), type: 'select', required: true, half: true,
+          options: [{ value: '', label: t('— No linked city —') }],
+          hint: t('Add cities under the Cities section first. This also fills the project\'s display city name.')
         },
-        { key: 'country', label: 'Country', type: 'text', half: true },
-        { key: 'location', label: 'Location / address', type: 'text' },
-        { key: 'tagline', label: 'Tagline', type: 'text' },
-        { key: 'developer', label: 'Developer', type: 'text', half: true },
-        { key: 'developer_logo', label: 'Developer logo', type: 'image', half: true, hint: 'Shown on the project card and sidebar' },
-        { key: 'year', label: 'Year', type: 'number', half: true },
-        { key: 'cover', label: 'Cover image', type: 'image' },
-        { key: 'gallery', label: 'Gallery', type: 'gallery' },
-        { key: 'about', label: 'About (one paragraph per line)', type: 'lines' },
-        { key: 'amenities', label: 'Amenities', type: 'tags' },
-        { key: 'price', label: 'Price (display)', type: 'text', half: true, hint: 'e.g. EGP 3.2M' },
-        { key: 'price_value', label: 'Price value (number)', type: 'number', half: true },
-        { key: 'area', label: 'Area (display)', type: 'text', half: true },
-        { key: 'area_value', label: 'Area value (number)', type: 'number', half: true },
-        { key: 'units', label: 'Units', type: 'text', half: true },
-        { key: 'floors', label: 'Floors', type: 'text', half: true },
-        { key: 'handover', label: 'Handover', type: 'text', half: true },
-        { key: 'is_rental', label: 'Rental listing', type: 'bool', half: true },
-        { key: 'lat', label: 'Latitude', type: 'number', half: true },
-        { key: 'lng', label: 'Longitude', type: 'number', half: true },
-        { key: 'brochure_pdf', label: 'Brochure (PDF)', type: 'pdf', hint: 'Shown as a "Download brochure" button on the project page — leave empty to hide it' },
-        { key: 'consultants', label: 'Executive Consultants', type: 'consultants', hint: 'Shown in the project page sidebar — leave empty to hide the section' },
-        { key: 'sort_order', label: 'Sort order', type: 'number', half: true },
-        { key: 'published', label: 'Published', type: 'bool', half: true }
+        { key: 'country', label: t('Country'), type: 'text', half: true },
+        { key: 'location', label: t('Location / address'), type: 'text' },
+        { key: 'tagline', label: t('Tagline'), type: 'text' },
+        { key: 'developer', label: t('Developer'), type: 'text', half: true },
+        { key: 'developer_logo', label: t('Developer logo'), type: 'image', half: true, hint: t('Shown on the project card and sidebar') },
+        { key: 'year', label: t('Year'), type: 'number', half: true },
+        { key: 'cover', label: t('Cover image'), type: 'image' },
+        { key: 'gallery', label: t('Gallery'), type: 'gallery' },
+        { key: 'about', label: t('About (one paragraph per line)'), type: 'lines' },
+        { key: 'amenities', label: t('Amenities'), type: 'tags' },
+        { key: 'price', label: t('Price (display)'), type: 'text', half: true, hint: t('e.g. EGP 3.2M') },
+        { key: 'price_value', label: t('Price value (number)'), type: 'number', half: true },
+        { key: 'area', label: t('Area (display)'), type: 'text', half: true },
+        { key: 'area_value', label: t('Area value (number)'), type: 'number', half: true },
+        { key: 'units', label: t('Units'), type: 'text', half: true },
+        { key: 'floors', label: t('Floors'), type: 'text', half: true },
+        { key: 'handover', label: t('Handover'), type: 'text', half: true },
+        { key: 'is_rental', label: t('Rental listing'), type: 'bool', half: true },
+        { key: 'lat', label: t('Latitude'), type: 'number', half: true },
+        { key: 'lng', label: t('Longitude'), type: 'number', half: true },
+        { key: 'brochure_pdf', label: t('Brochure (PDF)'), type: 'pdf', hint: t('Shown as a "Download brochure" button on the project page — leave empty to hide it') },
+        { key: 'consultants', label: t('Executive Consultants'), type: 'consultants', hint: t('Shown in the project page sidebar — leave empty to hide the section') },
+        { key: 'sort_order', label: t('Sort order'), type: 'number', half: true },
+        { key: 'published', label: t('Published'), type: 'bool', half: true }
       ]
     },
     cities: {
-      label: 'Cities', singular: 'City', table: 'cities', icon: 'city',
+      label: t('Cities'), singular: t('City'), table: 'cities', icon: 'city',
       columns: [
         { key: 'image', label: '', type: 'thumb' },
-        { key: 'name', label: 'Name', type: 'name', sub: 'country' },
-        { key: 'size', label: 'Tile' },
-        { key: 'published', label: 'Status', type: 'pill' }
+        { key: 'name', label: t('Name'), type: 'name', sub: 'country' },
+        { key: 'size', label: t('Tile') },
+        { key: 'published', label: t('Status'), type: 'pill' }
       ],
       fields: [
-        { key: 'name', label: 'Name', type: 'text', required: true, half: true },
-        { key: 'country', label: 'Country', type: 'text', half: true },
-        { key: 'image', label: 'Image', type: 'image' },
-        { key: 'size', label: 'Tile size', type: 'select', options: ['normal', 'wide', 'big'], half: true, hint: 'controls the tile size in the homepage “By Cities” grid' },
-        { key: 'sort_order', label: 'Sort order', type: 'number', half: true },
-        { key: 'published', label: 'Published', type: 'bool', half: true }
+        { key: 'name', label: t('Name'), type: 'text', required: true, half: true },
+        { key: 'country', label: t('Country'), type: 'text', half: true },
+        { key: 'image', label: t('Image'), type: 'image' },
+        { key: 'size', label: t('Tile size'), type: 'select', options: ['normal', 'wide', 'big'], half: true, hint: t('controls the tile size in the homepage “By Cities” grid') },
+        { key: 'sort_order', label: t('Sort order'), type: 'number', half: true },
+        { key: 'published', label: t('Published'), type: 'bool', half: true }
       ]
     },
     testimonials: {
-      label: 'Testimonials', singular: 'Testimonial', table: 'testimonials', icon: 'quote',
+      label: t('Testimonials'), singular: t('Testimonial'), table: 'testimonials', icon: 'quote',
       columns: [
         { key: 'avatar', label: '', type: 'thumb' },
-        { key: 'name', label: 'Name', type: 'name', sub: 'location' },
-        { key: 'quote', label: 'Quote', type: 'truncate' },
-        { key: 'rating', label: 'Rating' },
-        { key: 'published', label: 'Status', type: 'pill' }
+        { key: 'name', label: t('Name'), type: 'name', sub: 'location' },
+        { key: 'quote', label: t('Quote'), type: 'truncate' },
+        { key: 'rating', label: t('Rating') },
+        { key: 'published', label: t('Status'), type: 'pill' }
       ],
       fields: [
-        { key: 'quote', label: 'Quote', type: 'textarea', required: true },
-        { key: 'name', label: 'Name', type: 'text', required: true, half: true },
-        { key: 'location', label: 'Location', type: 'text', half: true },
-        { key: 'avatar', label: 'Avatar', type: 'image' },
-        { key: 'rating', label: 'Rating (1–5)', type: 'number', half: true },
-        { key: 'sort_order', label: 'Sort order', type: 'number', half: true },
-        { key: 'published', label: 'Published', type: 'bool' }
+        { key: 'quote', label: t('Quote'), type: 'textarea', required: true },
+        { key: 'name', label: t('Name'), type: 'text', required: true, half: true },
+        { key: 'location', label: t('Location'), type: 'text', half: true },
+        { key: 'avatar', label: t('Avatar'), type: 'image' },
+        { key: 'rating', label: t('Rating (1–5)'), type: 'number', half: true },
+        { key: 'sort_order', label: t('Sort order'), type: 'number', half: true },
+        { key: 'published', label: t('Published'), type: 'bool' }
       ]
     },
     developers: {
-      label: 'Developers', singular: 'Developer', table: 'developers', icon: 'users',
+      label: t('Developers'), singular: t('Developer'), table: 'developers', icon: 'users',
       columns: [
         { key: 'logo', label: '', type: 'thumb' },
-        { key: 'name', label: 'Name', type: 'name' },
-        { key: 'published', label: 'Status', type: 'pill' }
+        { key: 'name', label: t('Name'), type: 'name' },
+        { key: 'published', label: t('Status'), type: 'pill' }
       ],
       fields: [
-        { key: 'name', label: 'Name', type: 'text', required: true },
-        { key: 'logo', label: 'Logo (optional)', type: 'image', hint: 'leave empty to render the name as a wordmark' },
-        { key: 'sort_order', label: 'Sort order', type: 'number', half: true },
-        { key: 'published', label: 'Published', type: 'bool', half: true }
+        { key: 'name', label: t('Name'), type: 'text', required: true },
+        { key: 'logo', label: t('Logo (optional)'), type: 'image', hint: t('leave empty to render the name as a wordmark') },
+        { key: 'sort_order', label: t('Sort order'), type: 'number', half: true },
+        { key: 'published', label: t('Published'), type: 'bool', half: true }
       ]
     }
   };
@@ -184,17 +184,17 @@
   // shown only when keys are missing — the public site still works on fallback
   function renderUnconfigured() {
     wireChrome();
-    $('#viewTitle').textContent = 'Setup required';
-    $('#viewSub').textContent = 'Connect Supabase to start managing content';
+    $('#viewTitle').textContent = t('Setup required');
+    $('#viewSub').textContent = t('Connect Supabase to start managing content');
     $('#content').innerHTML = `
       <div class="notice">
-        <h3>Supabase isn’t configured</h3>
-        <p>Your public site is running on bundled demo data. To enable the admin and live editing:</p>
+        <h3>${t('Supabase isn’t configured')}</h3>
+        <p>${t('Your public site is running on bundled demo data. To enable the admin and live editing:')}</p>
         <p style="margin-top:10px">
-          1. Create a project at <code>supabase.com</code><br>
-          2. Run <code>supabase/schema.sql</code> in the SQL editor<br>
-          3. Paste your Project URL + anon key into <code>config.js</code><br>
-          4. Add yourself to the <code>admins</code> table, then reload
+          1. ${t('Create a project at')} <code>supabase.com</code><br>
+          2. ${t('Run')} <code>supabase/schema.sql</code> ${t('in the SQL editor')}<br>
+          3. ${t('Paste your Project URL + anon key into')} <code>config.js</code><br>
+          4. ${t('Add yourself to the')} <code>admins</code> ${t('table, then reload')}
         </p>
       </div>`;
     $$('.sb-link').forEach(b => { if (b.dataset.view !== 'settings') b.style.display = 'none'; });
@@ -221,7 +221,7 @@
 
     // clicking the account row opens Account & settings
     const userRow = $('.sb-user');
-    if (userRow) { userRow.style.cursor = 'pointer'; userRow.title = 'Account & settings'; userRow.addEventListener('click', () => go('settings')); }
+    if (userRow) { userRow.style.cursor = 'pointer'; userRow.title = t('Account & settings'); userRow.addEventListener('click', () => go('settings')); }
   }
 
   function go(view) {
@@ -238,7 +238,7 @@
     else if (view === 'settings') { renderSettings(); pa.style.display = 'none'; }
     else if (RESOURCES[view]) {
       const r = RESOURCES[view];
-      $('#primaryAction').querySelector('span').textContent = 'Add ' + r.singular.toLowerCase();
+      $('#primaryAction').querySelector('span').textContent = t('Add') + ' ' + r.singular.toLowerCase();
       pa.style.display = 'inline-flex';
       renderList(view);
     }
@@ -273,8 +273,8 @@
   // OVERVIEW
   // ============================================================
   function renderOverview() {
-    $('#viewTitle').textContent = 'Dashboard';
-    $('#viewSub').textContent = 'An overview of your content';
+    $('#viewTitle').textContent = t('Dashboard');
+    $('#viewSub').textContent = t('An overview of your content');
     const cards = Object.keys(RESOURCES).map(key => {
       const r = RESOURCES[key];
       const n = state.cache[key + '_count'] || 0;
@@ -284,11 +284,11 @@
       </button>`;
     }).join('');
     $('#content').innerHTML = `<div class="stat-grid">${cards}</div>
-      <div class="panel"><div class="panel-head"><b class="bricolage" style="font-size:1.05rem">Quick actions</b></div>
+      <div class="panel"><div class="panel-head"><b class="bricolage" style="font-size:1.05rem">${t('Quick actions')}</b></div>
         <div style="padding:20px;display:flex;gap:.7rem;flex-wrap:wrap">
-          <button class="btn btn-sky btn-sm" data-jump="projects">Manage projects</button>
-          <button class="btn btn-ghost btn-sm" data-jump="content">Edit site content</button>
-          <button class="btn btn-ghost btn-sm" data-jump="settings">Setup &amp; seed data</button>
+          <button class="btn btn-sky btn-sm" data-jump="projects">${t('Manage projects')}</button>
+          <button class="btn btn-ghost btn-sm" data-jump="content">${t('Edit site content')}</button>
+          <button class="btn btn-ghost btn-sm" data-jump="settings">${t('Setup & seed data')}</button>
         </div></div>`;
     $$('[data-jump]').forEach(b => b.addEventListener('click', () => go(b.dataset.jump)));
   }
@@ -299,11 +299,11 @@
   async function renderList(view) {
     const r = RESOURCES[view];
     $('#viewTitle').textContent = r.label;
-    $('#viewSub').textContent = `Manage your ${r.label.toLowerCase()}`;
+    $('#viewSub').textContent = `${t('Manage your')} ${r.label.toLowerCase()}`;
     $('#content').innerHTML = `<div class="panel">
       <div class="panel-head">
         <div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4-4"/></svg>
-          <input type="search" id="tblSearch" placeholder="Search ${r.label.toLowerCase()}…" /></div>
+          <input type="search" id="tblSearch" placeholder="${esc(t('Search'))} ${esc(r.label.toLowerCase())}…" /></div>
       </div>
       <div id="tblWrap"><div class="empty-row"><span class="spinner" style="border-color:rgba(0,0,0,.15);border-top-color:var(--sky)"></span></div></div>
     </div>`;
@@ -311,7 +311,7 @@
     $('#tblSearch').addEventListener('input', e => { state.query = e.target.value.toLowerCase(); paintRows(view); });
 
     const { data, error } = await sb.from(r.table).select('*').order('sort_order', { ascending: true });
-    if (error) { $('#tblWrap').innerHTML = `<div class="empty-row">Couldn’t load: ${esc(error.message)}</div>`; return; }
+    if (error) { $('#tblWrap').innerHTML = `<div class="empty-row">${t('Couldn’t load:')} ${esc(error.message)}</div>`; return; }
     state.cache[view] = data || [];
     paintRows(view);
   }
@@ -323,15 +323,15 @@
       rows = rows.filter(row => JSON.stringify(row).toLowerCase().includes(state.query));
     }
     if (!rows.length) {
-      $('#tblWrap').innerHTML = `<div class="empty-row">No ${r.label.toLowerCase()} yet. Click “Add ${r.singular.toLowerCase()}” to create one.</div>`;
+      $('#tblWrap').innerHTML = `<div class="empty-row">${t('No')} ${r.label.toLowerCase()} ${t('yet. Click')} “${t('Add')} ${r.singular.toLowerCase()}” ${t('to create one.')}</div>`;
       return;
     }
     const head = r.columns.map(c => `<th>${esc(c.label)}</th>`).join('') + '<th></th>';
     const body = rows.map(row => {
       const cells = r.columns.map(c => `<td>${cell(c, row)}</td>`).join('');
       return `<tr>${cells}<td><div class="row-actions">
-        <button class="icon-btn" data-edit="${row.id}" title="Edit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>
-        <button class="icon-btn del" data-del="${row.id}" title="Delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>
+        <button class="icon-btn" data-edit="${row.id}" title="${esc(t('Edit'))}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>
+        <button class="icon-btn del" data-del="${row.id}" title="${esc(t('Delete'))}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>
       </div></td></tr>`;
     }).join('');
     $('#tblWrap').innerHTML = `<table class="tbl"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;
@@ -353,13 +353,13 @@
       return `<div class="name">${esc(v)}</div>${sub}`;
     }
     if (c.type === 'pill') {
-      return v ? `<span class="pill on"><i></i>Published</span>` : `<span class="pill off"><i></i>Hidden</span>`;
+      return v ? `<span class="pill on"><i></i>${t('Published')}</span>` : `<span class="pill off"><i></i>${t('Hidden')}</span>`;
     }
     if (c.type === 'truncate') {
       const s = String(v || '');
       return esc(s.length > 60 ? s.slice(0, 60) + '…' : s);
     }
-    if (Array.isArray(v)) return v.slice(0, 3).map(t => `<span class="tag-mini">${esc(t)}</span>`).join('') + (v.length > 3 ? ` +${v.length - 3}` : '');
+    if (Array.isArray(v)) return v.slice(0, 3).map(tag => `<span class="tag-mini">${esc(tag)}</span>`).join('') + (v.length > 3 ? ` +${v.length - 3}` : '');
     return esc(v);
   }
 
@@ -375,7 +375,7 @@
     const r = RESOURCES[view];
     editing = { view, id: row ? row.id : null };
     uploads = {};
-    $('#drawerTitle').textContent = (row ? 'Edit ' : 'New ') + r.singular.toLowerCase();
+    $('#drawerTitle').textContent = (row ? t('Edit') : t('New')) + ' ' + r.singular.toLowerCase();
     const body = $('#drawerBody');
     body.innerHTML = '';
 
@@ -430,7 +430,7 @@
       const known = f.options.some(o => optVal(o) === val);
       const legacy = (val != null && val !== '' && !known) ? `<option value="${esc(val)}" selected>${esc(val)}</option>` : '';
       const opts = legacy + f.options.map(o =>
-        `<option value="${esc(optVal(o))}" ${optVal(o) === val ? 'selected' : ''}>${esc(optLabel(o))}</option>`
+        `<option value="${esc(optVal(o))}" ${optVal(o) === val ? 'selected' : ''}>${esc(t(optLabel(o)))}</option>`
       ).join('');
       return `<div class="field"><label for="${id}">${esc(f.label)}</label><select id="${id}">${opts}</select>${hint}</div>`;
     }
@@ -443,17 +443,17 @@
     }
     if (f.type === 'tags') {
       const text = Array.isArray(val) ? val.join(', ') : (val || '');
-      return `<div class="field"><label for="${id}">${esc(f.label)}</label><input type="text" id="${id}" value="${esc(text)}" placeholder="comma, separated, values">${hint}</div>`;
+      return `<div class="field"><label for="${id}">${esc(f.label)}</label><input type="text" id="${id}" value="${esc(text)}" placeholder="${esc(t('comma, separated, values'))}">${hint}</div>`;
     }
     if (f.type === 'image') {
       return `<div class="field"><label>${esc(f.label)}</label>
         <div class="img-field">
           <img class="img-prev" id="${id}_prev" src="${esc(imgUrl(val, 200))}" alt="">
           <div class="img-controls">
-            <input type="text" id="${id}" value="${esc(val || '')}" placeholder="Unsplash id or image URL">
+            <input type="text" id="${id}" value="${esc(val || '')}" placeholder="${esc(t('Unsplash id or image URL'))}">
             <div class="upload-row">
-              <button type="button" class="btn btn-ghost btn-sm" id="${id}_btn">Upload…</button>
-              <button type="button" class="btn btn-ghost btn-sm" id="${id}_pick">Choose existing…</button>
+              <button type="button" class="btn btn-ghost btn-sm" id="${id}_btn">${t('Upload…')}</button>
+              <button type="button" class="btn btn-ghost btn-sm" id="${id}_pick">${t('Choose existing…')}</button>
               <input type="file" id="${id}_file" accept="image/*" style="display:none">
             </div>
           </div>
@@ -468,12 +468,12 @@
     if (f.type === 'pdf') {
       return `<div class="field"><label>${esc(f.label)}</label>
         <div class="img-field">
-          <div class="pdf-prev" id="${id}_prev">${val ? `<a href="${esc(val)}" target="_blank" rel="noopener">View current PDF</a>` : 'No file uploaded'}</div>
+          <div class="pdf-prev" id="${id}_prev">${val ? `<a href="${esc(val)}" target="_blank" rel="noopener">${t('View current PDF')}</a>` : t('No file uploaded')}</div>
           <div class="img-controls">
-            <input type="text" id="${id}" value="${esc(val || '')}" placeholder="PDF URL">
+            <input type="text" id="${id}" value="${esc(val || '')}" placeholder="${esc(t('PDF URL'))}">
             <div class="upload-row">
-              <button type="button" class="btn btn-ghost btn-sm" id="${id}_btn">Upload…</button>
-              <button type="button" class="btn btn-ghost btn-sm" id="${id}_pick">Choose existing…</button>
+              <button type="button" class="btn btn-ghost btn-sm" id="${id}_btn">${t('Upload…')}</button>
+              <button type="button" class="btn btn-ghost btn-sm" id="${id}_pick">${t('Choose existing…')}</button>
               <input type="file" id="${id}_file" accept="application/pdf" style="display:none">
             </div>
           </div>
@@ -482,14 +482,14 @@
     if (f.type === 'consultants') {
       return `<div class="field"><label>${esc(f.label)}</label>
         <div class="consultants-edit" id="${id}_wrap"></div>
-        <button type="button" class="btn btn-ghost btn-sm" id="${id}_add" style="margin-top:8px">+ Add consultant</button>
+        <button type="button" class="btn btn-ghost btn-sm" id="${id}_add" style="margin-top:8px">+ ${t('Add consultant')}</button>
         <input type="file" id="${id}_file" accept="image/*" style="display:none">
         ${hint}</div>`;
     }
     // text / number
-    const t = f.type === 'number' ? 'number' : 'text';
+    const inputType = f.type === 'number' ? 'number' : 'text';
     const step = f.type === 'number' ? ' step="any"' : '';
-    return `<div class="field"><label for="${id}">${esc(f.label)}</label><input type="${t}"${step} id="${id}" value="${esc(val == null ? '' : val)}"${f.required ? ' required' : ''}>${hint}</div>`;
+    return `<div class="field"><label for="${id}">${esc(f.label)}</label><input type="${inputType}"${step} id="${id}" value="${esc(val == null ? '' : val)}"${f.required ? ' required' : ''}>${hint}</div>`;
   }
 
   // ---------- image field wiring ----------
@@ -498,15 +498,15 @@
     if (!input) return;
     input.addEventListener('input', () => { prev.src = imgUrl(input.value, 200); });
     btn.addEventListener('click', () => file.click());
-    if (pick) pick.addEventListener('click', () => openMediaPicker('image', (url) => { input.value = url; prev.src = url; toast('Image selected — remember to Save'); }));
+    if (pick) pick.addEventListener('click', () => openMediaPicker('image', (url) => { input.value = url; prev.src = url; toast(t('Image selected — remember to Save')); }));
     file.addEventListener('change', async () => {
       if (!file.files[0]) return;
       pendingUploads++;
       btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>';
       const url = await uploadFile(file.files[0]);
       pendingUploads--;
-      btn.disabled = false; btn.textContent = 'Upload…';
-      if (url) { input.value = url; prev.src = url; toast('Image uploaded — remember to Save'); }
+      btn.disabled = false; btn.textContent = t('Upload…');
+      if (url) { input.value = url; prev.src = url; toast(t('Image uploaded — remember to Save')); }
     });
   }
 
@@ -520,10 +520,10 @@
       wrap.innerHTML = uploads[key].map((ref, i) =>
         `<div class="g-item"><img src="${esc(imgUrl(ref, 200))}" alt=""><button type="button" data-rm="${i}">×</button></div>`
       ).join('')
-        + `<button type="button" class="add-img" id="${id}_add" title="Upload new">+</button>`
-        + `<button type="button" class="add-img add-img-pick" id="${id}_pick" title="Choose an existing file">
+        + `<button type="button" class="add-img" id="${id}_add" title="${esc(t('Upload new'))}">+</button>`
+        + `<button type="button" class="add-img add-img-pick" id="${id}_pick" title="${esc(t('Choose an existing file'))}">
              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
-             Choose
+             ${t('Choose')}
            </button>`;
       $('#' + id + '_add').addEventListener('click', () => file.click());
       $('#' + id + '_pick').addEventListener('click', () => openMediaPicker('image', (url) => { uploads[key].push(url); paint(); }));
@@ -533,10 +533,10 @@
       const files = Array.from(file.files || []);
       if (!files.length) return;
       pendingUploads++;
-      toast('Uploading ' + files.length + ' image(s)…');
+      toast(t('Uploading') + ' ' + files.length + ' ' + t('image(s)…'));
       for (const f of files) { const url = await uploadFile(f); if (url) uploads[key].push(url); }
       pendingUploads--;
-      file.value = ''; paint(); toast('Gallery updated — remember to Save');
+      file.value = ''; paint(); toast(t('Gallery updated — remember to Save'));
     });
     paint();
   }
@@ -545,18 +545,18 @@
   function wirePdf(id, initial) {
     const input = $('#' + id), prev = $('#' + id + '_prev'), btn = $('#' + id + '_btn'), pick = $('#' + id + '_pick'), file = $('#' + id + '_file');
     if (!input) return;
-    const updatePrev = (url) => { prev.innerHTML = url ? `<a href="${esc(url)}" target="_blank" rel="noopener">View current PDF</a>` : 'No file uploaded'; };
+    const updatePrev = (url) => { prev.innerHTML = url ? `<a href="${esc(url)}" target="_blank" rel="noopener">${t('View current PDF')}</a>` : t('No file uploaded'); };
     input.addEventListener('input', () => updatePrev(input.value));
     btn.addEventListener('click', () => file.click());
-    if (pick) pick.addEventListener('click', () => openMediaPicker('pdf', (url) => { input.value = url; updatePrev(url); toast('PDF selected — remember to Save'); }));
+    if (pick) pick.addEventListener('click', () => openMediaPicker('pdf', (url) => { input.value = url; updatePrev(url); toast(t('PDF selected — remember to Save')); }));
     file.addEventListener('change', async () => {
       if (!file.files[0]) return;
       pendingUploads++;
       btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>';
       const url = await uploadFile(file.files[0], 'pdf');
       pendingUploads--;
-      btn.disabled = false; btn.textContent = 'Upload…';
-      if (url) { input.value = url; updatePrev(url); toast('PDF uploaded — remember to Save'); }
+      btn.disabled = false; btn.textContent = t('Upload…');
+      if (url) { input.value = url; updatePrev(url); toast(t('PDF uploaded — remember to Save')); }
     });
   }
 
@@ -570,10 +570,10 @@
     const paint = () => {
       wrap.innerHTML = uploads[key].map((c, i) => `
         <div class="consultant-row" data-i="${i}">
-          <img class="consultant-logo-prev" src="${esc(imgUrl(c.logo, 100))}" alt="" title="Click to choose an existing logo" data-cpick="${i}">
-          <input type="text" placeholder="Consultant name" value="${esc(c.name)}" data-cname="${i}">
-          <button type="button" class="btn btn-ghost btn-sm" data-clogo="${i}">Upload…</button>
-          <button type="button" class="icon-btn del" data-crm="${i}" title="Remove"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>
+          <img class="consultant-logo-prev" src="${esc(imgUrl(c.logo, 100))}" alt="" title="${esc(t('Click to choose an existing logo'))}" data-cpick="${i}">
+          <input type="text" placeholder="${esc(t('Consultant name'))}" value="${esc(c.name)}" data-cname="${i}">
+          <button type="button" class="btn btn-ghost btn-sm" data-clogo="${i}">${t('Upload…')}</button>
+          <button type="button" class="icon-btn del" data-crm="${i}" title="${esc(t('Remove'))}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>
         </div>`).join('');
       $$('[data-cname]', wrap).forEach(inp => inp.addEventListener('input', () => { uploads[key][+inp.dataset.cname].name = inp.value; }));
       $$('[data-clogo]', wrap).forEach(b => b.addEventListener('click', () => { uploadTarget = +b.dataset.clogo; file.click(); }));
@@ -590,7 +590,7 @@
       const url = await uploadFile(file.files[0], 'image');
       pendingUploads--;
       file.value = '';
-      if (url) { uploads[key][uploadTarget].logo = url; paint(); toast('Logo uploaded — remember to Save'); }
+      if (url) { uploads[key][uploadTarget].logo = url; paint(); toast(t('Logo uploaded — remember to Save')); }
     });
     paint();
   }
@@ -608,33 +608,33 @@
     kind = kind || 'image';
     if (!f) return null;
     // guard: right file type, and keep it a sane size
-    if (kind === 'image' && f.type && !/^image\//.test(f.type)) { toast('Please choose an image file', 'err'); return null; }
-    if (kind === 'pdf' && f.type && f.type !== 'application/pdf') { toast('Please choose a PDF file', 'err'); return null; }
+    if (kind === 'image' && f.type && !/^image\//.test(f.type)) { toast(t('Please choose an image file'), 'err'); return null; }
+    if (kind === 'pdf' && f.type && f.type !== 'application/pdf') { toast(t('Please choose a PDF file'), 'err'); return null; }
     const maxMB = kind === 'pdf' ? 50 : 12;
-    if (f.size > maxMB * 1024 * 1024) { toast(`File is larger than ${maxMB} MB — please pick a smaller one`, 'err'); return null; }
+    if (f.size > maxMB * 1024 * 1024) { toast(`${t('File is larger than')} ${maxMB} MB — ${t('please pick a smaller one')}`, 'err'); return null; }
     try {
       const ext = (f.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
       const path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
       const { error } = await withTimeout(
         sb.storage.from('media').upload(path, f, { cacheControl: '3600', upsert: false, contentType: f.type || undefined }),
         120000,
-        'Upload timed out — the file may be too large for your connection, or the storage bucket may have a lower size limit than this form allows.'
+        t('Upload timed out — the file may be too large for your connection, or the storage bucket may have a lower size limit than this form allows.')
       );
       if (error) {
         console.error('Upload failed:', error);
         const m = String(error.message || error.error || '').toLowerCase();
-        let msg = error.message || 'Upload failed';
-        if (m.includes('bucket not found')) msg = 'Storage bucket "media" is missing. In Supabase → Storage, create a public bucket named "media" (or run supabase/fix-storage-and-admin.sql).';
-        else if (m.includes('row-level security') || m.includes('not authorized') || m.includes('violates') || m.includes('permission')) msg = 'Upload blocked — your account is not an admin yet. Add your user to the admins table (see supabase/fix-storage-and-admin.sql).';
+        let msg = error.message || t('Upload failed');
+        if (m.includes('bucket not found')) msg = t('Storage bucket "media" is missing. In Supabase → Storage, create a public bucket named "media" (or run supabase/fix-storage-and-admin.sql).');
+        else if (m.includes('row-level security') || m.includes('not authorized') || m.includes('violates') || m.includes('permission')) msg = t('Upload blocked — your account is not an admin yet. Add your user to the admins table (see supabase/fix-storage-and-admin.sql).');
         toast(msg, 'err');
         return null;
       }
       const { data } = sb.storage.from('media').getPublicUrl(path);
-      if (!data || !data.publicUrl) { toast('Uploaded, but could not resolve the public URL', 'err'); return null; }
+      if (!data || !data.publicUrl) { toast(t('Uploaded, but could not resolve the public URL'), 'err'); return null; }
       return data.publicUrl;
     } catch (e) {
       console.error('Upload exception:', e);
-      toast('Upload failed: ' + (e.message || e), 'err');
+      toast(t('Upload failed:') + ' ' + (e.message || e), 'err');
       return null;
     }
   }
@@ -647,8 +647,8 @@
     el.className = 'mp-overlay';
     el.innerHTML = `
       <div class="mp-modal">
-        <div class="mp-head"><b class="bricolage">Choose an existing file</b><button type="button" class="icon-btn" id="mpClose">×</button></div>
-        <div class="mp-search"><input type="search" id="mpSearch" placeholder="Search filenames…"></div>
+        <div class="mp-head"><b class="bricolage">${t('Choose an existing file')}</b><button type="button" class="icon-btn" id="mpClose">×</button></div>
+        <div class="mp-search"><input type="search" id="mpSearch" placeholder="${esc(t('Search filenames…'))}"></div>
         <div class="mp-grid" id="mpGrid"></div>
       </div>`;
     document.body.appendChild(el);
@@ -667,7 +667,7 @@
     els.grid.innerHTML = `<div class="empty-row"><span class="spinner" style="border-color:rgba(0,0,0,.15);border-top-color:var(--sky)"></span></div>`;
 
     const { data, error } = await sb.storage.from('media').list('', { limit: 300, sortBy: { column: 'created_at', order: 'desc' } });
-    if (error) { els.grid.innerHTML = `<div class="empty-row">Couldn’t load files: ${esc(error.message)}</div>`; return; }
+    if (error) { els.grid.innerHTML = `<div class="empty-row">${t('Couldn’t load files:')} ${esc(error.message)}</div>`; return; }
 
     const imgExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'avif'];
     const files = (data || []).filter(f => f.name && !f.name.startsWith('.')).filter(f => {
@@ -676,7 +676,7 @@
     });
 
     const paintList = (list) => {
-      if (!list.length) { els.grid.innerHTML = `<div class="empty-row">No ${kind === 'pdf' ? 'PDFs' : 'images'} uploaded yet — upload one first, then it'll show up here to reuse.</div>`; return; }
+      if (!list.length) { els.grid.innerHTML = `<div class="empty-row">${(kind === 'pdf' ? t('No PDFs uploaded yet — upload one first, then it\'ll show up here to reuse.') : t('No images uploaded yet — upload one first, then it\'ll show up here to reuse.'))}</div>`; return; }
       els.grid.innerHTML = list.map(f => {
         const url = sb.storage.from('media').getPublicUrl(f.name).data.publicUrl;
         if (kind === 'pdf') {
@@ -718,13 +718,13 @@
   }
 
   async function saveForm(view) {
-    if (pendingUploads > 0) { toast('An image is still uploading — please wait a moment', 'err'); return; }
+    if (pendingUploads > 0) { toast(t('An image is still uploading — please wait a moment'), 'err'); return; }
     const r = RESOURCES[view];
     const payload = collect(view);
     // required check
     for (const f of r.fields) {
       if (f.required && (payload[f.key] == null || payload[f.key] === '')) {
-        toast(`“${f.label}” is required`, 'err'); return;
+        toast(`“${f.label}” ${t('is required')}`, 'err'); return;
       }
     }
     // keep the legacy display "city" text column in sync with the picked city,
@@ -740,11 +740,11 @@
     if (editing.id) res = await sb.from(r.table).update(payload).eq('id', editing.id);
     else res = await sb.from(r.table).insert(payload);
 
-    save.disabled = false; save.textContent = 'Save';
+    save.disabled = false; save.textContent = t('Save');
     if (res.error) { toast(res.error.message, 'err'); return; }
 
     closeDrawer();
-    toast(editing.id ? 'Saved' : `${r.singular} created`);
+    toast(editing.id ? t('Saved') : `${r.singular} ${t('created')}`);
     await refreshCounts();
     renderList(view);
   }
@@ -754,7 +754,7 @@
   async function linkedChildrenWarning(view, id) {
     if (view === 'cities') {
       const { count } = await sb.from('projects').select('id', { count: 'exact', head: true }).eq('city_id', id);
-      return count > 0 ? `\n\n${count} project(s) are linked to this city — they'll be kept, just unlinked from it.` : '';
+      return count > 0 ? `\n\n${count} ${t('project(s) are linked to this city — they\'ll be kept, just unlinked from it.')}` : '';
     }
     return '';
   }
@@ -762,10 +762,10 @@
   async function removeRow(view, id) {
     const r = RESOURCES[view];
     const warning = await linkedChildrenWarning(view, id);
-    if (!confirm(`Delete this ${r.singular.toLowerCase()}? This can’t be undone.${warning}`)) return;
+    if (!confirm(`${t('Delete this')} ${r.singular.toLowerCase()}? ${t('This can’t be undone.')}${warning}`)) return;
     const { error } = await sb.from(r.table).delete().eq('id', id);
     if (error) { toast(error.message, 'err'); return; }
-    toast(`${r.singular} deleted`);
+    toast(`${r.singular} ${t('deleted')}`);
     await refreshCounts();
     renderList(view);
   }
@@ -777,38 +777,38 @@
   // SITE CONTENT EDITOR (content_blocks)
   // ============================================================
   const CONTENT_SCHEMA = {
-    company: { title: 'Company / Brand', fields: [
-      { key: 'name', label: 'Company name' },
-      { key: 'logo', label: 'Logo', type: 'image', hint: 'shown in the header & footer — leave empty to use the default mark' },
-      { key: 'tagline', label: 'Footer tagline', type: 'textarea' },
-      { key: 'email', label: 'Primary email' },
-      { key: 'emailSecondary', label: 'Secondary email' },
-      { key: 'phone', label: 'Primary phone' },
-      { key: 'phoneSecondary', label: 'Secondary phone / WhatsApp' },
-      { key: 'address', label: 'Address / HQ (one line per row)', type: 'textarea' },
-      { key: 'hours', label: 'Office hours (one line per row)', type: 'textarea' },
-      { key: 'instagram', label: 'Instagram URL' },
-      { key: 'x', label: 'X (Twitter) URL' },
-      { key: 'linkedin', label: 'LinkedIn URL' },
-      { key: 'facebook', label: 'Facebook URL' },
-      { key: 'copyright', label: 'Copyright line' } ],
-      list: 'offices', listAddLabel: 'Add office',
-      listFields: [ { key: 'city', label: 'Office name / city' }, { key: 'lines', label: 'Address (one line per row)', type: 'textarea' }, { key: 'phone', label: 'Phone' } ] },
-    hero: { title: 'Hero', fields: [
-      { key: 'eyebrow', label: 'Eyebrow' }, { key: 'titleA', label: 'Title line 1' },
-      { key: 'titleB', label: 'Title line 2' }, { key: 'sub', label: 'Subtext', type: 'textarea' },
-      { key: 'images', label: 'Hero background images (slideshow)', type: 'gallery', hint: 'shown behind the hero — cross-fades every few seconds' } ] },
-    stats: { title: 'Journey / Stats', fields: [
-      { key: 'lead', label: 'Lead paragraph', type: 'textarea' } ], list: 'items',
-      listFields: [ { key: 'value', label: 'Value', type: 'number' }, { key: 'suffix', label: 'Suffix' }, { key: 'label', label: 'Label', type: 'textarea' } ] },
-    cta: { title: 'Call to action', fields: [
-      { key: 'titleA', label: 'Title line 1' }, { key: 'titleB', label: 'Title line 2' },
-      { key: 'text', label: 'Text', type: 'textarea' }, { key: 'button', label: 'Button label' } ] }
+    company: { title: t('Company / Brand'), fields: [
+      { key: 'name', label: t('Company name') },
+      { key: 'logo', label: t('Logo'), type: 'image', hint: t('shown in the header & footer — leave empty to use the default mark') },
+      { key: 'tagline', label: t('Footer tagline'), type: 'textarea' },
+      { key: 'email', label: t('Primary email') },
+      { key: 'emailSecondary', label: t('Secondary email') },
+      { key: 'phone', label: t('Primary phone') },
+      { key: 'phoneSecondary', label: t('Secondary phone / WhatsApp') },
+      { key: 'address', label: t('Address / HQ (one line per row)'), type: 'textarea' },
+      { key: 'hours', label: t('Office hours (one line per row)'), type: 'textarea' },
+      { key: 'instagram', label: t('Instagram URL') },
+      { key: 'x', label: t('X (Twitter) URL') },
+      { key: 'linkedin', label: t('LinkedIn URL') },
+      { key: 'facebook', label: t('Facebook URL') },
+      { key: 'copyright', label: t('Copyright line') } ],
+      list: 'offices', listAddLabel: t('Add office'),
+      listFields: [ { key: 'city', label: t('Office name / city') }, { key: 'lines', label: t('Address (one line per row)'), type: 'textarea' }, { key: 'phone', label: t('Phone') } ] },
+    hero: { title: t('Hero'), fields: [
+      { key: 'eyebrow', label: t('Eyebrow') }, { key: 'titleA', label: t('Title line 1') },
+      { key: 'titleB', label: t('Title line 2') }, { key: 'sub', label: t('Subtext'), type: 'textarea' },
+      { key: 'images', label: t('Hero background images (slideshow)'), type: 'gallery', hint: t('shown behind the hero — cross-fades every few seconds') } ] },
+    stats: { title: t('Journey / Stats'), fields: [
+      { key: 'lead', label: t('Lead paragraph'), type: 'textarea' } ], list: 'items',
+      listFields: [ { key: 'value', label: t('Value'), type: 'number' }, { key: 'suffix', label: t('Suffix') }, { key: 'label', label: t('Label'), type: 'textarea' } ] },
+    cta: { title: t('Call to action'), fields: [
+      { key: 'titleA', label: t('Title line 1') }, { key: 'titleB', label: t('Title line 2') },
+      { key: 'text', label: t('Text'), type: 'textarea' }, { key: 'button', label: t('Button label') } ] }
   };
 
   async function renderContent() {
-    $('#viewTitle').textContent = 'Site content';
-    $('#viewSub').textContent = 'Edit hero, stats and call-to-action copy';
+    $('#viewTitle').textContent = t('Site content');
+    $('#viewSub').textContent = t('Edit hero, stats and call-to-action copy');
     $('#content').innerHTML = `<div class="empty-row"><span class="spinner" style="border-color:rgba(0,0,0,.15);border-top-color:var(--sky)"></span></div>`;
 
     const { data } = await sb.from('content_blocks').select('key,value');
@@ -829,13 +829,13 @@
       });
       if (sch.list) {
         const items = Array.isArray(val[sch.list]) ? val[sch.list] : [];
-        html += `<div class="field-hint" style="margin:10px 0 6px">${esc(sch.list)}</div>`;
+        html += `<div class="field-hint" style="margin:10px 0 6px">${esc(t(sch.list))}</div>`;
         html += `<div class="content-list" id="clist_${key}">`;
         items.forEach(it => { html += listItemHTML(key, sch.list, sch.listFields, it); });
         html += `</div>`;
-        html += `<button type="button" class="btn btn-ghost btn-sm list-add" data-key="${key}" style="margin:2px 0 8px">+ ${esc(sch.listAddLabel || 'Add row')}</button>`;
+        html += `<button type="button" class="btn btn-ghost btn-sm list-add" data-key="${key}" style="margin:2px 0 8px">+ ${esc(sch.listAddLabel || t('Add row'))}</button>`;
       }
-      html += `<button class="btn btn-sky btn-sm" data-save-block="${key}" style="margin-top:8px">Save ${esc(sch.title.toLowerCase())}</button>`;
+      html += `<button class="btn btn-sky btn-sm" data-save-block="${key}" style="margin-top:8px">${t('Save')} ${esc(sch.title.toLowerCase())}</button>`;
       html += `</div></div>`;
     }
     $('#content').innerHTML = html;
@@ -870,7 +870,7 @@
     item = item || {};
     const inner = listFields.map(f => contentField(key + '__' + list + '__' + idx, f, item[f.key] == null ? '' : item[f.key])).join('');
     return `<div class="content-list-item" data-idx="${idx}" style="position:relative;border:1px solid var(--line);border-radius:10px;padding:12px 12px 12px;margin-bottom:10px">
-      <button type="button" class="icon-btn del list-rm" title="Remove" style="position:absolute;top:8px;right:8px">
+      <button type="button" class="icon-btn del list-rm" title="${esc(t('Remove'))}" style="position:absolute;top:8px;right:8px">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
       </button>
       <div class="grid-2">${inner}</div>
@@ -894,9 +894,9 @@
         <div class="img-field">
           <img class="img-prev" id="${id}_prev" src="${esc(imgUrl(v, 200))}" alt="">
           <div class="img-controls">
-            <input type="text" id="${id}" value="${esc(v || '')}" placeholder="Unsplash id or image URL">
+            <input type="text" id="${id}" value="${esc(v || '')}" placeholder="${esc(t('Unsplash id or image URL'))}">
             <div class="upload-row">
-              <button type="button" class="btn btn-ghost btn-sm" id="${id}_btn">Upload…</button>
+              <button type="button" class="btn btn-ghost btn-sm" id="${id}_btn">${t('Upload…')}</button>
               <input type="file" id="${id}_file" accept="image/*" style="display:none">
             </div>
           </div>
@@ -908,7 +908,7 @@
   }
 
   async function saveBlock(key) {
-    if (pendingUploads > 0) { toast('An image is still uploading — please wait a moment', 'err'); return; }
+    if (pendingUploads > 0) { toast(t('An image is still uploading — please wait a moment'), 'err'); return; }
     const sch = CONTENT_SCHEMA[key];
     const value = {};
     sch.fields.forEach(f => {
@@ -937,52 +937,52 @@
     const { error } = await sb.from('content_blocks').upsert({ key, value }, { onConflict: 'key' });
     if (error) { toast(error.message, 'err'); return; }
     state.cache.content[key] = value;
-    toast('Content saved');
+    toast(t('Content saved'));
   }
 
   // ============================================================
   // SETTINGS / SEEDER
   // ============================================================
   function renderSettings() {
-    $('#viewTitle').textContent = 'Setup';
-    $('#viewSub').textContent = localMode ? 'Local demo mode — everything saves in this browser' : 'Connection status and starter data';
+    $('#viewTitle').textContent = t('Setup');
+    $('#viewSub').textContent = localMode ? t('Local demo mode — everything saves in this browser') : t('Connection status and starter data');
 
     if (localMode) {
       const cred = window.RealteekLocal.getCred();
       $('#content').innerHTML = `
-        <div class="panel" style="margin-bottom:20px"><div class="panel-head"><b class="bricolage" style="font-size:1.05rem">Mode</b></div>
+        <div class="panel" style="margin-bottom:20px"><div class="panel-head"><b class="bricolage" style="font-size:1.05rem">${t('Mode')}</b></div>
           <div style="padding:20px">
-            <p style="margin-bottom:10px">Backend: <span class="pill on"><i></i>Local (this browser)</span></p>
-            <p class="field-hint" style="line-height:1.6">All content you create here is saved in this browser's storage and shown live on the public site. Uploaded images are stored inline (resized), so keep them reasonably sized. To publish to the cloud and share across devices, add your Supabase keys in <code>config.js</code> and run <code>supabase/schema.sql</code>.</p>
+            <p style="margin-bottom:10px">${t('Backend:')} <span class="pill on"><i></i>${t('Local (this browser)')}</span></p>
+            <p class="field-hint" style="line-height:1.6">${t("All content you create here is saved in this browser's storage and shown live on the public site. Uploaded images are stored inline (resized), so keep them reasonably sized. To publish to the cloud and share across devices, add your Supabase keys in")} <code>config.js</code> ${t('and run')} <code>supabase/schema.sql</code>.</p>
           </div></div>
 
-        <div class="panel" style="margin-bottom:20px"><div class="panel-head"><b class="bricolage" style="font-size:1.05rem">Admin login — email &amp; password</b></div>
+        <div class="panel" style="margin-bottom:20px"><div class="panel-head"><b class="bricolage" style="font-size:1.05rem">${t('Admin login — email & password')}</b></div>
           <div style="padding:20px">
             <div class="grid-2">
-              <div class="field"><label for="credEmail">Email</label><input type="email" id="credEmail" value="${esc(cred.email)}" autocomplete="off"></div>
-              <div class="field"><label for="credPass">Password</label><input type="text" id="credPass" value="${esc(cred.password)}" autocomplete="off"></div>
+              <div class="field"><label for="credEmail">${t('Email')}</label><input type="email" id="credEmail" value="${esc(cred.email)}" autocomplete="off"></div>
+              <div class="field"><label for="credPass">${t('Password')}</label><input type="text" id="credPass" value="${esc(cred.password)}" autocomplete="off"></div>
             </div>
-            <button class="btn btn-sky btn-sm" id="credSave">Save changes</button>
-            <div class="field-hint" style="margin-top:10px">Takes effect immediately — you'll use these the next time you sign in.</div>
+            <button class="btn btn-sky btn-sm" id="credSave">${t('Save changes')}</button>
+            <div class="field-hint" style="margin-top:10px">${t("Takes effect immediately — you'll use these the next time you sign in.")}</div>
           </div></div>
 
-        <div class="panel"><div class="panel-head"><b class="bricolage" style="font-size:1.05rem">Danger zone</b></div>
+        <div class="panel"><div class="panel-head"><b class="bricolage" style="font-size:1.05rem">${t('Danger zone')}</b></div>
           <div style="padding:20px">
-            <p style="color:var(--ink-soft);margin-bottom:14px;line-height:1.6">Reset all content back to the bundled demo data. This wipes every change you've made in this browser.</p>
-            <button class="btn btn-ghost btn-sm" id="resetBtn">Reset demo data</button>
+            <p style="color:var(--ink-soft);margin-bottom:14px;line-height:1.6">${t("Reset all content back to the bundled demo data. This wipes every change you've made in this browser.")}</p>
+            <button class="btn btn-ghost btn-sm" id="resetBtn">${t('Reset demo data')}</button>
           </div></div>`;
       $('#credSave').addEventListener('click', () => {
         const em = $('#credEmail').value.trim(), pw = $('#credPass').value;
-        if (!em || !pw) { toast('Email and password are required', 'err'); return; }
+        if (!em || !pw) { toast(t('Email and password are required'), 'err'); return; }
         window.RealteekLocal.setCred(em, pw);
         $('#userEmail').textContent = em;
-        $('#userName').textContent = em.split('@')[0] || 'Admin';
-        toast('Login updated');
+        $('#userName').textContent = em.split('@')[0] || t('Admin');
+        toast(t('Login updated'));
       });
       $('#resetBtn').addEventListener('click', () => {
-        if (!confirm('Reset all content to the demo data? This cannot be undone.')) return;
+        if (!confirm(t('Reset all content to the demo data? This cannot be undone.'))) return;
         window.RealteekLocal.resetData();
-        toast('Demo data restored');
+        toast(t('Demo data restored'));
         setTimeout(() => location.reload(), 600);
       });
       return;
@@ -991,32 +991,32 @@
     const ok = configured;
     const email = (state.user && state.user.email) || '';
     $('#content').innerHTML = `
-      <div class="panel" style="margin-bottom:20px"><div class="panel-head"><b class="bricolage" style="font-size:1.05rem">Connection</b></div>
+      <div class="panel" style="margin-bottom:20px"><div class="panel-head"><b class="bricolage" style="font-size:1.05rem">${t('Connection')}</b></div>
         <div style="padding:20px">
-          <p style="margin-bottom:10px">Supabase: ${ok ? '<span class="pill on"><i></i>Connected</span>' : '<span class="pill off"><i></i>Not configured</span>'}</p>
-          <p class="field-hint">Project URL: <code>${esc((cfg.url || '').replace(/^https?:\/\//, '') || '—')}</code></p>
+          <p style="margin-bottom:10px">Supabase: ${ok ? `<span class="pill on"><i></i>${t('Connected')}</span>` : `<span class="pill off"><i></i>${t('Not configured')}</span>`}</p>
+          <p class="field-hint">${t('Project URL:')} <code>${esc((cfg.url || '').replace(/^https?:\/\//, '') || '—')}</code></p>
         </div></div>
 
-      <div class="panel" style="margin-bottom:20px"><div class="panel-head"><b class="bricolage" style="font-size:1.05rem">Account — email &amp; password</b></div>
+      <div class="panel" style="margin-bottom:20px"><div class="panel-head"><b class="bricolage" style="font-size:1.05rem">${t('Account — email & password')}</b></div>
         <div style="padding:20px">
-          <div class="field"><label for="accEmail">Email</label><input type="email" id="accEmail" value="${esc(email)}"></div>
-          <button class="btn btn-ghost btn-sm" id="accEmailSave" style="margin-bottom:18px">Update email</button>
-          <div class="field-hint" style="margin:-10px 0 18px">Changing your email sends a confirmation link to the new address.</div>
-          <div class="field"><label for="accPass">New password</label><input type="text" id="accPass" placeholder="At least 6 characters"></div>
-          <button class="btn btn-sky btn-sm" id="accPassSave">Update password</button>
+          <div class="field"><label for="accEmail">${t('Email')}</label><input type="email" id="accEmail" value="${esc(email)}"></div>
+          <button class="btn btn-ghost btn-sm" id="accEmailSave" style="margin-bottom:18px">${t('Update email')}</button>
+          <div class="field-hint" style="margin:-10px 0 18px">${t('Changing your email sends a confirmation link to the new address.')}</div>
+          <div class="field"><label for="accPass">${t('New password')}</label><input type="text" id="accPass" placeholder="${esc(t('At least 6 characters'))}"></div>
+          <button class="btn btn-sky btn-sm" id="accPassSave">${t('Update password')}</button>
         </div></div>
 
-      <div class="panel" style="margin-bottom:20px"><div class="panel-head"><b class="bricolage" style="font-size:1.05rem">Starter data</b></div>
+      <div class="panel" style="margin-bottom:20px"><div class="panel-head"><b class="bricolage" style="font-size:1.05rem">${t('Starter data')}</b></div>
         <div style="padding:20px">
-          <p style="color:var(--ink-soft);margin-bottom:14px;line-height:1.6">Seed your database with the site’s bundled demo content — projects, listings, cities, testimonials, developers and copy. Tables that already contain rows are skipped, so this is safe to run once.</p>
-          <button class="btn btn-sky" id="seedBtn">Import starter data</button>
+          <p style="color:var(--ink-soft);margin-bottom:14px;line-height:1.6">${t('Seed your database with the site’s bundled demo content — projects, listings, cities, testimonials, developers and copy. Tables that already contain rows are skipped, so this is safe to run once.')}</p>
+          <button class="btn btn-sky" id="seedBtn">${t('Import starter data')}</button>
           <div id="seedLog" class="field-hint" style="margin-top:14px;white-space:pre-line"></div>
         </div></div>
 
-      <div class="panel"><div class="panel-head"><b class="bricolage" style="font-size:1.05rem">Currency</b></div>
+      <div class="panel"><div class="panel-head"><b class="bricolage" style="font-size:1.05rem">${t('Currency')}</b></div>
         <div style="padding:20px">
-          <p style="color:var(--ink-soft);margin-bottom:14px;line-height:1.6">Some project/listing prices were saved with a "$" before EGP became the site's only currency. This rewrites any price still starting with "$" to start with "EGP" instead, leaving the rest of the value untouched. Safe to run more than once — already-converted prices are left alone.</p>
-          <button class="btn btn-sky" id="egpBtn">Convert existing prices to EGP</button>
+          <p style="color:var(--ink-soft);margin-bottom:14px;line-height:1.6">${t('Some project/listing prices were saved with a "$" before EGP became the site\'s only currency. This rewrites any price still starting with "$" to start with "EGP" instead, leaving the rest of the value untouched. Safe to run more than once — already-converted prices are left alone.')}</p>
+          <button class="btn btn-sky" id="egpBtn">${t('Convert existing prices to EGP')}</button>
           <div id="egpLog" class="field-hint" style="margin-top:14px;white-space:pre-line"></div>
         </div></div>`;
     const btn = $('#seedBtn');
@@ -1027,27 +1027,27 @@
     const emailBtn = $('#accEmailSave');
     if (emailBtn) emailBtn.addEventListener('click', async () => {
       const v = $('#accEmail').value.trim();
-      if (!v) { toast('Email is required', 'err'); return; }
+      if (!v) { toast(t('Email is required'), 'err'); return; }
       emailBtn.disabled = true; emailBtn.innerHTML = '<span class="spinner"></span>';
       const { error } = await sb.auth.updateUser({ email: v });
-      emailBtn.disabled = false; emailBtn.textContent = 'Update email';
-      toast(error ? error.message : 'Confirmation email sent to the new address', error ? 'err' : '');
+      emailBtn.disabled = false; emailBtn.textContent = t('Update email');
+      toast(error ? error.message : t('Confirmation email sent to the new address'), error ? 'err' : '');
     });
     const passBtn = $('#accPassSave');
     if (passBtn) passBtn.addEventListener('click', async () => {
       const v = $('#accPass').value;
-      if (!v || v.length < 6) { toast('Password must be at least 6 characters', 'err'); return; }
+      if (!v || v.length < 6) { toast(t('Password must be at least 6 characters'), 'err'); return; }
       passBtn.disabled = true; passBtn.innerHTML = '<span class="spinner"></span>';
       const { error } = await sb.auth.updateUser({ password: v });
-      passBtn.disabled = false; passBtn.textContent = 'Update password';
+      passBtn.disabled = false; passBtn.textContent = t('Update password');
       if (!error) $('#accPass').value = '';
-      toast(error ? error.message : 'Password updated', error ? 'err' : '');
+      toast(error ? error.message : t('Password updated'), error ? 'err' : '');
     });
   }
 
   async function seedAll() {
     const btn = $('#seedBtn'), log = $('#seedLog');
-    btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Importing…';
+    btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> ' + t('Importing…');
     const lines = [];
     const note = (s) => { lines.push(s); log.textContent = lines.join('\n'); };
 
@@ -1078,14 +1078,14 @@
 
       await backfillCityLinks(note);
 
-      note('\nDone. Reloading counts…');
+      note('\n' + t('Done. Reloading counts…'));
       await refreshCounts();
-      toast('Starter data imported');
+      toast(t('Starter data imported'));
     } catch (e) {
-      note('Error: ' + (e.message || e));
-      toast('Import failed', 'err');
+      note(t('Error:') + ' ' + (e.message || e));
+      toast(t('Import failed'), 'err');
     }
-    btn.disabled = false; btn.textContent = 'Import starter data';
+    btn.disabled = false; btn.textContent = t('Import starter data');
   }
 
   // one-time cleanup for content saved back when prices were shown in "$" —
@@ -1093,7 +1093,7 @@
   // (the number, /mo suffix, etc.) exactly as the admin entered it
   async function convertPricesToEGP() {
     const btn = $('#egpBtn'), log = $('#egpLog');
-    btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Converting…';
+    btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> ' + t('Converting…');
     const lines = [];
     const note = (s) => { lines.push(s); log.textContent = lines.join('\n'); };
 
@@ -1103,7 +1103,7 @@
         note(`projects: ${error.message}`);
       } else {
         const toFix = (data || []).filter(row => typeof row.price === 'string' && row.price.trim().startsWith('$'));
-        if (!toFix.length) { note('projects: nothing to convert'); }
+        if (!toFix.length) { note('projects: ' + t('nothing to convert')); }
         else {
           let ok = 0, fail = 0;
           for (const row of toFix) {
@@ -1111,16 +1111,16 @@
             const { error: upErr } = await sb.from('projects').update({ price }).eq('id', row.id);
             if (upErr) fail++; else ok++;
           }
-          note(`projects: ${ok} price(s) converted${fail ? `, ${fail} failed` : ''}`);
+          note(`projects: ${ok} ${t('price(s) converted')}${fail ? `, ${fail} ${t('failed')}` : ''}`);
         }
       }
-      note('\nDone.');
-      toast('Prices converted to EGP');
+      note('\n' + t('Done.'));
+      toast(t('Prices converted to EGP'));
     } catch (e) {
-      note('Error: ' + (e.message || e));
-      toast('Conversion failed', 'err');
+      note(t('Error:') + ' ' + (e.message || e));
+      toast(t('Conversion failed'), 'err');
     }
-    btn.disabled = false; btn.textContent = 'Convert existing prices to EGP';
+    btn.disabled = false; btn.textContent = t('Convert existing prices to EGP');
   }
 
   // links any project that still has a free-text city (no city_id yet) to a
@@ -1130,8 +1130,8 @@
     const { data: cities } = await sb.from('cities').select('id,name');
     if (!cities || !cities.length) return;
     const findCity = (text) => {
-      const t = String(text || '').toLowerCase();
-      return cities.find(c => t === c.name.toLowerCase() || t.includes(c.name.toLowerCase()));
+      const txt = String(text || '').toLowerCase();
+      return cities.find(c => txt === c.name.toLowerCase() || txt.includes(c.name.toLowerCase()));
     };
 
     const { data: projects } = await sb.from('projects').select('id,city,city_id');
@@ -1141,17 +1141,17 @@
       const c = findCity(p.city);
       if (c) { await sb.from('projects').update({ city_id: c.id }).eq('id', p.id); projLinked++; }
     }
-    note(`city links: ${projLinked} project(s) ✓`);
+    note(`${t('city links:')} ${projLinked} ${t('project(s)')} ✓`);
   }
 
   async function seedTable(table, rows, conflictKey, note) {
-    if (!rows.length) { note(`${table}: nothing to seed`); return; }
+    if (!rows.length) { note(`${table}: ${t('nothing to seed')}`); return; }
     if (!conflictKey) {
       // no natural key to de-dupe by — skip entirely if the table already has any rows
       const { count } = await sb.from(table).select('id', { count: 'exact', head: true });
-      if (count && count > 0) { note(`${table}: ${count} rows exist, skipped`); return; }
+      if (count && count > 0) { note(`${table}: ${count} ${t('rows exist, skipped')}`); return; }
       const { error } = await sb.from(table).insert(rows);
-      note(error ? `${table}: ${error.message}` : `${table}: ${rows.length} rows ✓`);
+      note(error ? `${table}: ${error.message}` : `${table}: ${rows.length} ${t('rows')} ✓`);
       return;
     }
     // has a natural key (e.g. slug) — only insert rows that don't already exist.
@@ -1160,32 +1160,33 @@
     const { data: existing } = await sb.from(table).select(conflictKey);
     const have = new Set((existing || []).map(row => row[conflictKey]));
     const fresh = rows.filter(row => !have.has(row[conflictKey]));
-    if (!fresh.length) { note(`${table}: ${rows.length} rows already exist, skipped`); return; }
+    if (!fresh.length) { note(`${table}: ${rows.length} ${t('rows already exist, skipped')}`); return; }
     const { error } = await sb.from(table).insert(fresh);
     const skipped = rows.length - fresh.length;
-    note(error ? `${table}: ${error.message}` : `${table}: ${fresh.length} new row(s) ✓${skipped ? ` (${skipped} already existed, skipped)` : ''}`);
+    note(error ? `${table}: ${error.message}` : `${table}: ${fresh.length} ${t('new row(s)')} ✓${skipped ? ` (${skipped} ${t('already existed, skipped')})` : ''}`);
   }
 
   // ============================================================
   // INQUIRIES (contact-form leads)
   // ============================================================
   async function renderInquiries() {
-    $('#viewTitle').textContent = 'Inquiries';
-    $('#viewSub').textContent = 'Messages submitted through your contact form';
+    $('#viewTitle').textContent = t('Inquiries');
+    $('#viewSub').textContent = t('Messages submitted through your contact form');
     $('#content').innerHTML = `<div class="panel"><div id="inqWrap"><div class="empty-row"><span class="spinner" style="border-color:rgba(0,0,0,.15);border-top-color:var(--sky)"></span></div></div></div>`;
     const { data, error } = await sb.from('inquiries').select('*').order('created_at', { ascending: false });
     if (error) {
-      $('#inqWrap').innerHTML = `<div class="empty-row">Couldn’t load inquiries: ${esc(error.message)}<br><span class="field-hint">If you haven’t yet, run the inquiries section of <code>supabase/schema.sql</code> in your Supabase SQL editor.</span></div>`;
+      $('#inqWrap').innerHTML = `<div class="empty-row">${t('Couldn’t load inquiries:')} ${esc(error.message)}<br><span class="field-hint">${t('If you haven’t yet, run the inquiries section of')} <code>supabase/schema.sql</code> ${t('in your Supabase SQL editor.')}</span></div>`;
       return;
     }
     state.cache.inquiries = data || [];
     paintInquiries();
   }
 
+  const INQUIRY_STATUS_LABEL = { new: t('New'), read: t('Read'), handled: t('Handled') };
   function paintInquiries() {
     const rows = state.cache.inquiries || [];
-    if (!rows.length) { $('#inqWrap').innerHTML = `<div class="empty-row">No inquiries yet. Submissions from the contact page will appear here.</div>`; return; }
-    const opt = (v, cur) => `<option value="${v}" ${v === cur ? 'selected' : ''}>${v[0].toUpperCase() + v.slice(1)}</option>`;
+    if (!rows.length) { $('#inqWrap').innerHTML = `<div class="empty-row">${t('No inquiries yet. Submissions from the contact page will appear here.')}</div>`; return; }
+    const opt = (v, cur) => `<option value="${v}" ${v === cur ? 'selected' : ''}>${INQUIRY_STATUS_LABEL[v] || v}</option>`;
     const body = rows.map(r => {
       const name = esc([r.first, r.last].filter(Boolean).join(' ') || '—');
       const when = r.created_at ? new Date(r.created_at).toLocaleString() : '';
@@ -1196,10 +1197,10 @@
         <td>${esc(r.interest || '')}${r.budget ? `<div style="color:var(--ink-soft);font-size:.8rem">${esc(r.budget)}</div>` : ''}</td>
         <td style="max-width:340px;white-space:normal">${esc(msg.length > 180 ? msg.slice(0, 180) + '…' : msg)}</td>
         <td><select class="inq-status" data-id="${r.id}">${opt('new', r.status)}${opt('read', r.status)}${opt('handled', r.status)}</select></td>
-        <td><div class="row-actions"><button class="icon-btn del" data-del="${r.id}" title="Delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button></div></td>
+        <td><div class="row-actions"><button class="icon-btn del" data-del="${r.id}" title="${esc(t('Delete'))}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button></div></td>
       </tr>`;
     }).join('');
-    $('#inqWrap').innerHTML = `<table class="tbl"><thead><tr><th>From</th><th>Contact</th><th>Interest</th><th>Message</th><th>Status</th><th></th></tr></thead><tbody>${body}</tbody></table>`;
+    $('#inqWrap').innerHTML = `<table class="tbl"><thead><tr><th>${t('From')}</th><th>${t('Contact')}</th><th>${t('Interest')}</th><th>${t('Message')}</th><th>${t('Status')}</th><th></th></tr></thead><tbody>${body}</tbody></table>`;
     $$('.inq-status').forEach(s => s.addEventListener('change', () => updateInquiry(s.dataset.id, s.value)));
     $$('[data-del]', $('#inqWrap')).forEach(b => b.addEventListener('click', () => deleteInquiry(b.dataset.del)));
   }
@@ -1211,69 +1212,69 @@
     if (row) row.status = status;
     paintInquiries();
     refreshCounts();
-    toast('Status updated');
+    toast(t('Status updated'));
   }
 
   async function deleteInquiry(id) {
-    if (!confirm('Delete this inquiry? This can’t be undone.')) return;
+    if (!confirm(t('Delete this inquiry? This can’t be undone.'))) return;
     const { error } = await sb.from('inquiries').delete().eq('id', id);
     if (error) { toast(error.message, 'err'); return; }
     state.cache.inquiries = (state.cache.inquiries || []).filter(x => x.id !== id);
     paintInquiries();
     refreshCounts();
-    toast('Inquiry deleted');
+    toast(t('Inquiry deleted'));
   }
 
   // ============================================================
   // NEWSLETTER (footer signup-form subscribers)
   // ============================================================
   async function renderNewsletter() {
-    $('#viewTitle').textContent = 'Newsletter';
-    $('#viewSub').textContent = 'Emails collected from the footer signup form';
+    $('#viewTitle').textContent = t('Newsletter');
+    $('#viewSub').textContent = t('Emails collected from the footer signup form');
     $('#content').innerHTML = `<div class="panel">
-      <div class="panel-head"><button class="btn btn-ghost btn-sm" id="copyEmailsBtn">Copy all emails</button></div>
+      <div class="panel-head"><button class="btn btn-ghost btn-sm" id="copyEmailsBtn">${t('Copy all emails')}</button></div>
       <div id="nlWrap"><div class="empty-row"><span class="spinner" style="border-color:rgba(0,0,0,.15);border-top-color:var(--sky)"></span></div></div>
     </div>`;
     const { data, error } = await sb.from('newsletter_subscribers').select('*').order('created_at', { ascending: false });
     if (error) {
-      $('#nlWrap').innerHTML = `<div class="empty-row">Couldn’t load subscribers: ${esc(error.message)}<br><span class="field-hint">If you haven’t yet, run the newsletter section of <code>supabase/schema.sql</code> in your Supabase SQL editor.</span></div>`;
+      $('#nlWrap').innerHTML = `<div class="empty-row">${t('Couldn’t load subscribers:')} ${esc(error.message)}<br><span class="field-hint">${t('If you haven’t yet, run the newsletter section of')} <code>supabase/schema.sql</code> ${t('in your Supabase SQL editor.')}</span></div>`;
       return;
     }
     state.cache.newsletter = data || [];
     paintNewsletter();
     $('#copyEmailsBtn').addEventListener('click', () => {
       const emails = (state.cache.newsletter || []).map(r => r.email).join(', ');
-      if (!emails) { toast('No subscribers yet', 'err'); return; }
+      if (!emails) { toast(t('No subscribers yet'), 'err'); return; }
       navigator.clipboard.writeText(emails).then(
-        () => toast('Emails copied to clipboard'),
-        () => toast('Could not copy — select and copy manually', 'err')
+        () => toast(t('Emails copied to clipboard')),
+        () => toast(t('Could not copy — select and copy manually'), 'err')
       );
     });
   }
 
   function paintNewsletter() {
     const rows = state.cache.newsletter || [];
-    if (!rows.length) { $('#nlWrap').innerHTML = `<div class="empty-row">No subscribers yet. Signups from any page's footer will appear here.</div>`; return; }
+    if (!rows.length) { $('#nlWrap').innerHTML = `<div class="empty-row">${t("No subscribers yet. Signups from any page's footer will appear here.")}</div>`; return; }
     const body = rows.map(r => {
       const when = r.created_at ? new Date(r.created_at).toLocaleString() : '';
       return `<tr>
         <td><a href="mailto:${esc(r.email)}">${esc(r.email)}</a></td>
         <td style="color:var(--ink-soft);font-size:.85rem">${esc(when)}</td>
-        <td><div class="row-actions"><button class="icon-btn del" data-del="${r.id}" title="Delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button></div></td>
+        <td><div class="row-actions"><button class="icon-btn del" data-del="${r.id}" title="${esc(t('Delete'))}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button></div></td>
       </tr>`;
     }).join('');
-    $('#nlWrap').innerHTML = `<table class="tbl"><thead><tr><th>Email</th><th>Subscribed</th><th></th></tr></thead><tbody>${body}</tbody></table>`;
+    $('#nlWrap').innerHTML = `<table class="tbl"><thead><tr><th>${t('Email')}</th><th>${t('Subscribed')}</th><th></th></tr></thead><tbody>${body}</tbody></table>`;
     $$('[data-del]', $('#nlWrap')).forEach(b => b.addEventListener('click', () => deleteSubscriber(b.dataset.del)));
   }
 
   async function deleteSubscriber(id) {
-    if (!confirm('Remove this subscriber? This can’t be undone.')) return;
+    if (!confirm(t('Remove this subscriber? This can’t be undone.'))) return;
     const { error } = await sb.from('newsletter_subscribers').delete().eq('id', id);
     if (error) { toast(error.message, 'err'); return; }
     state.cache.newsletter = (state.cache.newsletter || []).filter(x => x.id !== id);
     paintNewsletter();
     refreshCounts();
-    toast('Subscriber removed');
+    toast(t('Subscriber removed'));
   }
 
   // ---------- icons ----------

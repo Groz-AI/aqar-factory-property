@@ -1,6 +1,8 @@
 /* ============================================================
    REALTEEK ADMIN — dashboard styling
    ============================================================ */
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap');
+
 :root{
   --sky:#2E9BDD; --sky-deep:#1B6FA8; --sky-soft:#E9F4FC;
   --ink:#0C1620; --ink-2:#1a2632; --ink-soft:#5C6776;
@@ -51,14 +53,26 @@ button{font-family:inherit;cursor:pointer}
 .sidebar{background:var(--ink);color:#aeb8c4;display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
 .sb-brand{display:flex;align-items:center;gap:.55rem;padding:22px 24px;color:#fff;border-bottom:1px solid var(--line-dark)}
 .sb-brand svg{width:28px;height:28px}
-.sb-brand b{font-family:"Bricolage Grotesque",sans-serif;font-size:1.25rem;font-weight:700}
+.sb-brand b{font-family:"Bricolage Grotesque",sans-serif;font-size:1.25rem;font-weight:700;flex:1}
+
+.admin-lang-switch{
+  font-family:inherit;font-size:.78rem;font-weight:600;line-height:1;cursor:pointer;
+  padding:.5em .9em;border-radius:999px;white-space:nowrap;
+  color:#fff;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);transition:.2s;
+}
+.admin-lang-switch:hover{background:rgba(255,255,255,.22)}
+.login-screen .admin-lang-switch{
+  position:fixed;top:18px;inset-inline-end:18px;color:var(--ink);background:#fff;
+  border:1px solid var(--line);box-shadow:var(--shadow);
+}
+.login-screen .admin-lang-switch:hover{border-color:var(--ink)}
 .sb-nav{padding:16px 14px;flex:1;overflow-y:auto}
 .sb-section{font-size:.68rem;text-transform:uppercase;letter-spacing:.16em;color:#5d6b7a;padding:14px 12px 6px}
-.sb-link{display:flex;align-items:center;gap:.7rem;padding:.7em .9em;border-radius:10px;font-size:.93rem;font-weight:500;color:#aeb8c4;transition:.2s;border:none;background:none;width:100%;text-align:left}
+.sb-link{display:flex;align-items:center;gap:.7rem;padding:.7em .9em;border-radius:10px;font-size:.93rem;font-weight:500;color:#aeb8c4;transition:.2s;border:none;background:none;width:100%;text-align:start}
 .sb-link svg{width:19px;height:19px;flex:none}
 .sb-link:hover{background:rgba(255,255,255,.05);color:#fff}
 .sb-link.active{background:var(--sky);color:#fff}
-.sb-link .badge{margin-left:auto;background:rgba(255,255,255,.12);border-radius:999px;font-size:.72rem;padding:.1em .6em;font-weight:600}
+.sb-link .badge{margin-inline-start:auto;background:rgba(255,255,255,.12);border-radius:999px;font-size:.72rem;padding:.1em .6em;font-weight:600}
 .sb-link.active .badge{background:rgba(255,255,255,.25)}
 .sb-foot{padding:16px;border-top:1px solid var(--line-dark)}
 .sb-user{display:flex;align-items:center;gap:.6rem;padding:.5em;margin-bottom:8px;font-size:.85rem}
@@ -76,7 +90,7 @@ button{font-family:inherit;cursor:pointer}
 #menuBtn{display:none}
 
 /* setup notice */
-.notice{background:#fff;border:1px solid var(--line);border-left:4px solid var(--warn);border-radius:var(--r);padding:22px 24px;margin-bottom:24px}
+.notice{background:#fff;border:1px solid var(--line);border-inline-start:4px solid var(--warn);border-radius:var(--r);padding:22px 24px;margin-bottom:24px}
 .notice h3{font-family:"Bricolage Grotesque",sans-serif;margin-bottom:6px}
 .notice p{color:var(--ink-soft);font-size:.92rem;line-height:1.6}
 .notice code{background:var(--paper);padding:.1em .4em;border-radius:5px;font-size:.85em}
@@ -96,7 +110,7 @@ button{font-family:inherit;cursor:pointer}
 .panel-head .search svg{width:17px;height:17px;color:var(--ink-soft)}
 .panel-head .search input{border:none;background:none;outline:none;width:100%;font-family:inherit;font-size:.92rem}
 .tbl{width:100%;border-collapse:collapse}
-.tbl th{text-align:left;font-size:.74rem;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-soft);font-weight:600;padding:12px 20px;border-bottom:1px solid var(--line);background:#fafbfc}
+.tbl th{text-align:start;font-size:.74rem;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-soft);font-weight:600;padding:12px 20px;border-bottom:1px solid var(--line);background:#fafbfc}
 .tbl td{padding:12px 20px;border-bottom:1px solid var(--line);font-size:.92rem;vertical-align:middle}
 .tbl tr:last-child td{border-bottom:none}
 .tbl tr:hover td{background:#fafbfc}
@@ -120,8 +134,9 @@ button{font-family:inherit;cursor:pointer}
 /* ---------- slide-over form ---------- */
 .overlay{position:fixed;inset:0;background:rgba(8,12,18,.45);backdrop-filter:blur(2px);opacity:0;visibility:hidden;transition:.3s;z-index:50}
 .overlay.open{opacity:1;visibility:visible}
-.drawer{position:fixed;top:0;right:0;height:100vh;width:min(560px,94vw);background:#fff;box-shadow:-20px 0 60px -20px rgba(0,0,0,.4);
+.drawer{position:fixed;top:0;inset-inline-end:0;height:100vh;width:min(560px,94vw);background:#fff;box-shadow:-20px 0 60px -20px rgba(0,0,0,.4);
   transform:translateX(100%);transition:transform .4s var(--ease);z-index:51;display:flex;flex-direction:column}
+[dir="rtl"] .drawer{box-shadow:20px 0 60px -20px rgba(0,0,0,.4);transform:translateX(-100%)}
 .drawer.open{transform:none}
 .drawer-head{display:flex;align-items:center;gap:1rem;padding:20px 26px;border-bottom:1px solid var(--line)}
 .drawer-head h2{font-family:"Bricolage Grotesque",sans-serif;font-size:1.25rem;flex:1}
@@ -141,9 +156,10 @@ label.switch{position:relative;display:inline-flex;align-items:center;gap:.6rem;
 /* a near-transparent var(--line) fill made the "off" state nearly invisible
    against the white drawer — use a clearly visible gray + border instead */
 .switch .track{width:42px;height:24px;border-radius:999px;background:#ccd3da;border:1px solid #b9c2cb;position:relative;transition:.25s;flex:none}
-.switch .track::after{content:"";position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;transition:.25s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.switch .track::after{content:"";position:absolute;top:2px;inset-inline-start:2px;width:18px;height:18px;border-radius:50%;background:#fff;transition:.25s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
 .switch input:checked + .track{background:var(--ok);border-color:var(--ok)}
 .switch input:checked + .track::after{transform:translateX(18px)}
+[dir="rtl"] .switch input:checked + .track::after{transform:translateX(-18px)}
 
 /* image / gallery field */
 .img-field{display:flex;gap:12px;align-items:flex-start}
@@ -153,7 +169,7 @@ label.switch{position:relative;display:inline-flex;align-items:center;gap:.6rem;
 .gallery-edit{display:flex;flex-wrap:wrap;gap:10px;margin-top:6px}
 .gallery-edit .g-item{position:relative;width:84px;height:64px;border-radius:10px;overflow:hidden;border:1px solid var(--line)}
 .gallery-edit .g-item img{width:100%;height:100%;object-fit:cover}
-.gallery-edit .g-item button{position:absolute;top:3px;right:3px;width:20px;height:20px;border-radius:50%;background:rgba(8,12,18,.7);color:#fff;border:none;display:grid;place-items:center;font-size:12px}
+.gallery-edit .g-item button{position:absolute;top:3px;inset-inline-end:3px;width:20px;height:20px;border-radius:50%;background:rgba(8,12,18,.7);color:#fff;border:none;display:grid;place-items:center;font-size:12px}
 .add-img{width:84px;height:64px;border-radius:10px;border:1.5px dashed var(--line);background:var(--paper);color:var(--ink-soft);display:grid;place-items:center;font-size:24px}
 .add-img:hover{border-color:var(--sky);color:var(--sky)}
 .add-img-pick{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:11px;font-weight:600;line-height:1.2;text-align:center;padding:4px}
@@ -196,9 +212,16 @@ label.switch{position:relative;display:inline-flex;align-items:center;gap:.6rem;
 
 @media(max-width:860px){
   .shell{grid-template-columns:1fr}
-  .sidebar{position:fixed;left:0;top:0;z-index:40;transform:translateX(-100%);transition:transform .3s;width:256px}
+  .sidebar{position:fixed;inset-inline-start:0;top:0;z-index:40;transform:translateX(-100%);transition:transform .3s;width:256px}
+  [dir="rtl"] .sidebar{transform:translateX(100%)}
   .sidebar.open{transform:none}
   .content{padding:20px}
   .grid-2{grid-template-columns:1fr}
   #menuBtn{display:grid}
 }
+
+/* ============================================================
+   RTL (Arabic)
+   ============================================================ */
+[dir="rtl"] body{font-family:"Cairo","Hanken Grotesk",system-ui,sans-serif}
+[dir="rtl"] *{font-family:"Cairo",sans-serif !important;font-style:normal !important}

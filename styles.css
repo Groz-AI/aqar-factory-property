@@ -24,6 +24,8 @@
   --ease:cubic-bezier(.22,.61,.36,1);
 }
 
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap');
+
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
 body{
@@ -34,6 +36,32 @@ body{
   -webkit-font-smoothing:antialiased;
   overflow-x:hidden;
 }
+
+/* ============================================================
+   RTL (Arabic) — Cairo replaces the Latin display faces everywhere,
+   since Fraunces/Bricolage Grotesque have no Arabic glyphs
+   ============================================================ */
+[dir="rtl"] body{font-family:"Cairo","Hanken Grotesk",system-ui,sans-serif}
+[dir="rtl"] *{font-family:"Cairo",sans-serif !important;font-style:normal !important}
+
+/* admin-entered content (hero copy, project/testimonial text, etc.) isn't
+   force-translated, so it may still be plain English while the page is RTL —
+   let each of these elements auto-detect its own paragraph direction instead
+   of inheriting rtl, which otherwise visually scrambles punctuation/word order */
+[dir="rtl"] .hero-eyebrow, [dir="rtl"] .hero-title, [dir="rtl"] .hero-sub,
+[dir="rtl"] .journey-lead, [dir="rtl"] .cta-text h2, [dir="rtl"] .cta-text p,
+[dir="rtl"] .stats p, [dir="rtl"] .pcard-body h3, [dir="rtl"] .pcard-tag,
+[dir="rtl"] .project-body h3, [dir="rtl"] .project-body p,
+[dir="rtl"] .testi-card .tc-quote, [dir="rtl"] .city-meta h3,
+[dir="rtl"] .project-tag, [dir="rtl"] .card-desc,
+[dir="rtl"] .footer-brand > p, [dir="rtl"] .footer-bottom p:first-child,
+[dir="rtl"] .brand-name{unicode-bidi:plaintext}
+
+/* directional icons — mirror arrows/chevrons that point along the reading axis */
+[dir="rtl"] .view-all svg,
+[dir="rtl"] .pcard-foot .arrow svg,
+[dir="rtl"] #testiPrev svg,
+[dir="rtl"] #testiNext svg{transform:scaleX(-1)}
 a{color:inherit;text-decoration:none}
 img{max-width:100%;display:block}
 em{font-style:normal}
@@ -147,6 +175,20 @@ em{font-style:normal}
 .nav-toggle span{width:24px;height:2px;background:#fff;border-radius:2px;transition:.3s}
 .site-header.scrolled .nav-toggle span{background:var(--ink)}
 
+.lang-switch{
+  font-family:inherit;font-size:.84rem;font-weight:600;line-height:1;cursor:pointer;
+  padding:.55em 1.05em;border-radius:999px;white-space:nowrap;
+  color:rgba(255,255,255,.92);background:rgba(255,255,255,.14);
+  border:1px solid rgba(255,255,255,.32);transition:.25s;
+}
+.lang-switch:hover{background:rgba(255,255,255,.26);color:#fff}
+.site-header.scrolled .lang-switch,.site-header.solid .lang-switch{
+  color:var(--ink-soft);background:transparent;border-color:var(--line);
+}
+.site-header.scrolled .lang-switch:hover,.site-header.solid .lang-switch:hover{
+  color:var(--ink);background:rgba(12,22,32,.06);
+}
+
 /* ============================================================
    HERO
    ============================================================ */
@@ -193,7 +235,7 @@ em{font-style:normal}
 .hero-title .tw{display:inline}
 .hero-title .caret{
   display:inline-block;width:.055em;height:.82em;background:currentColor;
-  margin-left:.08em;vertical-align:-.02em;border-radius:3px;
+  margin-inline-start:.08em;vertical-align:-.02em;border-radius:3px;
   animation:caretBlink 1.05s steps(1) infinite;
 }
 @keyframes caretBlink{50%{opacity:0}}
@@ -253,7 +295,7 @@ em{font-style:normal}
 .csel{position:relative;flex:1;min-width:0}
 .csel-btn{
   display:flex;align-items:center;gap:.6rem;width:100%;border:none;background:none;cursor:pointer;
-  font-family:inherit;font-size:.98rem;font-weight:600;color:var(--ink);padding:0;text-align:left;
+  font-family:inherit;font-size:.98rem;font-weight:600;color:var(--ink);padding:0;text-align:start;
 }
 .csel-label{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .csel-caret{flex:none;width:20px;height:20px;display:grid;place-items:center;color:var(--sky-deep);transition:transform .25s var(--ease),color .25s}
@@ -318,7 +360,7 @@ em{font-style:normal}
 }
 .unit-modal-overlay.open .unit-modal{transform:none}
 .unit-modal-close{
-  position:absolute;top:14px;right:14px;z-index:2;width:38px;height:38px;border-radius:50%;
+  position:absolute;top:14px;inset-inline-end:14px;z-index:2;width:38px;height:38px;border-radius:50%;
   background:rgba(10,14,20,.55);color:#fff;border:none;display:grid;place-items:center;cursor:pointer;
   backdrop-filter:blur(6px);transition:.2s;
 }
@@ -339,7 +381,7 @@ em{font-style:normal}
 .cmp-item-body{flex:1;min-width:0}
 .cmp-item-body h4{font-family:"Bricolage Grotesque",sans-serif;font-size:1rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cmp-item-body p{color:var(--ink-soft);font-size:.85rem;margin-top:.15rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.cmp-item-price{font-family:"Fraunces",serif;font-style:italic;color:var(--sky-deep);font-weight:600;font-size:.95rem;flex:none;padding-left:8px}
+.cmp-item-price{font-family:"Fraunces",serif;font-style:italic;color:var(--sky-deep);font-weight:600;font-size:.95rem;flex:none;padding-inline-start:8px}
 .city-modal-empty{padding:40px 24px;text-align:center;color:var(--ink-soft)}
 
 /* ============================================================
@@ -364,7 +406,7 @@ em{font-style:normal}
 .city-meta h3{font-family:"Bricolage Grotesque",sans-serif;font-size:1.5rem;font-weight:700}
 .city-meta p{font-size:.85rem;opacity:.85}
 .city-count{
-  position:absolute;top:18px;right:18px;background:rgba(255,255,255,.16);backdrop-filter:blur(8px);
+  position:absolute;top:18px;inset-inline-end:18px;background:rgba(255,255,255,.16);backdrop-filter:blur(8px);
   border:1px solid rgba(255,255,255,.25);padding:.4em .9em;border-radius:999px;font-size:.78rem;font-weight:600;
 }
 
@@ -411,7 +453,7 @@ em{font-style:normal}
 .project-body p{color:var(--ink-soft);font-size:.92rem;margin:.5rem 0 1.2rem}
 .project-foot{display:flex;gap:1rem;color:var(--ink-soft);font-size:.85rem;font-weight:500;border-top:1px solid var(--line);padding-top:.9rem}
 .project-foot span:first-child{color:var(--ink)}
-.project-foot span:last-child{margin-left:auto;font-family:"Fraunces",serif;font-style:italic}
+.project-foot span:last-child{margin-inline-start:auto;font-family:"Fraunces",serif;font-style:italic}
 
 /* ============================================================
    DEVELOPERS WHO TRUST US
@@ -443,7 +485,7 @@ em{font-style:normal}
 /* four review cards in a row, fading between pages */
 .testi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:22px;align-items:stretch}
 .testi-card{
-  display:flex;flex-direction:column;gap:1rem;text-align:left;
+  display:flex;flex-direction:column;gap:1rem;text-align:start;
   background:#fff;border:1px solid var(--line);border-radius:20px;padding:26px 24px;
   box-shadow:var(--shadow-sm);
   opacity:0;transform:translateY(20px) scale(.98);
@@ -501,7 +543,7 @@ em{font-style:normal}
 .socials a:hover{background:var(--sky);border-color:var(--sky);color:#fff}
 .footer-col h4{font-family:"Bricolage Grotesque",sans-serif;font-size:1rem;color:#fff;margin-bottom:1.1rem}
 .footer-col a{display:block;font-size:.92rem;color:#9aa6b4;padding:.32rem 0;transition:.2s}
-.footer-col a:hover{color:#fff;padding-left:.3rem}
+.footer-col a:hover{color:#fff;padding-inline-start:.3rem}
 .footer-news p{font-size:.9rem;color:#9aa6b4;margin-bottom:1rem}
 .news-form{display:flex;gap:.5rem;background:rgba(255,255,255,.07);padding:6px;border-radius:999px}
 .news-form input{flex:1;background:none;border:none;outline:none;color:#fff;padding:.6em 1em;font-family:inherit}
@@ -530,7 +572,7 @@ em{font-style:normal}
 /* --ai-fab-bottom is measured live by ai-widget.js so the button always
    clears the hero search bar, no matter the viewport height — 26px is the
    default once that bar has scrolled out of view (or on pages without one) */
-.ai-widget{position:fixed;right:26px;bottom:var(--ai-fab-bottom,26px);z-index:300;transition:bottom .25s var(--ease)}
+.ai-widget{position:fixed;inset-inline-end:26px;bottom:var(--ai-fab-bottom,26px);z-index:300;transition:bottom .25s var(--ease)}
 
 .ai-fab{
   position:relative;display:inline-flex;align-items:center;gap:.65rem;
@@ -570,7 +612,7 @@ em{font-style:normal}
 
 /* chat panel — always rides 74px above wherever the fab button currently is */
 .ai-panel{
-  position:fixed;right:26px;bottom:calc(var(--ai-fab-bottom,26px) + 74px);width:min(400px,calc(100vw - 40px));
+  position:fixed;inset-inline-end:26px;bottom:calc(var(--ai-fab-bottom,26px) + 74px);width:min(400px,calc(100vw - 40px));
   max-height:min(640px,74vh);display:flex;flex-direction:column;
   background:#fff;border-radius:22px;overflow:hidden;
   box-shadow:0 40px 90px -30px rgba(10,20,30,.45),0 0 0 1px rgba(12,22,32,.06);
@@ -638,7 +680,7 @@ em{font-style:normal}
 .ai-input-row button:hover{transform:scale(1.06)}
 .ai-input-row button:disabled{opacity:.5;cursor:default;transform:none}
 
-.ai-match{display:flex;gap:.75rem;background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px;cursor:pointer;transition:transform .25s var(--ease),box-shadow .25s;text-align:left;width:100%}
+.ai-match{display:flex;gap:.75rem;background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px;cursor:pointer;transition:transform .25s var(--ease),box-shadow .25s;text-align:start;width:100%}
 .ai-match:hover{transform:translateY(-2px);box-shadow:var(--shadow-md)}
 .ai-match img{width:60px;height:60px;border-radius:10px;object-fit:cover;flex:none}
 .ai-match-body{min-width:0}
@@ -684,9 +726,9 @@ em{font-style:normal}
   .footer-bottom{flex-direction:column;gap:.4rem;text-align:center}
   .testi-grid{grid-template-columns:1fr}
   .section{padding:70px 0}
-  .hero-ai-badge{font-size:.78rem;text-align:left;padding:.55em 1em}
-  .ai-widget{right:14px}
+  .hero-ai-badge{font-size:.78rem;text-align:start;padding:.55em 1em}
+  .ai-widget{inset-inline-end:14px}
   .ai-fab-label{display:none}
   .ai-fab{padding:.9em}
-  .ai-panel{right:10px;left:10px;width:auto}
+  .ai-panel{inset-inline:10px;width:auto}
 }

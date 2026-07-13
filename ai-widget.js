@@ -41,26 +41,27 @@
   // ---------- build the widget shell ----------
   const root = document.createElement('div');
   root.className = 'ai-widget';
+  const tt = window.t || ((s) => s);
   root.innerHTML = `
-    <div class="ai-panel" id="aiPanel" aria-hidden="true" role="dialog" aria-label="Realteek AI project matchmaker">
+    <div class="ai-panel" id="aiPanel" aria-hidden="true" role="dialog" aria-label="${tt('Realteek AI project matchmaker')}">
       <div class="ai-panel-head">
         <div class="ai-panel-id">
           <span class="ai-avatar">${sparkSVG}</span>
-          <div><b>Realteek AI</b><small>Your project matchmaker</small></div>
+          <div><b>${tt('Realteek AI')}</b><small>${tt('Your project matchmaker')}</small></div>
         </div>
         <button class="ai-panel-close" id="aiPanelClose" aria-label="Close">${closeSVG}</button>
       </div>
       <div class="ai-panel-body" id="aiPanelBody"></div>
       <div class="ai-panel-foot" id="aiPanelFoot"></div>
       <form class="ai-input-row" id="aiInputForm">
-        <input type="text" id="aiInputField" placeholder="Or just ask me anything…" autocomplete="off" maxlength="500" />
+        <input type="text" id="aiInputField" placeholder="${tt('Or just ask me anything…')}" autocomplete="off" maxlength="500" />
         <button type="submit" aria-label="Send" id="aiInputSend">${sendSVG}</button>
       </form>
     </div>
-    <button class="ai-fab" id="aiFabBtn" aria-expanded="false" aria-label="Let AI choose for you">
+    <button class="ai-fab" id="aiFabBtn" aria-expanded="false" aria-label="${tt('Let AI choose for you')}">
       <span class="ai-fab-glow" aria-hidden="true"></span>
       <span class="ai-fab-icon" aria-hidden="true">${sparkSVG}</span>
-      <span class="ai-fab-label">Let AI Choose For You</span>
+      <span class="ai-fab-label">${tt('Let AI Choose For You')}</span>
     </button>`;
   document.body.appendChild(root);
 
@@ -214,7 +215,7 @@
     if (!dataset.projects.length) await loadData();
 
     const typing = showTyping();
-    let reply = "Sorry, I'm having trouble connecting right now. Please try again shortly.";
+    let reply = t("Sorry, I'm having trouble connecting right now. Please try again shortly.");
     try {
       const res = await fetch('/api/ai-chat', {
         method: 'POST',
@@ -254,7 +255,7 @@
     e.preventDefault();
     const text = inputField.value.trim();
     if (!text) return;
-    if (!started) { started = true; openPanel(); await botSay("Hi! I'm Realteek AI — what can I help you find?", 400); await loadData(); }
+    if (!started) { started = true; openPanel(); await botSay(t("Hi! I'm Realteek AI — what can I help you find?"), 400); await loadData(); }
     inputField.value = '';
     clearFoot();
     setSending(true);
@@ -264,33 +265,33 @@
   });
 
   async function boot() {
-    await botSay("Hi! I'm Realteek AI — answer a few quick questions and I'll match you with the best-fit projects, or just type your own question below anytime.", 500);
+    await botSay(t("Hi! I'm Realteek AI — answer a few quick questions and I'll match you with the best-fit projects, or just type your own question below anytime."), 500);
     await loadData();
     askCategory();
   }
 
   function askCategory() {
-    const opts = [{ label: 'Any type', value: 'all' }]
+    const opts = [{ label: t('Any type'), value: 'all' }]
       .concat(projectCategories().map(c => ({ label: c, value: c })));
-    botSay('What type of project are you looking for?', 500).then(() => setChips(opts, opt => {
+    botSay(t('What type of project are you looking for?'), 500).then(() => setChips(opts, opt => {
       answers.category = opt.value;
       askUnitType();
     }));
   }
 
   function askUnitType() {
-    const opts = [{ label: 'Any unit type', value: 'all' }]
+    const opts = [{ label: t('Any unit type'), value: 'all' }]
       .concat(projectUnitTypes().map(u => ({ label: u, value: u })));
-    botSay('Got it. Any particular unit type — villas, apartments, duplex…?', 500).then(() => setChips(opts, opt => {
+    botSay(t('Got it. Any particular unit type — villas, apartments, duplex…?'), 500).then(() => setChips(opts, opt => {
       answers.unitType = opt.value;
       askCity();
     }));
   }
 
   function askCity() {
-    const opts = [{ label: 'Anywhere', value: '' }]
+    const opts = [{ label: t('Anywhere'), value: '' }]
       .concat(dataset.cities.map(c => ({ label: c.name, value: c.name })));
-    botSay('Nice choice. Any particular location in mind?', 550).then(() => setChips(opts, opt => {
+    botSay(t('Nice choice. Any particular location in mind?'), 550).then(() => setChips(opts, opt => {
       answers.city = opt.value;
       askBudget();
     }));
@@ -298,7 +299,7 @@
 
   function askBudget() {
     const opts = BUDGETS.map(b => ({ label: b.label, value: b }));
-    botSay("Got it. What's your budget range?", 550).then(() => setChips(opts, opt => {
+    botSay(t("Got it. What's your budget range?"), 550).then(() => setChips(opts, opt => {
       answers.budget = opt.value;
       showResults();
     }));
@@ -346,7 +347,7 @@
 
   async function showResults() {
     clearFoot();
-    await botSay('Let me find your best matches…', 700);
+    await botSay(t('Let me find your best matches…'), 700);
     const scored = dataset.projects
       .map(p => ({ p, s: scoreProject(p, answers) }))
       .sort((a, b) => b.s - a.s || parsePrice(b.p.stats && b.p.stats.price) - parsePrice(a.p.stats && a.p.stats.price));
@@ -354,14 +355,14 @@
     const anyReal = top.some(x => x.s > 0);
 
     await botSay(anyReal
-      ? "Here's what I found for you ✨"
-      : "I don't have an exact match for that combination, but here are some projects you might love:", 550);
+      ? t("Here's what I found for you ✨")
+      : t("I don't have an exact match for that combination, but here are some projects you might love:"), 550);
 
-    if (!top.length) addMessage('No projects are published yet — check back soon!', 'bot');
+    if (!top.length) addMessage(t('No projects are published yet — check back soon!'), 'bot');
     else renderMatchCards(top.map(x => x.p));
 
     setChips(
-      [{ label: 'Start over', value: 'restart' }, { label: 'Talk to an advisor', value: 'advisor' }],
+      [{ label: t('Start over'), value: 'restart' }, { label: t('Talk to an advisor'), value: 'advisor' }],
       opt => {
         if (opt.value === 'advisor') { window.location.href = 'contact.html'; return; }
         answers = { category: null, unitType: null, city: '', budget: null };
