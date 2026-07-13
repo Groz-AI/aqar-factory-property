@@ -52,9 +52,14 @@
   function apply(cRaw) {
     const c = Object.assign({}, DEFAULT, cRaw || {});
 
-    // ---- brand name (header + footer) ----
+    // ---- brand name (header + footer) — hide it and let the logo fill the
+    //      space when no company name is set ----
+    document.querySelectorAll('.brand-name').forEach(el => {
+      el.textContent = c.name || '';
+      el.style.display = c.name ? '' : 'none';
+    });
+    document.querySelectorAll('.brand').forEach(el => el.classList.toggle('brand--logo-only', !c.name));
     if (c.name) {
-      document.querySelectorAll('.brand-name').forEach(el => { el.textContent = c.name; });
       document.querySelectorAll('.brand[aria-label]').forEach(el => el.setAttribute('aria-label', c.name + ' home'));
     }
 
