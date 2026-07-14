@@ -450,7 +450,11 @@ function initHeroTyping() {
   const span = document.querySelector('.hero-title span');
   if (!span) return;
   const first = (span.textContent || '').trim() || 'Done Right';
-  const phrases = [...new Set([first, 'Made Simple', 'Reimagined', 'Built for You'])];
+  const isAr = !!(window.i18n && window.i18n.lang === 'ar');
+  const more = isAr
+    ? ['بمنتهى البساطة', 'بمفهوم جديد', 'مصممة من أجلك']
+    : ['Made Simple', 'Reimagined', 'Built for You'];
+  const phrases = [...new Set([first, ...more])];
 
   span.innerHTML = '<span class="tw"></span><span class="caret"></span>';
   const tw = span.querySelector('.tw');

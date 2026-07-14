@@ -55,17 +55,36 @@ button{font-family:inherit;cursor:pointer}
 .sb-brand svg{width:28px;height:28px}
 .sb-brand b{font-family:"Bricolage Grotesque",sans-serif;font-size:1.25rem;font-weight:700;flex:1}
 
+/* EN/AR animated toggle — always laid out left-to-right (EN left, AR right)
+   regardless of page direction, so the control itself never mirrors. */
 .admin-lang-switch{
-  font-family:inherit;font-size:.78rem;font-weight:600;line-height:1;cursor:pointer;
-  padding:.5em .9em;border-radius:999px;white-space:nowrap;
-  color:#fff;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);transition:.2s;
+  position:relative;direction:ltr;display:inline-flex;align-items:center;flex:none;
+  width:56px;height:28px;padding:3px;border-radius:999px;cursor:pointer;
+  font-family:inherit;background:rgba(255,255,255,.12);
+  border:1px solid rgba(255,255,255,.25);transition:background .2s,border-color .2s;
 }
 .admin-lang-switch:hover{background:rgba(255,255,255,.22)}
-.login-screen .admin-lang-switch{
-  position:fixed;top:18px;inset-inline-end:18px;color:var(--ink);background:#fff;
+.admin-lang-switch .ls-thumb{
+  position:absolute;top:3px;left:3px;width:24px;height:20px;border-radius:999px;
+  background:var(--sky);box-shadow:0 3px 10px -3px rgba(12,22,32,.5);
+  transition:transform .35s cubic-bezier(.65,0,.35,1);
+}
+.admin-lang-switch[data-lang="ar"] .ls-thumb{transform:translateX(24px)}
+.admin-lang-switch .ls-opt{
+  position:relative;z-index:1;flex:1;text-align:center;
+  font-size:.62rem;font-weight:800;letter-spacing:.02em;
+  color:rgba(255,255,255,.6);transition:color .3s;
+}
+.admin-lang-switch[data-lang="en"] .ls-en,.admin-lang-switch[data-lang="ar"] .ls-ar{color:#fff}
+/* on login.html the switch is a direct child of <body> (a sibling of
+   .login-screen, not a descendant) — target that structure directly */
+body > .admin-lang-switch{
+  position:fixed;top:18px;inset-inline-end:18px;background:#f1f4f7;
   border:1px solid var(--line);box-shadow:var(--shadow);
 }
-.login-screen .admin-lang-switch:hover{border-color:var(--ink)}
+body > .admin-lang-switch:hover{border-color:var(--ink-soft)}
+body > .admin-lang-switch .ls-opt{color:var(--ink-soft)}
+body > .admin-lang-switch[data-lang="en"] .ls-en,body > .admin-lang-switch[data-lang="ar"] .ls-ar{color:#fff}
 .sb-nav{padding:16px 14px;flex:1;overflow-y:auto}
 .sb-section{font-size:.68rem;text-transform:uppercase;letter-spacing:.16em;color:#5d6b7a;padding:14px 12px 6px}
 .sb-link{display:flex;align-items:center;gap:.7rem;padding:.7em .9em;border-radius:10px;font-size:.93rem;font-weight:500;color:#aeb8c4;transition:.2s;border:none;background:none;width:100%;text-align:start}

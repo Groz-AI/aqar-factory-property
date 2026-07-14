@@ -598,8 +598,10 @@
 
   function initSwitchers() {
     document.querySelectorAll('.lang-switch').forEach(btn => {
-      btn.textContent = lang === 'ar' ? 'English' : 'العربية';
+      btn.dataset.lang = lang;
+      btn.innerHTML = '<span class="ls-thumb"></span><span class="ls-opt ls-en">EN</span><span class="ls-opt ls-ar">AR</span>';
       btn.setAttribute('aria-label', lang === 'ar' ? 'Switch to English' : 'التبديل إلى العربية');
+      btn.setAttribute('aria-pressed', lang === 'ar' ? 'true' : 'false');
       btn.addEventListener('click', () => setLang(lang === 'ar' ? 'en' : 'ar'));
     });
   }
