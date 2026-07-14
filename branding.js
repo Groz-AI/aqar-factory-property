@@ -69,6 +69,18 @@
       document.querySelectorAll('.brand-mark').forEach(m => {
         m.innerHTML = `<img src="${esc(src)}" alt="${esc(c.name || '')}" style="width:100%;height:100%;object-fit:contain;display:block">`;
       });
+
+      // ---- favicon: use the same uploaded logo ----
+      const iconHref = imgURL(c.logo, 64);
+      ['icon', 'shortcut icon', 'apple-touch-icon'].forEach(rel => {
+        let link = document.querySelector(`link[rel="${rel}"]`);
+        if (!link) {
+          link = document.createElement('link');
+          link.rel = rel;
+          document.head.appendChild(link);
+        }
+        link.href = iconHref;
+      });
     }
 
     // ---- footer tagline ----
