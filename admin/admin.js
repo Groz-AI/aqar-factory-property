@@ -795,15 +795,28 @@
       list: 'offices', listAddLabel: t('Add office'),
       listFields: [ { key: 'city', label: t('Office name / city') }, { key: 'lines', label: t('Address (one line per row)'), type: 'textarea' }, { key: 'phone', label: t('Phone') } ] },
     hero: { title: t('Hero'), fields: [
-      { key: 'eyebrow', label: t('Eyebrow') }, { key: 'titleA', label: t('Title line 1') },
-      { key: 'titleB', label: t('Title line 2') }, { key: 'sub', label: t('Subtext'), type: 'textarea' },
+      { key: 'eyebrow', label: t('Eyebrow') },
+      { key: 'eyebrow_ar', label: t('Eyebrow (Arabic)'), hint: t('Shown when the site is set to Arabic — leave empty to fall back to the English text above.') },
+      { key: 'titleA', label: t('Title line 1') },
+      { key: 'titleA_ar', label: t('Title line 1 (Arabic)'), hint: t('Shown when the site is set to Arabic — leave empty to fall back to the English text above.') },
+      { key: 'titleB', label: t('Title line 2') },
+      { key: 'titleB_ar', label: t('Title line 2 (Arabic)'), hint: t('Shown when the site is set to Arabic — leave empty to fall back to the English text above.') },
+      { key: 'sub', label: t('Subtext'), type: 'textarea' },
+      { key: 'sub_ar', label: t('Subtext (Arabic)'), type: 'textarea', hint: t('Shown when the site is set to Arabic — leave empty to fall back to the English text above.') },
       { key: 'images', label: t('Hero background images (slideshow)'), type: 'gallery', hint: t('shown behind the hero — cross-fades every few seconds') } ] },
     stats: { title: t('Journey / Stats'), fields: [
-      { key: 'lead', label: t('Lead paragraph'), type: 'textarea' } ], list: 'items',
-      listFields: [ { key: 'value', label: t('Value'), type: 'number' }, { key: 'suffix', label: t('Suffix') }, { key: 'label', label: t('Label'), type: 'textarea' } ] },
+      { key: 'lead', label: t('Lead paragraph'), type: 'textarea' },
+      { key: 'lead_ar', label: t('Lead paragraph (Arabic)'), type: 'textarea', hint: t('Shown when the site is set to Arabic — leave empty to fall back to the English text above.') } ], list: 'items',
+      listFields: [ { key: 'value', label: t('Value'), type: 'number' }, { key: 'suffix', label: t('Suffix') }, { key: 'label', label: t('Label'), type: 'textarea' }, { key: 'label_ar', label: t('Label (Arabic)'), type: 'textarea' } ] },
     cta: { title: t('Call to action'), fields: [
-      { key: 'titleA', label: t('Title line 1') }, { key: 'titleB', label: t('Title line 2') },
-      { key: 'text', label: t('Text'), type: 'textarea' }, { key: 'button', label: t('Button label') } ] }
+      { key: 'titleA', label: t('Title line 1') },
+      { key: 'titleA_ar', label: t('Title line 1 (Arabic)'), hint: t('Shown when the site is set to Arabic — leave empty to fall back to the English text above.') },
+      { key: 'titleB', label: t('Title line 2') },
+      { key: 'titleB_ar', label: t('Title line 2 (Arabic)'), hint: t('Shown when the site is set to Arabic — leave empty to fall back to the English text above.') },
+      { key: 'text', label: t('Text'), type: 'textarea' },
+      { key: 'text_ar', label: t('Text (Arabic)'), type: 'textarea', hint: t('Shown when the site is set to Arabic — leave empty to fall back to the English text above.') },
+      { key: 'button', label: t('Button label') },
+      { key: 'button_ar', label: t('Button label (Arabic)'), hint: t('Shown when the site is set to Arabic — leave empty to fall back to the English text above.') } ] }
   };
 
   async function renderContent() {

@@ -57,23 +57,32 @@ window.FALLBACK = {
     },
     hero: {
       eyebrow: "Curated Homes For Sale.",
+      eyebrow_ar: "منازل مختارة بعناية للبيع.",
       titleA: "Real Estate",
+      titleA_ar: "العقارات",
       titleB: "Done Right",
-      sub: "A handpicked collection of homes, offices and luxury spaces — curated for people who refuse to settle."
+      titleB_ar: "كما ينبغي",
+      sub: "A handpicked collection of homes, offices and luxury spaces — curated for people who refuse to settle.",
+      sub_ar: "مجموعة مختارة بعناية من المنازل والمكاتب والمساحات الفاخرة — لمن يرفضون التنازل."
     },
     stats: {
       lead: "With a proven track record and in-depth market knowledge, we're here to make your real estate journey smooth and stress-free. Whether you're buying your first home or expanding your portfolio, you can count on our team to deliver results with integrity.",
+      lead_ar: "بخبرة مثبتة ومعرفة عميقة بالسوق، نحن هنا لنجعل رحلتك العقارية سلسة وخالية من التوتر. سواء كنت تشتري منزلك الأول أو توسّع محفظتك، يمكنك الاعتماد على فريقنا لتحقيق نتائج بنزاهة تامة.",
       items: [
-        { value: 1500, suffix: "", label: "Total properties sold, helping families find their dream homes for over a decade." },
-        { value: 30, suffix: "+", label: "Strong partnerships with local businesses to enhance and extend our services." },
-        { value: 98, suffix: "%", label: "Client satisfaction rate, reflecting our commitment to exceptional service." }
+        { value: 1500, suffix: "", label: "Total properties sold, helping families find their dream homes for over a decade.", label_ar: "إجمالي العقارات المباعة، حيث نساعد العائلات على إيجاد منازل أحلامها منذ أكثر من عقد." },
+        { value: 30, suffix: "+", label: "Strong partnerships with local businesses to enhance and extend our services.", label_ar: "شراكات قوية مع الشركات المحلية لتعزيز خدماتنا وتوسيع نطاقها." },
+        { value: 98, suffix: "%", label: "Client satisfaction rate, reflecting our commitment to exceptional service.", label_ar: "معدل رضا العملاء، مما يعكس التزامنا بتقديم خدمة استثنائية." }
       ]
     },
     cta: {
       titleA: "Make Your Dream",
+      titleA_ar: "حوّل مساحة",
       titleB: "Space a Reality",
+      titleB_ar: "أحلامك إلى واقع",
       text: "Partner with us to create stunning, innovative spaces that match your vision. Let's build something extraordinary together.",
-      button: "Get Started"
+      text_ar: "تعاون معنا لإنشاء مساحات مبتكرة وآسرة تتناسب مع رؤيتك. لنبنِ معًا شيئًا استثنائيًا.",
+      button: "Get Started",
+      button_ar: "ابدأ الآن"
     }
   }
 };

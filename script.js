@@ -404,18 +404,22 @@ function renderTestimonials(testimonials) {
    ============================================================ */
 function applyContent(c) {
   if (!c) return;
+  const isAr = !!(window.i18n && window.i18n.lang === 'ar');
+  const pick = (obj, key) => (isAr && obj[key + '_ar']) ? obj[key + '_ar'] : obj[key];
   if (c.hero) {
     const h = c.hero;
     const eye = document.querySelector('.hero-eyebrow');
     const title = document.querySelector('.hero-title');
     const sub = document.querySelector('.hero-sub');
-    if (eye && h.eyebrow) eye.textContent = h.eyebrow;
-    if (title && (h.titleA || h.titleB)) title.innerHTML = `${h.titleA || ''} <span>${h.titleB || ''}</span>`;
-    if (sub && h.sub) sub.textContent = h.sub;
+    const eyebrow = pick(h, 'eyebrow'), titleA = pick(h, 'titleA'), titleB = pick(h, 'titleB'), subText = pick(h, 'sub');
+    if (eye && eyebrow) eye.textContent = eyebrow;
+    if (title && (titleA || titleB)) title.innerHTML = `${titleA || ''} <span>${titleB || ''}</span>`;
+    if (sub && subText) sub.textContent = subText;
   }
   if (c.stats) {
     const lead = document.querySelector('.journey-lead');
-    if (lead && c.stats.lead) lead.textContent = c.stats.lead;
+    const leadText = pick(c.stats, 'lead');
+    if (lead && leadText) lead.textContent = leadText;
     const nodes = document.querySelectorAll('.stats .stat');
     (c.stats.items || []).forEach((it, i) => {
       const n = nodes[i];
@@ -423,16 +427,18 @@ function applyContent(c) {
       const num = n.querySelector('.stat-num');
       const p = n.querySelector('p');
       if (num) { num.dataset.count = it.value; num.dataset.suffix = it.suffix || ''; }
-      if (p && it.label) p.textContent = it.label;
+      const label = pick(it, 'label');
+      if (p && label) p.textContent = label;
     });
   }
   if (c.cta) {
     const banner = document.querySelector('.cta-text');
     if (banner) {
       const h2 = banner.querySelector('h2'), p = banner.querySelector('p'), btn = banner.querySelector('.btn');
-      if (h2 && (c.cta.titleA || c.cta.titleB)) h2.innerHTML = `${c.cta.titleA || ''}<br/>${emLast(c.cta.titleB || '')}`;
-      if (p && c.cta.text) p.textContent = c.cta.text;
-      if (btn && c.cta.button) btn.textContent = c.cta.button;
+      const titleA = pick(c.cta, 'titleA'), titleB = pick(c.cta, 'titleB'), text = pick(c.cta, 'text'), button = pick(c.cta, 'button');
+      if (h2 && (titleA || titleB)) h2.innerHTML = `${titleA || ''}<br/>${emLast(titleB || '')}`;
+      if (p && text) p.textContent = text;
+      if (btn && button) btn.textContent = button;
     }
   }
 }
