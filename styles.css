@@ -140,12 +140,12 @@ em{font-style:normal}
 }
 .brand{display:flex;align-items:center;gap:.55rem;font-weight:700;color:#fff}
 .site-header.scrolled .brand{color:var(--ink)}
-.brand-mark{width:30px;height:30px;display:grid;place-items:center}
-.brand-mark svg{width:30px;height:30px}
+.brand-mark{width:38px;height:38px;display:grid;place-items:center}
+.brand-mark svg{width:38px;height:38px}
 .brand-name{font-family:"Bricolage Grotesque",sans-serif;font-size:1.35rem;letter-spacing:-.01em}
-/* no company name set — let the logo take the full brand slot instead of a cramped 30px mark */
-.brand--logo-only .brand-mark{width:44px;height:44px}
-.brand--logo-only .brand-mark svg{width:44px;height:44px}
+/* no company name set — let the logo take the full brand slot instead of a cramped mark */
+.brand--logo-only .brand-mark{width:54px;height:54px}
+.brand--logo-only .brand-mark svg{width:54px;height:54px}
 
 /* rounded-tab nav group — the only glassmorphism shape in the header */
 .nav{
