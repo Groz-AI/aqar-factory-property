@@ -64,12 +64,22 @@
     }
 
     // ---- logo: swap the inline mark for an uploaded image when set ----
-    // (favicon is a fixed static asset — see the <link rel="icon"> tags in
-    // each page's <head> — and is intentionally not admin-editable.)
     if (c.logo) {
       const src = imgURL(c.logo, 160);
       document.querySelectorAll('.brand-mark').forEach(m => {
         m.innerHTML = `<img src="${esc(src)}" alt="${esc(c.name || '')}" style="width:100%;height:100%;object-fit:contain;display:block">`;
+      });
+
+      // ---- favicon: use the same uploaded logo ----
+      const iconHref = imgURL(c.logo, 64);
+      ['icon', 'shortcut icon', 'apple-touch-icon'].forEach(rel => {
+        let link = document.querySelector(`link[rel="${rel}"]`);
+        if (!link) {
+          link = document.createElement('link');
+          link.rel = rel;
+          document.head.appendChild(link);
+        }
+        link.href = iconHref;
       });
     }
 
