@@ -43,11 +43,11 @@
   root.className = 'ai-widget';
   const tt = window.t || ((s) => s);
   root.innerHTML = `
-    <div class="ai-panel" id="aiPanel" aria-hidden="true" role="dialog" aria-label="${tt('Realteek AI project matchmaker')}">
+    <div class="ai-panel" id="aiPanel" aria-hidden="true" role="dialog" aria-label="${tt('Aqar Factory AI project matchmaker')}">
       <div class="ai-panel-head">
         <div class="ai-panel-id">
           <span class="ai-avatar">${sparkSVG}</span>
-          <div><b>${tt('Realteek AI')}</b><small>${tt('Your project matchmaker')}</small></div>
+          <div><b>${tt('Aqar Factory AI')}</b><small>${tt('Your project matchmaker')}</small></div>
         </div>
         <button class="ai-panel-close" id="aiPanelClose" aria-label="Close">${closeSVG}</button>
       </div>
@@ -255,7 +255,7 @@
     e.preventDefault();
     const text = inputField.value.trim();
     if (!text) return;
-    if (!started) { started = true; openPanel(); await botSay(t("Hi! I'm Realteek AI — what can I help you find?"), 400); await loadData(); }
+    if (!started) { started = true; openPanel(); await botSay(t("Hi! I'm Aqar Factory AI — what can I help you find?"), 400); await loadData(); }
     inputField.value = '';
     clearFoot();
     setSending(true);
@@ -265,7 +265,7 @@
   });
 
   async function boot() {
-    await botSay(t("Hi! I'm Realteek AI — answer a few quick questions and I'll match you with the best-fit projects, or just type your own question below anytime."), 500);
+    await botSay(t("Hi! I'm Aqar Factory AI — answer a few quick questions and I'll match you with the best-fit projects, or just type your own question below anytime."), 500);
     await loadData();
     askCategory();
   }

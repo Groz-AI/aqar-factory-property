@@ -17,11 +17,11 @@ window.FALLBACK = {
 
   testimonials: [
     { quote:"We couldn't be happier with the outcome. From the initial consultation to the final touches, the team demonstrated a high level of professionalism, creativity and care.", name:"Tommie Littel", location:"Nusa Dua, Bali", avatar:"1507003211169-0a1dd7228f2d", rating:5 },
-    { quote:"Realteek found us an off-market penthouse we'd never have discovered alone. The whole process felt effortless and genuinely tailored to us.", name:"Amara Okafor", location:"Dubai Marina, UAE", avatar:"1494790108377-be9c29b29330", rating:5 },
+    { quote:"Aqar Factory found us an off-market penthouse we'd never have discovered alone. The whole process felt effortless and genuinely tailored to us.", name:"Amara Okafor", location:"Dubai Marina, UAE", avatar:"1494790108377-be9c29b29330", rating:5 },
     { quote:"As an investor I value precision and honesty. Their market read was sharp and the returns have spoken for themselves.", name:"Daniel Brooks", location:"London, UK", avatar:"1500648767791-00dcc994a43e", rating:5 },
     { quote:"Selling our family home was emotional, but they handled every detail with such warmth. Sold above asking in nine days.", name:"Sofia Marchetti", location:"Paris, France", avatar:"1438761681033-6461ffad8d80", rating:5 },
     { quote:"The office leasing team understood our growth plans and matched us perfectly. Couldn't recommend them more highly.", name:"Kenji Watanabe", location:"Singapore CBD", avatar:"1463453091185-61582044d556", rating:5 },
-    { quote:"Beautiful homes, but it's the people that make Realteek. Responsive, transparent and never pushy.", name:"Isabella Cruz", location:"Miami, USA", avatar:"1534528741775-53994a69daeb", rating:5 },
+    { quote:"Beautiful homes, but it's the people that make Aqar Factory. Responsive, transparent and never pushy.", name:"Isabella Cruz", location:"Miami, USA", avatar:"1534528741775-53994a69daeb", rating:5 },
     { quote:"From browsing to keys in hand, everything was seamless. The curated listings saved us weeks of searching.", name:"Marcus Lindqvist", location:"New York, USA", avatar:"1506794778202-cad84cf45f1d", rating:5 },
     { quote:"A boutique experience with global reach. They treated our modest budget with the same care as any luxury client.", name:"Priya Nair", location:"Jakarta, Indonesia", avatar:"1517841905240-472988babdf9", rating:5 }
   ],
@@ -35,7 +35,7 @@ window.FALLBACK = {
 
   content: {
     company: {
-      name: "Realteek",
+      name: "Aqar Factory",
       logo: "",
       tagline: "Real estate done right — handpicked homes, offices and luxury units across the world's great cities.",
       email: "hello@realteek.com",
@@ -48,7 +48,7 @@ window.FALLBACK = {
       x: "#",
       linkedin: "#",
       facebook: "",
-      copyright: "© 2026 Realteek. All rights reserved.",
+      copyright: "© 2026 Aqar Factory. All rights reserved.",
       offices: [
         { city: "Dubai · HQ", lines: "Level 18, Marina Gate Tower\nDubai Marina, UAE", phone: "+971 4 555 0100" },
         { city: "London", lines: "22 Curzon Street, Mayfair\nLondon W1J, United Kingdom", phone: "+44 20 7555 0140" },

@@ -42,7 +42,7 @@ let ALL = [];
 let project = null;
 
 function populate() {
-  document.title = `${project.name} — Realteek`;
+  document.title = `${project.name} — Aqar Factory`;
 
   const heroImg = document.getElementById('heroImg');
   if (heroImg._tid) clearInterval(heroImg._tid);

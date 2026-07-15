@@ -28,8 +28,8 @@
     'About Us': 'من نحن',
     'Contact': 'تواصل معنا',
     'Open menu': 'فتح القائمة',
-    'Realteek home': 'الصفحة الرئيسية لـ Realteek',
-    'Realteek': 'Realteek',
+    'Aqar Factory home': 'الصفحة الرئيسية لـ Aqar Factory',
+    'Aqar Factory': 'Aqar Factory',
 
     // ---------- home hero ----------
     'Curated Homes For Sale.': 'منازل مختارة بعناية للبيع.',
@@ -83,7 +83,7 @@
     'New listings, market notes and quiet off-market deals — once a month.': 'أحدث المشاريع، ملاحظات السوق، وصفقات حصرية — مرة كل شهر.',
     'Your email': 'بريدك الإلكتروني',
     'Join': 'اشترك',
-    '© 2026 Realteek. All rights reserved.': '© 2026 Realteek. جميع الحقوق محفوظة.',
+    '© 2026 Aqar Factory. All rights reserved.': '© 2026 Aqar Factory. جميع الحقوق محفوظة.',
     'Privacy · Terms · Cookies': 'الخصوصية · الشروط · ملفات تعريف الارتباط',
 
     // ---------- projects listing page ----------
@@ -132,7 +132,7 @@
     'Who we are': 'من نحن',
     'A handpicked approach to a': 'نهج مختار بعناية في',
     'noisy market': 'سوق صاخب',
-    "Realteek began with a simple frustration: great properties were being sold like commodities. We set out to do the opposite — to treat every listing as a story, every client as a long-term relationship, and every transaction as something worth getting right.": 'بدأت Realteek من إحباط بسيط: كانت العقارات المميزة تُباع وكأنها سلع. فقررنا فعل العكس — أن نتعامل مع كل عقار كقصة، وكل عميل كعلاقة طويلة الأمد، وكل صفقة كأمر يستحق أن يُنجز بإتقان.',
+    "Aqar Factory began with a simple frustration: great properties were being sold like commodities. We set out to do the opposite — to treat every listing as a story, every client as a long-term relationship, and every transaction as something worth getting right.": 'بدأت Aqar Factory من إحباط بسيط: كانت العقارات المميزة تُباع وكأنها سلع. فقررنا فعل العكس — أن نتعامل مع كل عقار كقصة، وكل عميل كعلاقة طويلة الأمد، وكل صفقة كأمر يستحق أن يُنجز بإتقان.',
     "Today we operate across the world's most dynamic cities, partnering with the developers and owners we believe in, and quietly turning down the ones we don't. The result is a smaller, sharper portfolio — and clients who come back.": 'اليوم نعمل في أكثر مدن العالم حيوية، بشراكة مع المطورين والملّاك الذين نثق بهم، ونعتذر بهدوء عن التعامل مع من لا نثق بهم. والنتيجة محفظة أصغر وأكثر تميزًا — وعملاء يعودون إلينا دائمًا.',
     'Talk to our team': 'تحدث مع فريقنا',
     'yrs': 'سنة',
@@ -223,12 +223,12 @@
     // ---------- AI widget ----------
     'Let AI Choose For You': 'دع الذكاء الاصطناعي يختار لك',
     'Let AI choose for you': 'دع الذكاء الاصطناعي يختار لك',
-    'Realteek AI project matchmaker': 'مساعد الذكاء الاصطناعي لاختيار المشاريع في Realteek',
-    'Realteek AI': 'الذكاء الاصطناعي لـ Realteek',
+    'Aqar Factory AI project matchmaker': 'مساعد الذكاء الاصطناعي لاختيار المشاريع في Aqar Factory',
+    'Aqar Factory AI': 'الذكاء الاصطناعي لـ Aqar Factory',
     'Your project matchmaker': 'مساعدك في اختيار المشروع المناسب',
     'Or just ask me anything…': 'أو اسألني أي شيء…',
     'Send': 'إرسال',
-    "Hi! I'm Realteek AI — answer a few quick questions and I'll match you with the best-fit projects, or just type your own question below anytime.": 'مرحبًا! أنا الذكاء الاصطناعي لـ Realteek — أجب عن بضعة أسئلة سريعة وسأقترح عليك أنسب المشاريع، أو اكتب سؤالك الخاص أدناه في أي وقت.',
+    "Hi! I'm Aqar Factory AI — answer a few quick questions and I'll match you with the best-fit projects, or just type your own question below anytime.": 'مرحبًا! أنا الذكاء الاصطناعي لـ Aqar Factory — أجب عن بضعة أسئلة سريعة وسأقترح عليك أنسب المشاريع، أو اكتب سؤالك الخاص أدناه في أي وقت.',
     'What type of project are you looking for?': 'ما نوع المشروع الذي تبحث عنه؟',
     'Any type': 'أي نوع',
     'Got it. Any particular unit type — villas, apartments, duplex…?': 'تمام. هل تفضل نوع وحدة معين — فلل، شقق، دوبلكس…؟',
@@ -243,7 +243,7 @@
     'Start over': 'ابدأ من جديد',
     'Talk to an advisor': 'تحدث مع مستشار',
     "Sorry, I'm having trouble connecting right now. Please try again shortly.": 'عذرًا، أواجه مشكلة في الاتصال حاليًا. يرجى المحاولة مرة أخرى خلال قليل.',
-    "Hi! I'm Realteek AI — what can I help you find?": 'مرحبًا! أنا الذكاء الاصطناعي لـ Realteek — بماذا يمكنني مساعدتك؟',
+    "Hi! I'm Aqar Factory AI — what can I help you find?": 'مرحبًا! أنا الذكاء الاصطناعي لـ Aqar Factory — بماذا يمكنني مساعدتك؟',
 
     // ---------- data-i18n-html keys (mixed markup) ----------
     'cities.heading': 'استكشف العقارات <em>حسب المدن</em>',
@@ -530,7 +530,7 @@
     'Content saved': 'تم حفظ المحتوى',
 
     // ---------- admin login ----------
-    'Sign in · Realteek Admin': 'تسجيل الدخول · إدارة Realteek',
+    'Sign in · Aqar Factory Admin': 'تسجيل الدخول · إدارة Aqar Factory',
     'Welcome back': 'مرحبًا بعودتك',
     'Sign in to manage your listings, projects and site content.': 'سجّل الدخول لإدارة مشاريعك ومحتوى موقعك.',
     'Email address': 'البريد الإلكتروني',

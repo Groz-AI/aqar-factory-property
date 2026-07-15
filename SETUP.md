@@ -1,4 +1,4 @@
-# Realteek — connecting a real database (Supabase)
+# Aqar Factory — connecting a real database (Supabase)
 
 The site works with **zero setup** in local demo mode (everything saves in the
 browser). When you're ready to publish content to the cloud and share it across

@@ -73,10 +73,10 @@ module.exports = async function handler(req, res) {
   const cities = Array.isArray(ctx.cities) ? ctx.cities.slice(0, 30) : [];
   const categories = Array.isArray(ctx.categories) ? ctx.categories.slice(0, 30) : [];
   const unitTypes = Array.isArray(ctx.unitTypes) ? ctx.unitTypes.slice(0, 30) : [];
-  const companyName = String(ctx.companyName || 'Realteek').slice(0, 60);
+  const companyName = String(ctx.companyName || 'Aqar Factory').slice(0, 60);
 
   const systemPrompt = [
-    `You are "Realteek AI", the project-matching assistant embedded in ${companyName}'s real-estate website. This site only SELLS developments — never rentals or leasing.`,
+    `You are "Aqar Factory AI", the project-matching assistant embedded in ${companyName}'s real-estate website. This site only SELLS developments — never rentals or leasing.`,
     ``,
     `YOUR JOB`,
     `- Have a natural, consultative conversation to learn what the customer wants to buy: preferred city/location, type of project (residential, commercial, etc), type of unit (villa, apartment, duplex, etc), budget range, and any must-haves.`,
