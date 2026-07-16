@@ -777,6 +777,8 @@
   // SITE CONTENT EDITOR (content_blocks)
   // ============================================================
   const CONTENT_SCHEMA = {
+    sections: { title: t('Homepage sections'), fields: [
+      { key: 'testimonials', label: t('Show the reviews section'), type: 'bool', hint: t('Turn off to hide the whole "Hear From Our Awesome Satisfied Clients" section from the homepage — individual reviews are still managed under Testimonials.') } ] },
     company: { title: t('Company / Brand'), fields: [
       { key: 'name', label: t('Company name') },
       { key: 'logo', label: t('Logo'), type: 'image', hint: t('shown in the header & footer — leave empty to use the default mark') },
@@ -897,6 +899,9 @@
   function contentField(prefix, f, v) {
     const id = 'c_' + prefix + '__' + f.key;
     const hint = f.hint ? `<div class="field-hint">${esc(f.hint)}</div>` : '';
+    if (f.type === 'bool') {
+      return `<div class="field"><label class="switch"><input type="checkbox" id="${id}" ${v ? 'checked' : ''}><span class="track"></span>${esc(f.label)}</label>${hint}</div>`;
+    }
     if (f.type === 'gallery') {
       return `<div class="field"><label>${esc(f.label)}</label>
         <div class="gallery-edit" id="${id}_wrap"></div>
@@ -929,6 +934,7 @@
       if (f.type === 'gallery') { value[f.key] = uploads[id] || []; return; }
       const node = $('#' + id);
       if (!node) return;
+      if (f.type === 'bool') { value[f.key] = node.checked; return; }
       value[f.key] = f.type === 'number' ? Number(node.value) : node.value;
     });
     if (sch.list) {

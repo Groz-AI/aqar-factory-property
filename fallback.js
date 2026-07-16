@@ -34,6 +34,9 @@ window.FALLBACK = {
   ],
 
   content: {
+    sections: {
+      testimonials: true
+    },
     company: {
       name: "Aqar Factory",
       logo: "",

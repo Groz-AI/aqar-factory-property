@@ -406,6 +406,10 @@ function applyContent(c) {
   if (!c) return;
   const isAr = !!(window.i18n && window.i18n.lang === 'ar');
   const pick = (obj, key) => (isAr && obj[key + '_ar']) ? obj[key + '_ar'] : obj[key];
+  if (c.sections && c.sections.testimonials === false) {
+    const sec = document.querySelector('.testimonials');
+    if (sec) sec.style.display = 'none';
+  }
   if (c.hero) {
     const h = c.hero;
     const eye = document.querySelector('.hero-eyebrow');
