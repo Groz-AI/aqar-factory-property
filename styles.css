@@ -827,4 +827,8 @@ em{font-style:normal}
   .ai-fab-label{display:none}
   .ai-fab{padding:.9em}
   .ai-panel{inset-inline:10px;width:auto}
+  .brand-mark{width:52px;height:52px}
+  .brand-mark svg{width:52px;height:52px}
+  .brand--logo-only .brand-mark{width:76px;height:76px}
+  .brand--logo-only .brand-mark svg{width:76px;height:76px}
 }
