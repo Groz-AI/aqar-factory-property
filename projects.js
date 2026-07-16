@@ -49,7 +49,7 @@ let state = { cat: 'all', city: 'all', q: '', sort: 'featured' };
 function buildFacets() {
   const categories = ['all', ...new Set(P.map(p => p.category))];
   catChips.innerHTML = categories.map((c, i) =>
-    `<button class="chip ${i === 0 ? 'active' : ''}" data-cat="${c}">${c === 'all' ? t('All') : c}</button>`
+    `<button class="chip ${i === 0 ? 'active' : ''}" data-cat="${c}">${c === 'all' ? t('All') : t(c)}</button>`
   ).join('');
   const cities = [...new Set(P.map(p => p.city))].sort();
   citySelect.insertAdjacentHTML('beforeend',
@@ -72,7 +72,7 @@ function cardHTML(p){
     <div class="pcard-img" data-gallery>
       ${slides}<div class="pg-shade"></div>
       <span class="pcard-status ${statusClass(p.status)}"><i></i>${p.status || ''}</span>
-      <span class="pcard-cat">${p.category || ''}</span>
+      <span class="pcard-cat">${p.category ? t(p.category) : ''}</span>
       ${devLogo}
       ${dots}
     </div>

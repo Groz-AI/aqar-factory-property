@@ -128,7 +128,7 @@ function renderSearchFacets(cities, projects) {
   }
   if (searchTypeSelect && projects && projects.length) {
     const cats = [...new Set(projects.map(p => p.category).filter(Boolean))];
-    searchTypeSelect.setOptions([{ value: 'all', label: t('All project types') }].concat(cats.map(c => ({ value: c, label: c }))));
+    searchTypeSelect.setOptions([{ value: 'all', label: t('All project types') }].concat(cats.map(c => ({ value: c, label: t(c) }))));
   }
 }
 
@@ -264,7 +264,7 @@ function renderProjects(projects) {
     <a class="project reveal" href="project.html?id=${encodeURIComponent(p.id)}">
       <div class="project-img" data-gallery>${slides}<div class="pg-shade"></div>${dots}</div>
       <div class="project-body">
-        <span class="project-tag">${p.category || ''}</span>
+        <span class="project-tag">${p.category ? t(p.category) : ''}</span>
         <h3>${p.name}</h3>
         <p>${p.tagline || ''}</p>
         ${devLine}

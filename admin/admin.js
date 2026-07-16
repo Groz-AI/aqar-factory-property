@@ -360,6 +360,7 @@
       return esc(s.length > 60 ? s.slice(0, 60) + '…' : s);
     }
     if (Array.isArray(v)) return v.slice(0, 3).map(tag => `<span class="tag-mini">${esc(tag)}</span>`).join('') + (v.length > 3 ? ` +${v.length - 3}` : '');
+    if (c.key === 'category') return esc(t(v));
     return esc(v);
   }
 

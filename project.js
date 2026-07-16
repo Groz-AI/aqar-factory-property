@@ -55,7 +55,7 @@ function populate() {
   document.getElementById('projLoc').innerHTML = `${pinSVG}${project.location || ''}`;
   document.getElementById('tagline').textContent = project.tagline || '';
   document.getElementById('badges').innerHTML = `
-    <span class="dbadge dark">${project.category || ''}</span>
+    <span class="dbadge dark">${project.category ? t(project.category) : ''}</span>
     <span class="dbadge">${project.status || ''}</span>
     <span class="dbadge">${project.year || ''}</span>`;
 
@@ -165,7 +165,7 @@ function renderRelated() {
       <div class="pcard-img" data-gallery>
         ${slides}<div class="pg-shade"></div>
         <span class="pcard-status ${statusClass(p.status)}"><i></i>${p.status || ''}</span>
-        <span class="pcard-cat">${p.category || ''}</span>
+        <span class="pcard-cat">${p.category ? t(p.category) : ''}</span>
         ${devLogo}
         ${dots}
       </div>

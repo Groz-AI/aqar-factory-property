@@ -272,7 +272,7 @@
 
   function askCategory() {
     const opts = [{ label: t('Any type'), value: 'all' }]
-      .concat(projectCategories().map(c => ({ label: c, value: c })));
+      .concat(projectCategories().map(c => ({ label: t(c), value: c })));
     botSay(t('What type of project are you looking for?'), 500).then(() => setChips(opts, opt => {
       answers.category = opt.value;
       askUnitType();
