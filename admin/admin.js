@@ -288,7 +288,7 @@
         <div style="padding:20px;display:flex;gap:.7rem;flex-wrap:wrap">
           <button class="btn btn-sky btn-sm" data-jump="projects">${t('Manage projects')}</button>
           <button class="btn btn-ghost btn-sm" data-jump="content">${t('Edit site content')}</button>
-          <button class="btn btn-ghost btn-sm" data-jump="settings">${t('Setup & seed data')}</button>
+          <button class="btn btn-ghost btn-sm" data-jump="cities">${t('Manage cities')}</button>
         </div></div>`;
     $$('[data-jump]').forEach(b => b.addEventListener('click', () => go(b.dataset.jump)));
   }
@@ -969,7 +969,7 @@
   // ============================================================
   function renderSettings() {
     $('#viewTitle').textContent = t('Setup');
-    $('#viewSub').textContent = localMode ? t('Local demo mode — everything saves in this browser') : t('Connection status and starter data');
+    $('#viewSub').textContent = localMode ? t('Local demo mode — everything saves in this browser') : t('Connection status');
 
     if (localMode) {
       const cred = window.RealteekLocal.getCred();
@@ -1021,32 +1021,14 @@
           <p class="field-hint">${t('Project URL:')} <code>${esc((cfg.url || '').replace(/^https?:\/\//, '') || '—')}</code></p>
         </div></div>
 
-      <div class="panel" style="margin-bottom:20px"><div class="panel-head"><b class="bricolage" style="font-size:1.05rem">${t('Account — email & password')}</b></div>
+      <div class="panel"><div class="panel-head"><b class="bricolage" style="font-size:1.05rem">${t('Account — email & password')}</b></div>
         <div style="padding:20px">
           <div class="field"><label for="accEmail">${t('Email')}</label><input type="email" id="accEmail" value="${esc(email)}"></div>
           <button class="btn btn-ghost btn-sm" id="accEmailSave" style="margin-bottom:18px">${t('Update email')}</button>
           <div class="field-hint" style="margin:-10px 0 18px">${t('Changing your email sends a confirmation link to the new address.')}</div>
           <div class="field"><label for="accPass">${t('New password')}</label><input type="text" id="accPass" placeholder="${esc(t('At least 6 characters'))}"></div>
           <button class="btn btn-sky btn-sm" id="accPassSave">${t('Update password')}</button>
-        </div></div>
-
-      <div class="panel" style="margin-bottom:20px"><div class="panel-head"><b class="bricolage" style="font-size:1.05rem">${t('Starter data')}</b></div>
-        <div style="padding:20px">
-          <p style="color:var(--ink-soft);margin-bottom:14px;line-height:1.6">${t('Seed your database with the site’s bundled demo content — projects, listings, cities, testimonials, developers and copy. Tables that already contain rows are skipped, so this is safe to run once.')}</p>
-          <button class="btn btn-sky" id="seedBtn">${t('Import starter data')}</button>
-          <div id="seedLog" class="field-hint" style="margin-top:14px;white-space:pre-line"></div>
-        </div></div>
-
-      <div class="panel"><div class="panel-head"><b class="bricolage" style="font-size:1.05rem">${t('Currency')}</b></div>
-        <div style="padding:20px">
-          <p style="color:var(--ink-soft);margin-bottom:14px;line-height:1.6">${t('Some project/listing prices were saved with a "$" before EGP became the site\'s only currency. This rewrites any price still starting with "$" to start with "EGP" instead, leaving the rest of the value untouched. Safe to run more than once — already-converted prices are left alone.')}</p>
-          <button class="btn btn-sky" id="egpBtn">${t('Convert existing prices to EGP')}</button>
-          <div id="egpLog" class="field-hint" style="margin-top:14px;white-space:pre-line"></div>
         </div></div>`;
-    const btn = $('#seedBtn');
-    if (btn) btn.addEventListener('click', seedAll);
-    const egpBtn = $('#egpBtn');
-    if (egpBtn) egpBtn.addEventListener('click', convertPricesToEGP);
 
     const emailBtn = $('#accEmailSave');
     if (emailBtn) emailBtn.addEventListener('click', async () => {
@@ -1067,127 +1049,6 @@
       if (!error) $('#accPass').value = '';
       toast(error ? error.message : t('Password updated'), error ? 'err' : '');
     });
-  }
-
-  async function seedAll() {
-    const btn = $('#seedBtn'), log = $('#seedLog');
-    btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> ' + t('Importing…');
-    const lines = [];
-    const note = (s) => { lines.push(s); log.textContent = lines.join('\n'); };
-
-    try {
-      // projects (public shape → DB columns)
-      await seedTable('projects', (FALLBACK.projects || []).map((p, i) => ({
-        slug: p.id, name: p.name, category: p.category, unit_types: p.unitTypes || [], city: p.city, location: p.location,
-        country: p.country, year: p.year, status: p.status, tagline: p.tagline, cover: p.cover,
-        about: p.about || [], amenities: p.amenities || [], developer: p.developer, gallery: p.gallery || [],
-        price: p.stats && p.stats.price, units: p.stats && p.stats.units, floors: p.stats && p.stats.floors,
-        area: p.stats && p.stats.area, handover: p.stats && p.stats.handover,
-        price_value: p.priceValue || 0, area_value: p.areaValue || 0, is_rental: !!p.isRental,
-        lat: p.coords ? p.coords[0] : null, lng: p.coords ? p.coords[1] : null,
-        sort_order: i, published: true
-      })), 'slug', note);
-
-      await seedTable('cities', (FALLBACK.cities || []).map((x, i) => ({ ...x, sort_order: i, published: true })), null, note);
-      await seedTable('testimonials', (FALLBACK.testimonials || []).map((x, i) => ({ ...x, sort_order: i, published: true })), null, note);
-      await seedTable('developers', (FALLBACK.developers || []).map((x, i) => ({ ...x, sort_order: i, published: true })), null, note);
-
-      // content blocks
-      const content = FALLBACK.content || {};
-      const rows = Object.keys(content).map(key => ({ key, value: content[key] }));
-      if (rows.length) {
-        const { error } = await sb.from('content_blocks').upsert(rows, { onConflict: 'key' });
-        note(error ? `content: ${error.message}` : `content: ${rows.length} blocks ✓`);
-      }
-
-      await backfillCityLinks(note);
-
-      note('\n' + t('Done. Reloading counts…'));
-      await refreshCounts();
-      toast(t('Starter data imported'));
-    } catch (e) {
-      note(t('Error:') + ' ' + (e.message || e));
-      toast(t('Import failed'), 'err');
-    }
-    btn.disabled = false; btn.textContent = t('Import starter data');
-  }
-
-  // one-time cleanup for content saved back when prices were shown in "$" —
-  // rewrites only the leading "$" to "EGP ", leaving the rest of the value
-  // (the number, /mo suffix, etc.) exactly as the admin entered it
-  async function convertPricesToEGP() {
-    const btn = $('#egpBtn'), log = $('#egpLog');
-    btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> ' + t('Converting…');
-    const lines = [];
-    const note = (s) => { lines.push(s); log.textContent = lines.join('\n'); };
-
-    try {
-      const { data, error } = await sb.from('projects').select('id,price');
-      if (error) {
-        note(`projects: ${error.message}`);
-      } else {
-        const toFix = (data || []).filter(row => typeof row.price === 'string' && row.price.trim().startsWith('$'));
-        if (!toFix.length) { note('projects: ' + t('nothing to convert')); }
-        else {
-          let ok = 0, fail = 0;
-          for (const row of toFix) {
-            const price = row.price.replace(/^\s*\$/, 'EGP ');
-            const { error: upErr } = await sb.from('projects').update({ price }).eq('id', row.id);
-            if (upErr) fail++; else ok++;
-          }
-          note(`projects: ${ok} ${t('price(s) converted')}${fail ? `, ${fail} ${t('failed')}` : ''}`);
-        }
-      }
-      note('\n' + t('Done.'));
-      toast(t('Prices converted to EGP'));
-    } catch (e) {
-      note(t('Error:') + ' ' + (e.message || e));
-      toast(t('Conversion failed'), 'err');
-    }
-    btn.disabled = false; btn.textContent = t('Convert existing prices to EGP');
-  }
-
-  // links any project that still has a free-text city (no city_id yet) to a
-  // matching row in the Cities table — runs right after seeding so demo
-  // data is fully relational immediately, without needing to re-run schema.sql
-  async function backfillCityLinks(note) {
-    const { data: cities } = await sb.from('cities').select('id,name');
-    if (!cities || !cities.length) return;
-    const findCity = (text) => {
-      const txt = String(text || '').toLowerCase();
-      return cities.find(c => txt === c.name.toLowerCase() || txt.includes(c.name.toLowerCase()));
-    };
-
-    const { data: projects } = await sb.from('projects').select('id,city,city_id');
-    let projLinked = 0;
-    for (const p of (projects || [])) {
-      if (p.city_id) continue;
-      const c = findCity(p.city);
-      if (c) { await sb.from('projects').update({ city_id: c.id }).eq('id', p.id); projLinked++; }
-    }
-    note(`${t('city links:')} ${projLinked} ${t('project(s)')} ✓`);
-  }
-
-  async function seedTable(table, rows, conflictKey, note) {
-    if (!rows.length) { note(`${table}: ${t('nothing to seed')}`); return; }
-    if (!conflictKey) {
-      // no natural key to de-dupe by — skip entirely if the table already has any rows
-      const { count } = await sb.from(table).select('id', { count: 'exact', head: true });
-      if (count && count > 0) { note(`${table}: ${count} ${t('rows exist, skipped')}`); return; }
-      const { error } = await sb.from(table).insert(rows);
-      note(error ? `${table}: ${error.message}` : `${table}: ${rows.length} ${t('rows')} ✓`);
-      return;
-    }
-    // has a natural key (e.g. slug) — only insert rows that don't already exist.
-    // Never upsert here: an upsert would silently overwrite any live edits an
-    // admin made to a project that happens to share a slug with the demo data.
-    const { data: existing } = await sb.from(table).select(conflictKey);
-    const have = new Set((existing || []).map(row => row[conflictKey]));
-    const fresh = rows.filter(row => !have.has(row[conflictKey]));
-    if (!fresh.length) { note(`${table}: ${rows.length} ${t('rows already exist, skipped')}`); return; }
-    const { error } = await sb.from(table).insert(fresh);
-    const skipped = rows.length - fresh.length;
-    note(error ? `${table}: ${error.message}` : `${table}: ${fresh.length} ${t('new row(s)')} ✓${skipped ? ` (${skipped} ${t('already existed, skipped')})` : ''}`);
   }
 
   // ============================================================
