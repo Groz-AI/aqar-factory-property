@@ -93,11 +93,15 @@
     }
 
     // ---- social links (header/footer/contact — matched by aria-label) ----
+    // each platform has its own "show icon" toggle (key + '_visible', default
+    // shown) plus a URL — both must hold for the icon to actually appear.
     const socials = { Instagram: 'instagram', X: 'x', LinkedIn: 'linkedin', Facebook: 'facebook' };
     Object.keys(socials).forEach(label => {
-      const url = c[socials[label]];
+      const key = socials[label];
+      const url = c[key];
+      const visible = c[key + '_visible'] !== false;
       document.querySelectorAll(`a[aria-label="${label}"]`).forEach(a => {
-        if (url) { a.href = url; a.style.display = ''; }
+        if (visible && url) { a.href = url; a.style.display = ''; }
         else { a.style.display = 'none'; }
       });
     });

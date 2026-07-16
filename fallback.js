@@ -48,9 +48,13 @@ window.FALLBACK = {
       address: "Level 18, Marina Gate Tower\nDubai Marina, United Arab Emirates",
       hours: "Sunday – Thursday: 9am – 6pm\nSaturday: by appointment",
       instagram: "#",
+      instagram_visible: true,
       x: "#",
+      x_visible: true,
       linkedin: "#",
+      linkedin_visible: true,
       facebook: "",
+      facebook_visible: true,
       copyright: "© 2026 Aqar Factory. All rights reserved.",
       offices: [
         { city: "Dubai · HQ", lines: "Level 18, Marina Gate Tower\nDubai Marina, UAE", phone: "+971 4 555 0100" },
