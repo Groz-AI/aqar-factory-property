@@ -359,7 +359,7 @@
 .qc-icon svg{position:relative;z-index:1;width:22px;height:22px}
 .qc-call .qc-icon{background:linear-gradient(135deg,var(--sky),var(--sky-deep))}
 .qc-wa .qc-icon{background:#25d366}
-.qc-ring{position:absolute;inset:0;border-radius:50%;--ring-rgb:27,111,168;animation:qcRing 3.2s ease-out infinite}
+.qc-ring{position:absolute;inset:0;border-radius:50%;--ring-rgb:158,14,59;animation:qcRing 3.2s ease-out infinite}
 .qc-wa .qc-ring{--ring-rgb:37,211,102;animation-delay:.3s}
 @keyframes qcRing{0%{box-shadow:0 0 0 0 rgba(var(--ring-rgb),.4)}70%,100%{box-shadow:0 0 0 10px rgba(var(--ring-rgb),0)}}
 .qc-text{display:flex;flex-direction:column;gap:.15rem;min-width:0}

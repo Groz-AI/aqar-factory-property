@@ -4,9 +4,9 @@
 @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap');
 
 :root{
-  --sky:#2E9BDD; --sky-deep:#1B6FA8; --sky-soft:#E9F4FC;
-  --ink:#0C1620; --ink-2:#1a2632; --ink-soft:#5C6776;
-  --paper:#F4F6F8; --white:#fff; --black:#0A0E14;
+  --sky:#db1351; --sky-deep:#9E0E3B; --sky-soft:#FCE6EB;
+  --ink:#131A21; --ink-2:#1a2632; --ink-soft:#A0AAB5;
+  --paper:#F0F2F5; --white:#fff; --black:#0A0E14;
   --line:rgba(12,22,32,.1); --line-dark:rgba(255,255,255,.08);
   --ok:#2bb673; --warn:#E5A23B; --danger:#e5484d;
   --r:14px; --ease:cubic-bezier(.22,.61,.36,1);
