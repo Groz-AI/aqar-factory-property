@@ -95,7 +95,7 @@
     // ---- social links (header/footer/contact — matched by aria-label) ----
     // each platform has its own "show icon" toggle (key + '_visible', default
     // shown) plus a URL — both must hold for the icon to actually appear.
-    const socials = { Instagram: 'instagram', X: 'x', LinkedIn: 'linkedin', Facebook: 'facebook' };
+    const socials = { Instagram: 'instagram', X: 'x', LinkedIn: 'linkedin', Facebook: 'facebook', TikTok: 'tiktok' };
     Object.keys(socials).forEach(label => {
       const key = socials[label];
       const url = c[key];

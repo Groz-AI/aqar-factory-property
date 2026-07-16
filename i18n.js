@@ -73,7 +73,7 @@
 
     // ---------- footer ----------
     "Real estate done right — handpicked homes, offices and luxury units across the world's great cities.": 'العقارات كما ينبغي — منازل ومكاتب ووحدات فاخرة مختارة بعناية في أعظم مدن العالم.',
-    'Instagram': 'إنستغرام', 'X': 'إكس', 'LinkedIn': 'لينكدإن', 'Facebook': 'فيسبوك',
+    'Instagram': 'إنستغرام', 'X': 'إكس', 'LinkedIn': 'لينكدإن', 'Facebook': 'فيسبوك', 'TikTok': 'تيك توك',
     'Explore': 'استكشف',
     'Cities': 'المدن',
     'Company': 'الشركة',
@@ -331,7 +331,9 @@
     'Show LinkedIn icon': 'إظهار أيقونة لينكدإن',
     'LinkedIn URL': 'رابط لينكدإن',
     'Show Facebook icon': 'إظهار أيقونة فيسبوك',
+    'Show TikTok icon': 'إظهار أيقونة تيك توك',
     'Facebook URL': 'رابط فيسبوك',
+    'TikTok URL': 'رابط تيك توك',
     'Copyright line': 'سطر حقوق النشر',
     'Add office': 'إضافة مكتب',
     'Office name / city': 'اسم المكتب / المدينة',

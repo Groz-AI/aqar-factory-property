@@ -55,6 +55,8 @@ window.FALLBACK = {
       linkedin_visible: true,
       facebook: "",
       facebook_visible: true,
+      tiktok: "",
+      tiktok_visible: true,
       copyright: "© 2026 Aqar Factory. All rights reserved.",
       offices: [
         { city: "Dubai · HQ", lines: "Level 18, Marina Gate Tower\nDubai Marina, UAE", phone: "+971 4 555 0100" },

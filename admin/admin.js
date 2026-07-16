@@ -798,6 +798,8 @@
       { key: 'linkedin', label: t('LinkedIn URL') },
       { key: 'facebook_visible', label: t('Show Facebook icon'), type: 'bool' },
       { key: 'facebook', label: t('Facebook URL') },
+      { key: 'tiktok_visible', label: t('Show TikTok icon'), type: 'bool' },
+      { key: 'tiktok', label: t('TikTok URL') },
       { key: 'copyright', label: t('Copyright line') } ],
       list: 'offices', listAddLabel: t('Add office'),
       listFields: [ { key: 'city', label: t('Office name / city') }, { key: 'lines', label: t('Address (one line per row)'), type: 'textarea' }, { key: 'phone', label: t('Phone') } ] },
