@@ -208,6 +208,58 @@ em{font-style:normal}
 .site-header.scrolled .lang-switch[data-lang="en"] .ls-en,.site-header.scrolled .lang-switch[data-lang="ar"] .ls-ar,
 .site-header.solid .lang-switch[data-lang="en"] .ls-en,.site-header.solid .lang-switch[data-lang="ar"] .ls-ar{color:#fff}
 
+/* WhatsApp quick-contact button — header, pulsing WhatsApp-green ring.
+   Hidden by default (inline style) until whatsapp-widget.js confirms a
+   number is configured in the company profile. */
+.wa-header-btn{
+  position:relative;width:40px;height:40px;border-radius:50%;flex:none;
+  display:grid;place-items:center;background:#25D366;color:#fff;border:none;cursor:pointer;
+  transition:transform .25s var(--ease);
+}
+.wa-header-btn:hover{transform:translateY(-2px)}
+.wa-header-btn svg{position:relative;z-index:1;width:20px;height:20px}
+.wa-header-glow{position:absolute;inset:0;border-radius:50%;animation:waRingPulse 2.4s ease-out infinite}
+@keyframes waRingPulse{
+  0%{box-shadow:0 0 0 0 rgba(37,211,102,.55)}
+  70%,100%{box-shadow:0 0 0 12px rgba(37,211,102,0)}
+}
+@media(prefers-reduced-motion:reduce){.wa-header-glow{animation:none}}
+
+/* WhatsApp lead-form modal */
+.wa-modal{position:fixed;inset:0;z-index:400;display:grid;place-items:center;padding:20px;visibility:hidden;pointer-events:none}
+.wa-modal.open{visibility:visible;pointer-events:auto}
+.wa-modal-backdrop{position:absolute;inset:0;background:rgba(12,22,32,.55);backdrop-filter:blur(3px);opacity:0;transition:opacity .3s}
+.wa-modal.open .wa-modal-backdrop{opacity:1}
+.wa-modal-card{
+  position:relative;width:min(420px,100%);max-height:90vh;overflow-y:auto;background:#fff;border-radius:22px;padding:28px 26px;
+  box-shadow:0 40px 90px -30px rgba(10,20,30,.45);
+  transform:translateY(14px) scale(.97);opacity:0;transition:transform .35s var(--ease),opacity .3s;
+}
+.wa-modal.open .wa-modal-card{transform:none;opacity:1}
+.wa-modal-close{position:absolute;top:16px;inset-inline-end:16px;width:32px;height:32px;border-radius:50%;border:none;background:var(--paper);color:var(--ink-soft);display:grid;place-items:center;cursor:pointer;transition:.2s}
+.wa-modal-close:hover{background:var(--line);color:var(--ink)}
+.wa-modal-close svg{width:16px;height:16px}
+.wa-modal-head{display:flex;align-items:center;gap:.7rem;margin-bottom:1.3rem}
+.wa-modal-icon{width:44px;height:44px;border-radius:50%;background:#25D366;color:#fff;display:grid;place-items:center;flex:none}
+.wa-modal-icon svg{width:22px;height:22px}
+.wa-modal-head b{display:block;font-family:"Bricolage Grotesque",sans-serif;font-size:1.05rem}
+.wa-modal-head small{color:var(--ink-soft);font-size:.85rem}
+.wa-field{display:block;margin-bottom:1rem}
+.wa-field>span{display:block;font-size:.82rem;font-weight:600;color:var(--ink);margin-bottom:.4rem}
+.wa-field input,.wa-field select,.wa-field textarea{
+  width:100%;padding:.75em .9em;border-radius:12px;border:1px solid var(--line);
+  font-family:inherit;font-size:.95rem;background:var(--paper);transition:.2s;
+}
+.wa-field input:focus,.wa-field select:focus,.wa-field textarea:focus{border-color:var(--sky);box-shadow:0 0 0 4px var(--sky-soft);background:#fff;outline:none}
+.wa-field textarea{resize:vertical;min-height:90px}
+.wa-submit{
+  width:100%;display:flex;align-items:center;justify-content:center;gap:.6rem;
+  padding:.9em 1.2em;border-radius:999px;border:none;background:#25D366;color:#fff;
+  font-family:inherit;font-weight:700;font-size:.95rem;cursor:pointer;transition:.25s;
+}
+.wa-submit:hover{background:#1fb958;transform:translateY(-1px)}
+.wa-submit svg{width:18px;height:18px}
+
 /* ============================================================
    HERO
    ============================================================ */

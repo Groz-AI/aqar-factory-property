@@ -190,6 +190,14 @@
     'Speak to an advisor directly': 'تحدث مباشرة مع مستشار',
     'WhatsApp us': 'راسلنا عبر واتساب',
     'Usually replies in minutes': 'عادة ما يتم الرد خلال دقائق',
+
+    // ---------- header WhatsApp quick-contact ----------
+    'Chat on WhatsApp': 'الدردشة عبر واتساب',
+    'Chat with us on WhatsApp': 'تحدث معنا عبر واتساب',
+    'Your name': 'اسمك',
+    'Your message (optional)': 'رسالتك (اختياري)',
+    'Continue on WhatsApp': 'المتابعة عبر واتساب',
+    "Hi! I'm": 'مرحبًا! أنا',
     'or send us a message': 'أو أرسل لنا رسالة',
     'Send us a message': 'أرسل لنا رسالة',
     'First name': 'الاسم الأول',
