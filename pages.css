@@ -287,14 +287,6 @@
 .timeline h4{font-family:"Bricolage Grotesque",sans-serif;font-size:1.12rem;margin-bottom:.25rem}
 .timeline p{color:var(--ink-soft);font-size:.98rem;max-width:58ch}
 
-/* team */
-.team-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1.4rem;margin-top:52px}
-.team-card{text-align:start}
-.team-photo{height:300px;border-radius:18px;background-size:cover;background-position:center;margin-bottom:16px;box-shadow:var(--shadow-sm);transition:transform .4s var(--ease),box-shadow .4s var(--ease);filter:grayscale(.15)}
-.team-card:hover .team-photo{transform:translateY(-6px);box-shadow:var(--shadow-md);filter:grayscale(0)}
-.team-card h3{font-family:"Bricolage Grotesque",sans-serif;font-size:1.14rem}
-.team-card span{color:var(--sky-deep);font-size:.9rem;font-weight:500}
-
 /* ============================================================
    CONTACT
    ============================================================ */
@@ -372,11 +364,6 @@
 @media(prefers-reduced-motion:reduce){.qc-ring{animation:none}}
 @media(max-width:420px){.qc-text small{display:none}}
 
-/* map */
-.contact-map-section{padding-bottom:20px}
-.contact-map{border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow-md);border:1px solid var(--line);height:380px}
-.contact-map iframe{width:100%;height:100%;border:0;display:block;filter:grayscale(.2) contrast(1.05)}
-
 /* ============================================================
    RESPONSIVE — About / Contact
    ============================================================ */
@@ -385,7 +372,6 @@
   .about-stats-grid{grid-template-columns:repeat(2,1fr);gap:2.4rem 1rem}
   .about-stats-grid .about-stat:nth-child(2)::after{display:none}
   .values-grid{grid-template-columns:repeat(2,1fr)}
-  .team-grid{grid-template-columns:repeat(2,1fr)}
   .contact-grid{grid-template-columns:1fr;gap:2.4rem}
 }
 @media(max-width:760px){
@@ -395,10 +381,8 @@
   .about-stats-grid{grid-template-columns:1fr}
   .about-stats-grid .about-stat::after{display:none!important}
   .values-grid{grid-template-columns:1fr}
-  .team-grid{grid-template-columns:1fr 1fr}
   .cf-row{grid-template-columns:1fr}
   .contact-form-wrap{padding:24px}
-  .contact-map{height:300px}
 }
 
 /* ============================================================
@@ -414,5 +398,5 @@
 [dir="rtl"] #projName, [dir="rtl"] #tagline, [dir="rtl"] #about,
 [dir="rtl"] .amenity, [dir="rtl"] .fact-list dd, [dir="rtl"] #devName,
 [dir="rtl"] .pcard-body h3, [dir="rtl"] .pcard-tag,
-[dir="rtl"] .team-card h3, [dir="rtl"] .value-card p,
+[dir="rtl"] .value-card p,
 [dir="rtl"] [data-brand]{unicode-bidi:plaintext}
