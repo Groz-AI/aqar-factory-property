@@ -12,7 +12,6 @@ const IMG = (ref, w = 800) =>
 
 /* ---------- inline icons ---------- */
 const starSVG = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.6 1.4 6.8L12 17.8 5.9 20.4l1.4-6.8L2.2 9l6.9-.7L12 2Z"/></svg>`;
-const closeSVG = `<svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`;
 
 const escHTML = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
@@ -169,65 +168,11 @@ function renderCities(cities, projectList) {
   wrap.querySelectorAll('.city-card').forEach(card => {
     const cid = card.dataset.cityId;
     const city = cities.find(c => c.id === cid);
-    const projects = (projectList || []).filter(pr => pr.cityId === cid);
-    const open = () => openCityModal(city, projects);
-    card.addEventListener('click', open);
-    card.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } });
+    if (!city) return;
+    const go = () => { window.location.href = 'projects.html?city=' + encodeURIComponent(city.name); };
+    card.addEventListener('click', go);
+    card.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } });
   });
-}
-
-/* ============================================================
-   CITY PROJECTS MODAL — opened by clicking a city card
-   ============================================================ */
-let cityModalOverlay = null;
-let cityModalBody = null;
-
-function ensureCityModal() {
-  if (cityModalOverlay) return;
-  const el = document.createElement('div');
-  el.className = 'unit-modal-overlay';
-  el.id = 'cityModalOverlay';
-  el.innerHTML = `
-    <div class="unit-modal city-modal" role="dialog" aria-modal="true" aria-label="${t('Projects in this city')}">
-      <button class="unit-modal-close" id="cityModalClose" aria-label="Close">${closeSVG}</button>
-      <div class="unit-modal-scroll" id="cityModalBody"></div>
-    </div>`;
-  document.body.appendChild(el);
-  cityModalOverlay = el;
-  cityModalBody = el.querySelector('#cityModalBody');
-  el.addEventListener('click', e => { if (e.target === el) closeCityModal(); });
-  el.querySelector('#cityModalClose').addEventListener('click', closeCityModal);
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeCityModal(); });
-}
-
-function openCityModal(city, projects) {
-  if (!city) return;
-  ensureCityModal();
-  const rows = projects.map(p => {
-    const stats = p.stats || {};
-    return `<a class="cmp-item" href="project.html?id=${encodeURIComponent(p.id)}">
-      <img src="${IMG(p.cover, 160)}" alt="" loading="lazy">
-      <div class="cmp-item-body"><h4>${p.name || ''}</h4><p>${p.location || ''}</p></div>
-      <span class="cmp-item-price">${stats.price || ''}</span>
-    </a>`;
-  }).join('');
-  const countLabel = projects.length === 1 ? t('1 Project') : projects.length + ' ' + t('Projects');
-  cityModalBody.innerHTML = `
-    <div class="city-modal-head">
-      <h3>${city.name}</h3>
-      <p>${city.country ? city.country + ' · ' : ''}${countLabel}</p>
-    </div>
-    <div class="city-modal-projects">
-      ${projects.length ? rows : `<div class="city-modal-empty">${t('No projects linked to this city yet.')}</div>`}
-    </div>`;
-  cityModalOverlay.classList.add('open');
-  document.body.style.overflow = 'hidden';
-}
-
-function closeCityModal() {
-  if (!cityModalOverlay) return;
-  cityModalOverlay.classList.remove('open');
-  document.body.style.overflow = '';
 }
 
 /* ============================================================

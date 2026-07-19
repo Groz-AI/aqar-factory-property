@@ -43,8 +43,6 @@
     '1 Project': 'مشروع واحد',
     'Projects': 'مشاريع',
     'View projects in': 'عرض المشاريع في',
-    'Projects in this city': 'المشاريع في هذه المدينة',
-    'No projects linked to this city yet.': 'لا توجد مشاريع مرتبطة بهذه المدينة بعد.',
     "From skyline penthouses to beachfront estates — browse our most sought-after destinations and the homes waiting there.": 'من البنتهاوس المطل على الأفق إلى العقارات الساحلية — تصفح أكثر الوجهات طلبًا والمنازل التي تنتظرك هناك.',
 
     // ---------- home: journey/stats ----------
