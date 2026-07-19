@@ -136,15 +136,16 @@ em{font-style:normal}
 /* transparent layout row — no outer pill, the glass lives in the tabs only */
 .header-inner{
   display:flex;align-items:center;justify-content:space-between;gap:1.4rem;
+  padding-block:10px;
 }
 .brand{display:flex;align-items:center;gap:.55rem;font-weight:700;color:#fff}
 .site-header.scrolled .brand{color:var(--ink)}
-.brand-mark{width:68px;height:68px;display:grid;place-items:center}
-.brand-mark svg{width:68px;height:68px}
+.brand-mark{width:44px;height:44px;display:grid;place-items:center}
+.brand-mark svg{width:44px;height:44px}
 .brand-name{font-family:"Bricolage Grotesque",sans-serif;font-size:1.35rem;letter-spacing:-.01em}
 /* no company name set — let the logo take the full brand slot instead of a cramped mark */
-.brand--logo-only .brand-mark{width:110px;height:110px}
-.brand--logo-only .brand-mark svg{width:110px;height:110px}
+.brand--logo-only .brand-mark{width:60px;height:60px}
+.brand--logo-only .brand-mark svg{width:60px;height:60px}
 
 /* rounded-tab nav group — the only glassmorphism shape in the header */
 .nav{
@@ -827,8 +828,8 @@ em{font-style:normal}
   .ai-fab-label{display:none}
   .ai-fab{padding:.9em}
   .ai-panel{inset-inline:10px;width:auto}
-  .brand-mark{width:52px;height:52px}
-  .brand-mark svg{width:52px;height:52px}
-  .brand--logo-only .brand-mark{width:76px;height:76px}
-  .brand--logo-only .brand-mark svg{width:76px;height:76px}
+  .brand-mark{width:36px;height:36px}
+  .brand-mark svg{width:36px;height:36px}
+  .brand--logo-only .brand-mark{width:48px;height:48px}
+  .brand--logo-only .brand-mark svg{width:48px;height:48px}
 }
