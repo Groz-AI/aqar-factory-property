@@ -139,12 +139,20 @@ em{font-style:normal}
 }
 .brand{display:flex;align-items:center;gap:.55rem;font-weight:700;color:#fff}
 .site-header.scrolled .brand{color:var(--ink)}
-.brand-mark{width:68px;height:68px;display:grid;place-items:center}
-.brand-mark svg{width:68px;height:68px}
+.brand-mark{width:68px;height:68px;display:grid;place-items:center;transition:width .3s var(--ease),height .3s var(--ease)}
+.brand-mark svg{width:68px;height:68px;transition:width .3s var(--ease),height .3s var(--ease)}
 .brand-name{font-family:"Bricolage Grotesque",sans-serif;font-size:1.35rem;letter-spacing:-.01em}
 /* no company name set — let the logo take the full brand slot instead of a cramped mark */
 .brand--logo-only .brand-mark{width:110px;height:110px}
 .brand--logo-only .brand-mark svg{width:110px;height:110px}
+/* once scrolled the header becomes a slim solid bar — the big hero-sized
+   logo would make that bar look bloated, so shrink it back down there;
+   it stays full-size over the transparent hero where the extra height
+   isn't visually noticeable */
+.site-header.scrolled .brand-mark,.site-header.solid .brand-mark{width:40px;height:40px}
+.site-header.scrolled .brand-mark svg,.site-header.solid .brand-mark svg{width:40px;height:40px}
+.site-header.scrolled .brand--logo-only .brand-mark,.site-header.solid .brand--logo-only .brand-mark{width:48px;height:48px}
+.site-header.scrolled .brand--logo-only .brand-mark svg,.site-header.solid .brand--logo-only .brand-mark svg{width:48px;height:48px}
 
 /* rounded-tab nav group — the only glassmorphism shape in the header */
 .nav{
