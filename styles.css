@@ -828,8 +828,9 @@ em{font-style:normal}
   .ai-fab-label{display:none}
   .ai-fab{padding:.9em}
   .ai-panel{inset-inline:10px;width:auto}
-  .brand-mark{width:36px;height:36px}
-  .brand-mark svg{width:36px;height:36px}
-  .brand--logo-only .brand-mark{width:48px;height:48px}
-  .brand--logo-only .brand-mark svg{width:48px;height:48px}
+  .header-inner{padding-block:0}
+  .brand-mark{width:40px;height:40px}
+  .brand-mark svg{width:40px;height:40px}
+  .brand--logo-only .brand-mark{width:52px;height:52px}
+  .brand--logo-only .brand-mark svg{width:52px;height:52px}
 }
