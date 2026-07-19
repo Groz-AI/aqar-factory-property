@@ -139,15 +139,11 @@ em{font-style:normal}
 }
 .brand{display:flex;align-items:center;gap:.55rem;font-weight:700;color:#fff}
 .site-header.scrolled .brand{color:var(--ink)}
-/* the mark is sized big but pulled up via a negative bottom margin, so its
-   MARGIN BOX (what the flex row actually measures for height/alignment)
-   stays close to the nav pill's ~40px, while the oversized visual mark
-   hangs below that line instead of stretching the header bar taller */
-.brand-mark{width:68px;height:68px;display:grid;place-items:center;margin-bottom:-28px}
+.brand-mark{width:68px;height:68px;display:grid;place-items:center}
 .brand-mark svg{width:68px;height:68px}
 .brand-name{font-family:"Bricolage Grotesque",sans-serif;font-size:1.35rem;letter-spacing:-.01em}
 /* no company name set — let the logo take the full brand slot instead of a cramped mark */
-.brand--logo-only .brand-mark{width:110px;height:110px;margin-bottom:-70px}
+.brand--logo-only .brand-mark{width:110px;height:110px}
 .brand--logo-only .brand-mark svg{width:110px;height:110px}
 
 /* rounded-tab nav group — the only glassmorphism shape in the header */
@@ -831,8 +827,8 @@ em{font-style:normal}
   .ai-fab-label{display:none}
   .ai-fab{padding:.9em}
   .ai-panel{inset-inline:10px;width:auto}
-  .brand-mark{width:52px;height:52px;margin-bottom:-12px}
+  .brand-mark{width:52px;height:52px}
   .brand-mark svg{width:52px;height:52px}
-  .brand--logo-only .brand-mark{width:76px;height:76px;margin-bottom:-36px}
+  .brand--logo-only .brand-mark{width:76px;height:76px}
   .brand--logo-only .brand-mark svg{width:76px;height:76px}
 }
