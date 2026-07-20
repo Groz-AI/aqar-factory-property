@@ -127,6 +127,24 @@ create table if not exists public.developers (
   updated_at  timestamptz default now()
 );
 
+-- Blog posts
+create table if not exists public.blog_posts (
+  id            uuid primary key default gen_random_uuid(),
+  slug          text unique not null,
+  title         text not null,
+  excerpt       text,
+  cover         text,                               -- Unsplash id or full URL
+  author_name   text,
+  author_avatar text,
+  tags          text[] default '{}',
+  blocks        jsonb default '[]'::jsonb,           -- [{type:'heading'|'paragraph'|'image', text, image}], in display order
+  published_at  timestamptz default now(),           -- editable "posted on" date, independent of created_at
+  sort_order    int default 0,
+  published     boolean default true,
+  created_at    timestamptz default now(),
+  updated_at    timestamptz default now()
+);
+
 -- Editable singletons: hero text, stats, CTA, section headings…
 create table if not exists public.content_blocks (
   key        text primary key,                    -- 'hero' | 'stats' | 'cta' ...
@@ -138,7 +156,7 @@ create table if not exists public.content_blocks (
 do $$
 declare t text;
 begin
-  foreach t in array array['projects','cities','testimonials','developers','content_blocks']
+  foreach t in array array['projects','cities','testimonials','developers','blog_posts','content_blocks']
   loop
     execute format(
       'drop trigger if exists trg_touch_%1$s on public.%1$s;
@@ -154,7 +172,7 @@ end $$;
 do $$
 declare t text;
 begin
-  foreach t in array array['projects','cities','testimonials','developers']
+  foreach t in array array['projects','cities','testimonials','developers','blog_posts']
   loop
     execute format('alter table public.%I enable row level security;', t);
 
@@ -272,7 +290,7 @@ create policy "admin delete subscribers" on public.newsletter_subscribers
 do $$
 declare t text;
 begin
-  foreach t in array array['content_blocks','projects','cities','testimonials','developers']
+  foreach t in array array['content_blocks','projects','cities','testimonials','developers','blog_posts']
   loop
     begin
       execute format('alter publication supabase_realtime add table public.%I;', t);

@@ -1,0 +1,60 @@
+/* ============================================================
+   AQAR FACTORY — Blog listing
+   ============================================================ */
+let POSTS = [];
+const blogGrid = document.getElementById('blogGrid');
+const emptyState = document.getElementById('emptyState');
+
+const arrowSVG = `<svg viewBox="0 0 24 24" fill="none"><path d="M7 17 17 7M9 7h8v8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+
+function formatDate(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (isNaN(d)) return '';
+  const lang = (window.i18n && window.i18n.lang) || 'en';
+  return d.toLocaleDateString(lang === 'ar' ? 'ar' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+}
+
+function cardHTML(p) {
+  const tags = (p.tags || []).slice(0, 3).map(tag => `<span class="blog-tag">${tag}</span>`).join('');
+  const avatar = p.authorAvatar
+    ? `<img class="blog-card-avatar" src="${U(p.authorAvatar, 80)}" alt="" loading="lazy">`
+    : `<span class="blog-card-avatar blog-card-avatar-fallback">${(p.authorName || '·').charAt(0)}</span>`;
+  return `
+  <a class="blog-card reveal" href="blog-post.html?slug=${encodeURIComponent(p.id)}">
+    <div class="blog-card-img" style="background-image:url('${U(p.cover, 800)}')"></div>
+    <div class="blog-card-body">
+      ${tags ? `<div class="blog-card-tags">${tags}</div>` : ''}
+      <h3>${p.title || ''}</h3>
+      <p class="blog-card-excerpt">${p.excerpt || ''}</p>
+      <div class="blog-card-foot">
+        <div class="blog-card-author">${avatar}<span>${p.authorName || ''}</span></div>
+        <span class="blog-card-date">${formatDate(p.publishedAt)}</span>
+      </div>
+    </div>
+  </a>`;
+}
+
+function render() {
+  const list = [...POSTS].sort((a, b) => new Date(b.publishedAt || 0) - new Date(a.publishedAt || 0));
+  blogGrid.innerHTML = list.map(cardHTML).join('');
+  [...blogGrid.children].forEach((el, i) => { el.style.animationDelay = `${i * 60}ms`; });
+  emptyState.hidden = list.length !== 0;
+}
+
+(async function () {
+  try { POSTS = await window.store.getBlogPosts(); }
+  catch (e) { POSTS = (window.FALLBACK && window.FALLBACK.blogPosts) || []; }
+  if (!POSTS || !POSTS.length) POSTS = (window.FALLBACK && window.FALLBACK.blogPosts) || [];
+  render();
+})();
+
+/* ---------- header + mobile nav ---------- */
+const nav = document.getElementById('nav');
+document.getElementById('navToggle').addEventListener('click', () => nav.classList.toggle('open'));
+nav.addEventListener('click', e => { if (e.target.tagName === 'A') nav.classList.remove('open'); });
+
+const header = document.getElementById('header');
+const onHeaderScroll = () => header.classList.toggle('scrolled', window.scrollY > 30);
+onHeaderScroll();
+window.addEventListener('scroll', onHeaderScroll, { passive: true });

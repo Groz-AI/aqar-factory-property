@@ -33,6 +33,73 @@ window.FALLBACK = {
     { name:"Select Group", logo:null }
   ],
 
+  blogPosts: [
+    {
+      id: "off-plan-buying-guide",
+      title: "The Ultimate Guide to Buying Off-Plan Properties",
+      excerpt: "Off-plan can mean better pricing and flexible payment plans — but only if you know what to check before you sign. Here's our advisors' checklist.",
+      cover: "1600585154340-be6161a56a0c",
+      authorName: "Sofia Marchetti",
+      authorAvatar: "1438761681033-6461ffad8d80",
+      tags: ["Off-plan", "Buying guide", "Investment"],
+      publishedAt: "2026-06-02T09:00:00.000Z",
+      blocks: [
+        { type: "paragraph", text: "Off-plan property — buying a home before it's built — has become one of the fastest ways to enter a growth market at a lower price point. It also comes with real risk if you don't know what to check first." },
+        { type: "heading", text: "Why buyers choose off-plan" },
+        { type: "paragraph", text: "Developers typically price off-plan units below projected completion value, and spread payments across the construction timeline instead of asking for the full amount up front. For buyers comfortable waiting two to four years, that gap between entry price and market value at handover is the whole appeal." },
+        { type: "image", image: "1600607687939-ce8a6c25118c" },
+        { type: "heading", text: "What to verify before you reserve a unit" },
+        { type: "paragraph", text: "Start with the developer's track record: how many prior projects have they delivered, and were they on schedule? Ask for the escrow account details required by law in most markets — your payments should sit in a regulated account tied to construction milestones, not the developer's general funds." },
+        { type: "paragraph", text: "Read the payment plan closely for what happens if handover slips. A good contract caps the delay penalty and gives you an exit if the project is delayed beyond a defined window." },
+        { type: "heading", text: "Our advisors' rule of thumb" },
+        { type: "paragraph", text: "We only bring clients into off-plan developments from partners we've worked with before, with a public delivery history we can point to. If we haven't seen a developer hand over a comparable project on time, we say so plainly before you commit a deposit." }
+      ]
+    },
+    {
+      id: "new-capital-investment-outlook",
+      title: "New Capital: Why Investors Are Watching This City",
+      excerpt: "Egypt's New Administrative Capital has gone from government blueprint to one of the region's most-discussed investment stories. Here's what's actually driving demand.",
+      cover: "1486406146926-c627a92ad1ab",
+      authorName: "Daniel Brooks",
+      authorAvatar: "1500648767791-00dcc994a43e",
+      tags: ["Market insight", "New Capital", "Investment"],
+      publishedAt: "2026-05-14T09:00:00.000Z",
+      blocks: [
+        { type: "paragraph", text: "A decade ago, the New Administrative Capital existed only on paper. Today it's home to government ministries, a growing residential population, and a wave of developer activity that shows no sign of slowing." },
+        { type: "heading", text: "Infrastructure first" },
+        { type: "paragraph", text: "Unlike organic urban growth, New Capital was planned with roads, utilities and transit built ahead of demand rather than playing catch-up. That sequencing is a big part of why institutional developers moved in early — the hard infrastructure risk was already retired by the time private capital arrived." },
+        { type: "image", image: "1444723121867-7a241cacace9" },
+        { type: "heading", text: "What this means for buyers today" },
+        { type: "paragraph", text: "Early-phase pricing is largely gone, but the city is still years from being fully built out, which means the appreciation curve isn't over. The projects worth watching now are the ones closest to completed amenities — schools, retail and the government district — rather than the cheapest plots furthest from them." },
+        { type: "paragraph", text: "As always, our advice is the same regardless of which city is trending: buy the unit and location you'd be glad to own even if the growth story slows, not just the one riding this month's headlines." }
+      ]
+    },
+    {
+      id: "signs-time-to-upgrade-family-home",
+      title: "5 Signs It's Time to Upgrade Your Family Home",
+      excerpt: "Outgrowing a home rarely happens overnight — it creeps up. These are the signals our clients tell us they wish they'd acted on sooner.",
+      cover: "1560448204-e02f11c3d0e2",
+      authorName: "Amara Okafor",
+      authorAvatar: "1494790108377-be9c29b29330",
+      tags: ["Home buying", "Family", "Lifestyle"],
+      publishedAt: "2026-04-20T09:00:00.000Z",
+      blocks: [
+        { type: "paragraph", text: "Most families don't wake up one day and decide to move — the decision builds slowly, room by room. Here are the signs we hear most often from clients right before they call us." },
+        { type: "heading", text: "1. Storage has become a daily negotiation" },
+        { type: "paragraph", text: "If getting the stroller out means moving three other things first, that's not a storage problem you solve with organizers — it's a space problem." },
+        { type: "heading", text: "2. Everyone works from the kitchen table" },
+        { type: "paragraph", text: "A home that had one clear \"quiet corner\" for remote work in 2021 often has three people needing one by now. If calls are getting scheduled around who's home, it's worth counting how many dedicated workspaces you actually need." },
+        { type: "image", image: "1449844908441-8829872d2607" },
+        { type: "heading", text: "3. You've stopped hosting" },
+        { type: "paragraph", text: "A quiet but reliable signal: families who once hosted regularly and gradually stopped, often because the space no longer comfortably fits the gathering they used to have." },
+        { type: "heading", text: "4. The commute math has changed" },
+        { type: "paragraph", text: "Whether it's a new job, a new school, or a shift to hybrid work, a commute that made sense three years ago can quietly become the biggest source of weekly friction in the household." },
+        { type: "heading", text: "5. You're renovating around problems instead of fixing them" },
+        { type: "paragraph", text: "If your last three home-improvement projects were about working around a layout rather than improving it, that budget might be better spent as a down payment on a home that already fits." }
+      ]
+    }
+  ],
+
   content: {
     sections: {
       testimonials: true

@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Projects — Aqar Factory</title>
-<meta name="description" content="Browse Aqar Factory developments by category and city — residential, offices, luxury villas, retail and mixed-use projects." />
+<title>Article — Aqar Factory</title>
+<meta name="description" content="Aqar Factory blog — market insight, buying guides and stories from our team." />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Bricolage+Grotesque:opsz,wght@12..96,300..800&family=Hanken+Grotesk:wght@300..700&display=swap" rel="stylesheet" />
@@ -25,8 +25,8 @@
     </a>
     <nav class="nav" id="nav">
       <a href="index.html" data-i18n>Home</a>
-      <a href="projects.html" class="active" data-i18n>Projects</a>
-      <a href="blog.html" data-i18n>Blog</a>
+      <a href="projects.html" data-i18n>Projects</a>
+      <a href="blog.html" class="active" data-i18n>Blog</a>
       <a href="about.html" data-i18n>About Us</a>
       <a href="contact.html" data-i18n>Contact</a>
     </nav>
@@ -38,63 +38,38 @@
   </div>
 </header>
 
-<!-- PAGE HERO -->
-<section class="subpage-hero" style="--bg:url('https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?auto=format&fit=crop&w=1700&q=80')">
-  <div class="container subpage-hero-in">
-    <div class="breadcrumb light"><a href="index.html" data-i18n>Home</a><span>/</span><b data-i18n>Projects</b></div>
-    <p class="sub-eyebrow" data-i18n>Developments across the world's great cities</p>
-    <h1 data-i18n-html="projects.hero.title">Our <em>Projects</em></h1>
-    <p class="sub-lead" data-i18n>From skyline residences to grade-A offices and beachfront villas — explore the developments we've delivered and the ones taking shape now. Filter by category or city to find yours.</p>
+<!-- ARTICLE HERO -->
+<section class="detail-hero blog-post-hero" id="detailHero">
+  <div class="detail-hero-img" id="heroImg"></div>
+  <div class="container">
+    <div class="blog-post-tags" id="postTags"></div>
+    <h1 id="postTitle" data-i18n>Article</h1>
+    <div class="blog-post-byline">
+      <img class="blog-author-avatar" id="authorAvatar" src="" alt="" hidden>
+      <div>
+        <b id="authorName"></b>
+        <span class="blog-post-date" id="postDate"></span>
+      </div>
+    </div>
   </div>
 </section>
 
-<!-- FILTER TOOLBAR -->
-<div class="filter-toolbar">
-  <div class="container">
-    <div class="toolbar-inner">
-      <div class="search-box">
-        <svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.6"/><path d="m20 20-3-3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-        <input type="text" id="searchInput" placeholder="Search by name, city or location…" aria-label="Search projects" data-i18n-placeholder data-i18n-aria />
-        <button class="search-clear" id="searchClear" aria-label="Clear search" hidden data-i18n-aria>
-          <svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
-        </button>
-      </div>
-      <div class="city-select">
-        <select id="sortSelect" aria-label="Sort projects" data-i18n-aria>
-          <option value="featured" data-i18n>Featured</option>
-          <option value="price-desc" data-i18n>Price: High to Low</option>
-          <option value="price-asc" data-i18n>Price: Low to High</option>
-          <option value="area-desc" data-i18n>Area: Largest</option>
-          <option value="area-asc" data-i18n>Area: Smallest</option>
-          <option value="year-desc" data-i18n>Newest first</option>
-          <option value="name-asc" data-i18n>Name: A–Z</option>
-        </select>
-      </div>
-    </div>
-    <div class="toolbar-sub">
-      <div class="filter-group">
-        <span class="filter-label" data-i18n>Category</span>
-        <div class="cat-chips" id="catChips"><!-- chips injected --></div>
-      </div>
-      <div class="city-select compact">
-        <select id="citySelect"><option value="all" data-i18n>All cities</option></select>
-      </div>
-      <span class="result-count"><b id="resCount">0</b> <span data-i18n>projects</span></span>
-      <button class="reset-btn" id="resetBtn" hidden data-i18n>Reset</button>
-    </div>
+<!-- BODY -->
+<div class="container">
+  <div class="breadcrumb" style="padding-top:22px"><a href="index.html" data-i18n>Home</a><span>/</span><a href="blog.html" data-i18n>Blog</a><span>/</span><b id="crumbTitle">Article</b></div>
+
+  <div class="blog-post-layout">
+    <article class="blog-article" id="articleBody"></article>
   </div>
 </div>
 
-<!-- GRID -->
-<main class="container">
-  <div class="projects-grid" id="projectsGrid"></div>
-  <div class="empty-state" id="emptyState" hidden>
-    <svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.6"/><path d="m20 20-3-3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-    <h3 data-i18n>No projects match those filters</h3>
-    <p data-i18n>Try a different search, category or city.</p>
-    <button class="btn btn-dark" id="emptyReset" style="margin-top:1.2rem" data-i18n>Clear filters</button>
+<!-- RELATED -->
+<section class="related">
+  <div class="container">
+    <h2 class="display-head" data-i18n-html="blog.more">More <em>Stories</em></h2>
+    <div class="blog-grid" id="relatedPosts"></div>
   </div>
-</main>
+</section>
 
 <!-- FOOTER -->
 <footer class="footer" id="footer">
@@ -125,7 +100,7 @@
 <script src="store.js"></script>
 <script src="branding.js"></script>
 <script src="newsletter.js"></script>
-<script src="projects.js"></script>
+<script src="blog-post.js"></script>
 <script src="ai-widget.js"></script>
 <script src="whatsapp-widget.js"></script>
 </body>

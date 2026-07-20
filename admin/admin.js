@@ -150,6 +150,28 @@
         { key: 'sort_order', label: t('Sort order'), type: 'number', half: true },
         { key: 'published', label: t('Published'), type: 'bool', half: true }
       ]
+    },
+    posts: {
+      label: t('Blog'), singular: t('Post'), table: 'blog_posts', icon: 'post',
+      columns: [
+        { key: 'cover', label: '', type: 'thumb' },
+        { key: 'title', label: t('Title'), type: 'name', sub: 'author_name' },
+        { key: 'tags', label: t('Tags') },
+        { key: 'published', label: t('Status'), type: 'pill' }
+      ],
+      fields: [
+        { key: 'title', label: t('Title'), type: 'text', required: true },
+        { key: 'slug', label: t('Slug (URL id)'), type: 'text', required: true, hint: t('lowercase, dashes — e.g. azure-residences') },
+        { key: 'excerpt', label: t('Excerpt'), type: 'textarea', hint: t('Short summary shown on the blog listing card and search previews') },
+        { key: 'cover', label: t('Cover image'), type: 'image' },
+        { key: 'author_name', label: t('Author name'), type: 'text', half: true },
+        { key: 'author_avatar', label: t('Author avatar'), type: 'image', half: true },
+        { key: 'tags', label: t('Tag keywords'), type: 'tags' },
+        { key: 'blocks', label: t('Article content'), type: 'blocks', hint: t('Build the article from heading, paragraph and image blocks, in the order they should appear.') },
+        { key: 'published_at', label: t('Published date'), type: 'date', half: true },
+        { key: 'sort_order', label: t('Sort order'), type: 'number', half: true },
+        { key: 'published', label: t('Published'), type: 'bool', half: true }
+      ]
     }
   };
 
@@ -408,6 +430,7 @@
       if (f.type === 'gallery') wireGallery('f_' + f.key, f.key, (row && row[f.key]) || []);
       if (f.type === 'pdf') wirePdf('f_' + f.key, row ? row[f.key] : '');
       if (f.type === 'consultants') wireConsultants('f_' + f.key, f.key, (row && row[f.key]) || []);
+      if (f.type === 'blocks') wireBlocks('f_' + f.key, f.key, (row && row[f.key]) || []);
     });
 
     $('#drawerSave').onclick = () => saveForm(view);
@@ -417,6 +440,21 @@
   function fieldHTML(f, val) {
     const id = 'f_' + f.key;
     const hint = f.hint ? `<div class="field-hint">${esc(f.hint)}</div>` : '';
+    if (f.type === 'date') {
+      const dateVal = val ? String(val).slice(0, 10) : '';
+      return `<div class="field"><label for="${id}">${esc(f.label)}</label><input type="date" id="${id}" value="${esc(dateVal)}">${hint}</div>`;
+    }
+    if (f.type === 'blocks') {
+      return `<div class="field"><label>${esc(f.label)}</label>
+        <div class="blocks-edit" id="${id}_wrap"></div>
+        <div class="blocks-add-row">
+          <button type="button" class="btn btn-ghost btn-sm" id="${id}_add_heading">+ ${t('Heading')}</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="${id}_add_paragraph">+ ${t('Paragraph')}</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="${id}_add_image">+ ${t('Image')}</button>
+        </div>
+        <input type="file" id="${id}_file" accept="image/*" style="display:none">
+        ${hint}</div>`;
+    }
     if (f.type === 'bool') {
       return `<div class="field"><label class="switch"><input type="checkbox" id="${id}" ${val ? 'checked' : ''}><span class="track"></span>${esc(f.label)}</label>${hint}</div>`;
     }
@@ -596,6 +634,72 @@
     paint();
   }
 
+  // ---------- blog article content field wiring (repeatable heading/paragraph/image blocks) ----------
+  function wireBlocks(id, stateKey, initial) {
+    uploads[stateKey] = Array.isArray(initial)
+      ? initial.map(b => ({ type: (b && b.type) || 'paragraph', text: (b && b.text) || '', image: (b && b.image) || '' }))
+      : [];
+    const key = stateKey;
+    const wrap = $('#' + id + '_wrap'), file = $('#' + id + '_file');
+    if (!wrap) return;
+    let uploadTarget = null;
+    const typeLabel = ty => ty === 'heading' ? t('Heading') : ty === 'image' ? t('Image') : t('Paragraph');
+    const paint = () => {
+      wrap.innerHTML = uploads[key].length ? uploads[key].map((b, i) => {
+        const moveUp = i > 0 ? `<button type="button" class="icon-btn" data-bup="${i}" title="${esc(t('Move up'))}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>` : '';
+        const moveDown = i < uploads[key].length - 1 ? `<button type="button" class="icon-btn" data-bdown="${i}" title="${esc(t('Move down'))}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M19 12l-7 7-7-7"/></svg></button>` : '';
+        let body;
+        if (b.type === 'heading') {
+          body = `<input type="text" placeholder="${esc(t('Heading text'))}" value="${esc(b.text)}" data-btext="${i}">`;
+        } else if (b.type === 'image') {
+          body = `<div class="block-img-row">
+            <img class="block-img-prev" src="${esc(imgUrl(b.image, 200))}" alt="" data-bpick="${i}" title="${esc(t('Click to choose an existing image'))}">
+            <button type="button" class="btn btn-ghost btn-sm" data-bupload="${i}">${t('Upload…')}</button>
+          </div>`;
+        } else {
+          body = `<textarea placeholder="${esc(t('Paragraph text'))}" data-btext="${i}">${esc(b.text)}</textarea>`;
+        }
+        return `<div class="block-row" data-i="${i}">
+          <div class="block-row-head">
+            <span class="block-type-badge">${esc(typeLabel(b.type))}</span>
+            <div class="block-row-actions">${moveUp}${moveDown}<button type="button" class="icon-btn del" data-brm="${i}" title="${esc(t('Remove'))}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button></div>
+          </div>
+          ${body}
+        </div>`;
+      }).join('') : `<div class="field-hint">${esc(t('No blocks yet — add a heading, paragraph or image below.'))}</div>`;
+      $$('[data-btext]', wrap).forEach(node => node.addEventListener('input', () => { uploads[key][+node.dataset.btext].text = node.value; }));
+      $$('[data-bupload]', wrap).forEach(b => b.addEventListener('click', () => { uploadTarget = +b.dataset.bupload; file.click(); }));
+      $$('[data-bpick]', wrap).forEach(img => img.addEventListener('click', () => {
+        const i = +img.dataset.bpick;
+        openMediaPicker('image', (url) => { uploads[key][i].image = url; paint(); });
+      }));
+      $$('[data-brm]', wrap).forEach(b => b.addEventListener('click', () => { uploads[key].splice(+b.dataset.brm, 1); paint(); }));
+      $$('[data-bup]', wrap).forEach(b => b.addEventListener('click', () => {
+        const i = +b.dataset.bup;
+        [uploads[key][i - 1], uploads[key][i]] = [uploads[key][i], uploads[key][i - 1]];
+        paint();
+      }));
+      $$('[data-bdown]', wrap).forEach(b => b.addEventListener('click', () => {
+        const i = +b.dataset.bdown;
+        [uploads[key][i], uploads[key][i + 1]] = [uploads[key][i + 1], uploads[key][i]];
+        paint();
+      }));
+    };
+    const addHeading = $('#' + id + '_add_heading'), addParagraph = $('#' + id + '_add_paragraph'), addImage = $('#' + id + '_add_image');
+    if (addHeading) addHeading.addEventListener('click', () => { uploads[key].push({ type: 'heading', text: '', image: '' }); paint(); });
+    if (addParagraph) addParagraph.addEventListener('click', () => { uploads[key].push({ type: 'paragraph', text: '', image: '' }); paint(); });
+    if (addImage) addImage.addEventListener('click', () => { uploads[key].push({ type: 'image', text: '', image: '' }); paint(); });
+    file.addEventListener('change', async () => {
+      if (!file.files[0] || uploadTarget == null) return;
+      pendingUploads++;
+      const url = await uploadFile(file.files[0], 'image');
+      pendingUploads--;
+      file.value = '';
+      if (url) { uploads[key][uploadTarget].image = url; paint(); toast(t('Image uploaded — remember to Save')); }
+    });
+    paint();
+  }
+
   // guards any promise against hanging forever — a stalled/dropped upload
   // connection would otherwise leave pendingUploads stuck above zero and
   // permanently block Save with no way to recover short of reloading
@@ -706,7 +810,9 @@
       if (f.type === 'bool') { out[f.key] = node.checked; continue; }
       if (f.type === 'gallery') { out[f.key] = uploads[f.key] || []; continue; }
       if (f.type === 'consultants') { out[f.key] = (uploads[f.key] || []).filter(c => c.name || c.logo); continue; }
+      if (f.type === 'blocks') { out[f.key] = (uploads[f.key] || []).filter(b => b.text || b.image); continue; }
       let v = node ? node.value : '';
+      if (f.type === 'date') { out[f.key] = v || null; continue; }
       if (f.type === 'number') { out[f.key] = v === '' ? null : Number(v); continue; }
       // an empty selection on a reference field (city/project) means "unlinked" —
       // save it as null, not an empty string (uuid columns reject "")
@@ -1171,7 +1277,8 @@
     city: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V8l5-3v16"/><path d="M14 21V11l5 3v7"/></svg>',
     quote: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
     users: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>',
-    grid: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>'
+    grid: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>',
+    post: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/><path d="M8 7h8M8 11h5"/></svg>'
   };
 
   // go!

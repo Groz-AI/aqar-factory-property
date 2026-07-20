@@ -31,6 +31,19 @@
     };
   }
 
+  // map a DB blog_posts row to the shape pages expect
+  function mapBlogPost(r) {
+    return {
+      id: r.slug || r.id,
+      dbId: r.id,
+      title: r.title, excerpt: r.excerpt || '', cover: r.cover || '',
+      authorName: r.author_name || '', authorAvatar: r.author_avatar || '',
+      tags: Array.isArray(r.tags) ? r.tags : [],
+      blocks: Array.isArray(r.blocks) ? r.blocks : [],
+      publishedAt: r.published_at || r.created_at || null
+    };
+  }
+
   async function fetchTable(table, fallback, map) {
     if (!sb) return fallback;
     try {
@@ -107,7 +120,7 @@
   // supabase_realtime publication — see schema.sql).
   if (cloud && sb && typeof sb.channel === 'function') {
     try {
-      const TABLES = ['content_blocks', 'projects', 'cities', 'testimonials', 'developers'];
+      const TABLES = ['content_blocks', 'projects', 'cities', 'testimonials', 'developers', 'blog_posts'];
       let reloadT;
       const ch = sb.channel('realteek-public');
       TABLES.forEach(table => {
@@ -126,6 +139,7 @@
     getCities:       () => fetchTable('cities', F.cities || []),
     getTestimonials: () => fetchTable('testimonials', F.testimonials || []),
     getDevelopers:   () => fetchTable('developers', F.developers || []),
+    getBlogPosts:    () => fetchTable('blog_posts', F.blogPosts || [], mapBlogPost),
     getContent,
     getCompany,
     submitInquiry,
