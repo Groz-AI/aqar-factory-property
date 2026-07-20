@@ -47,10 +47,19 @@ function cardHTML(p) {
   </a>`;
 }
 
+const revealObserver = 'IntersectionObserver' in window
+  ? new IntersectionObserver(es => es.forEach(en => {
+      if (en.isIntersecting) { en.target.classList.add('in'); revealObserver.unobserve(en.target); }
+    }), { threshold: .16 })
+  : null;
+
 function render() {
   const list = [...POSTS].sort((a, b) => new Date(b.publishedAt || 0) - new Date(a.publishedAt || 0));
   blogGrid.innerHTML = list.map(cardHTML).join('');
-  [...blogGrid.children].forEach((el, i) => { el.style.animationDelay = `${i * 60}ms`; });
+  [...blogGrid.children].forEach((el, i) => {
+    el.style.animationDelay = `${i * 60}ms`;
+    if (revealObserver) revealObserver.observe(el); else el.classList.add('in');
+  });
   emptyState.hidden = list.length !== 0;
 }
 
