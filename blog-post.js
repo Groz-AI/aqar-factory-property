@@ -81,10 +81,19 @@ function populate() {
   const relatedSection = relatedWrap ? relatedWrap.closest('.related') : null;
   if (related.length) {
     relatedWrap.innerHTML = related.map(cardHTML).join('');
+    [...relatedWrap.children].forEach(el => {
+      if (revealObserver) revealObserver.observe(el); else el.classList.add('in');
+    });
   } else if (relatedSection) {
     relatedSection.hidden = true;
   }
 }
+
+const revealObserver = 'IntersectionObserver' in window
+  ? new IntersectionObserver(es => es.forEach(en => {
+      if (en.isIntersecting) { en.target.classList.add('in'); revealObserver.unobserve(en.target); }
+    }), { threshold: .16 })
+  : null;
 
 (async function () {
   try { ALL = await window.store.getBlogPosts(); }
