@@ -145,6 +145,24 @@ create table if not exists public.blog_posts (
   updated_at    timestamptz default now()
 );
 
+-- ---------- migrate an existing blog_posts table missing newer columns ----------
+-- (all no-ops on a brand new table; safe to re-run any time — this covers a
+-- table that already existed with only some of the columns above, since
+-- "create table if not exists" leaves an existing table untouched)
+alter table public.blog_posts add column if not exists slug          text unique;
+alter table public.blog_posts add column if not exists title         text;
+alter table public.blog_posts add column if not exists excerpt       text;
+alter table public.blog_posts add column if not exists cover         text;
+alter table public.blog_posts add column if not exists author_name   text;
+alter table public.blog_posts add column if not exists author_avatar text;
+alter table public.blog_posts add column if not exists tags          text[] default '{}';
+alter table public.blog_posts add column if not exists blocks        jsonb default '[]'::jsonb;
+alter table public.blog_posts add column if not exists published_at  timestamptz default now();
+alter table public.blog_posts add column if not exists sort_order    int default 0;
+alter table public.blog_posts add column if not exists published     boolean default true;
+alter table public.blog_posts add column if not exists created_at    timestamptz default now();
+alter table public.blog_posts add column if not exists updated_at    timestamptz default now();
+
 -- Editable singletons: hero text, stats, CTA, section headings…
 create table if not exists public.content_blocks (
   key        text primary key,                    -- 'hero' | 'stats' | 'cta' ...
