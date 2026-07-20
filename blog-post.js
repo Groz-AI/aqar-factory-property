@@ -7,6 +7,18 @@ const slug = params.get('slug');
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const arrowSVG = `<svg viewBox="0 0 24 24" fill="none"><path d="M7 17 17 7M9 7h8v8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 
+const isAr = () => !!(window.i18n && window.i18n.lang === 'ar');
+// prefer the Arabic field when the site is in Arabic mode and it's filled in,
+// otherwise fall back to the English one — same pattern as the homepage's
+// bilingual hero/stats/cta content
+function pick(p, key, arKey) {
+  if (isAr()) {
+    const v = p[arKey];
+    if (Array.isArray(v) ? v.length : v) return v;
+  }
+  return p[key];
+}
+
 function formatDate(iso) {
   if (!iso) return '';
   const d = new Date(iso);
@@ -26,14 +38,14 @@ function blockHTML(b) {
 }
 
 function cardHTML(p) {
-  const tags = (p.tags || []).slice(0, 2).map(tag => `<span class="blog-tag">${tag}</span>`).join('');
+  const tags = (pick(p, 'tags', 'tagsAr') || []).slice(0, 2).map(tag => `<span class="blog-tag">${tag}</span>`).join('');
   return `
   <a class="blog-card reveal" href="blog-post.html?slug=${encodeURIComponent(p.id)}">
     <div class="blog-card-img" style="background-image:url('${U(p.cover, 800)}')"></div>
     <div class="blog-card-body">
       ${tags ? `<div class="blog-card-tags">${tags}</div>` : ''}
-      <h3>${p.title || ''}</h3>
-      <p class="blog-card-excerpt">${p.excerpt || ''}</p>
+      <h3>${pick(p, 'title', 'titleAr') || ''}</h3>
+      <p class="blog-card-excerpt">${pick(p, 'excerpt', 'excerptAr') || ''}</p>
       <div class="blog-card-foot">
         <span class="blog-card-date">${formatDate(p.publishedAt)}</span>
         <span class="arrow">${arrowSVG}</span>
@@ -43,16 +55,18 @@ function cardHTML(p) {
 }
 
 function populate() {
-  document.title = `${post.title} — Aqar Factory`;
+  const title = pick(post, 'title', 'titleAr') || '';
+  const excerpt = pick(post, 'excerpt', 'excerptAr') || '';
+  document.title = `${title} — Aqar Factory`;
   const metaDesc = document.querySelector('meta[name="description"]');
-  if (metaDesc && post.excerpt) metaDesc.setAttribute('content', post.excerpt);
+  if (metaDesc && excerpt) metaDesc.setAttribute('content', excerpt);
 
   document.getElementById('heroImg').style.backgroundImage = `url('${U(post.cover, 1600)}')`;
-  document.getElementById('postTitle').textContent = post.title || '';
+  document.getElementById('postTitle').textContent = title;
   document.getElementById('postTitle').removeAttribute('data-i18n');
-  document.getElementById('crumbTitle').textContent = post.title || '';
+  document.getElementById('crumbTitle').textContent = title;
 
-  document.getElementById('postTags').innerHTML = (post.tags || [])
+  document.getElementById('postTags').innerHTML = (pick(post, 'tags', 'tagsAr') || [])
     .map(tag => `<span class="blog-tag">${esc(tag)}</span>`).join('');
 
   const avatarEl = document.getElementById('authorAvatar');
@@ -60,7 +74,7 @@ function populate() {
   document.getElementById('authorName').textContent = post.authorName || '';
   document.getElementById('postDate').textContent = formatDate(post.publishedAt);
 
-  document.getElementById('articleBody').innerHTML = (post.blocks || []).map(blockHTML).join('');
+  document.getElementById('articleBody').innerHTML = (pick(post, 'blocks', 'blocksAr') || []).map(blockHTML).join('');
 
   const related = ALL.filter(p => p.id !== post.id).slice(0, 3);
   const relatedWrap = document.getElementById('relatedPosts');

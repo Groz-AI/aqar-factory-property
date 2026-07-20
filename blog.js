@@ -7,6 +7,18 @@ const emptyState = document.getElementById('emptyState');
 
 const arrowSVG = `<svg viewBox="0 0 24 24" fill="none"><path d="M7 17 17 7M9 7h8v8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 
+const isAr = () => !!(window.i18n && window.i18n.lang === 'ar');
+// prefer the Arabic field when the site is in Arabic mode and it's filled in,
+// otherwise fall back to the English one — same pattern as the homepage's
+// bilingual hero/stats/cta content
+function pick(p, key, arKey) {
+  if (isAr()) {
+    const v = p[arKey];
+    if (Array.isArray(v) ? v.length : v) return v;
+  }
+  return p[key];
+}
+
 function formatDate(iso) {
   if (!iso) return '';
   const d = new Date(iso);
@@ -16,7 +28,7 @@ function formatDate(iso) {
 }
 
 function cardHTML(p) {
-  const tags = (p.tags || []).slice(0, 3).map(tag => `<span class="blog-tag">${tag}</span>`).join('');
+  const tags = (pick(p, 'tags', 'tagsAr') || []).slice(0, 3).map(tag => `<span class="blog-tag">${tag}</span>`).join('');
   const avatar = p.authorAvatar
     ? `<img class="blog-card-avatar" src="${U(p.authorAvatar, 80)}" alt="" loading="lazy">`
     : `<span class="blog-card-avatar blog-card-avatar-fallback">${(p.authorName || '·').charAt(0)}</span>`;
@@ -25,8 +37,8 @@ function cardHTML(p) {
     <div class="blog-card-img" style="background-image:url('${U(p.cover, 800)}')"></div>
     <div class="blog-card-body">
       ${tags ? `<div class="blog-card-tags">${tags}</div>` : ''}
-      <h3>${p.title || ''}</h3>
-      <p class="blog-card-excerpt">${p.excerpt || ''}</p>
+      <h3>${pick(p, 'title', 'titleAr') || ''}</h3>
+      <p class="blog-card-excerpt">${pick(p, 'excerpt', 'excerptAr') || ''}</p>
       <div class="blog-card-foot">
         <div class="blog-card-author">${avatar}<span>${p.authorName || ''}</span></div>
         <span class="blog-card-date">${formatDate(p.publishedAt)}</span>

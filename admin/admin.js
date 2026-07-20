@@ -161,13 +161,17 @@
       ],
       fields: [
         { key: 'title', label: t('Title'), type: 'text', required: true },
+        { key: 'title_ar', label: t('Title (Arabic)'), type: 'text', hint: t('Shown when the site is set to Arabic — leave empty to fall back to the English title above.') },
         { key: 'slug', label: t('Slug (URL id)'), type: 'text', required: true, hint: t('lowercase, dashes — e.g. azure-residences') },
         { key: 'excerpt', label: t('Excerpt'), type: 'textarea', hint: t('Short summary shown on the blog listing card and search previews') },
+        { key: 'excerpt_ar', label: t('Excerpt (Arabic)'), type: 'textarea', hint: t('Shown when the site is set to Arabic — leave empty to fall back to the English excerpt above.') },
         { key: 'cover', label: t('Cover image'), type: 'image' },
         { key: 'author_name', label: t('Author name'), type: 'text', half: true },
         { key: 'author_avatar', label: t('Author avatar'), type: 'image', half: true },
         { key: 'tags', label: t('Tag keywords'), type: 'tags' },
+        { key: 'tags_ar', label: t('Tag keywords (Arabic)'), type: 'tags', hint: t('Shown when the site is set to Arabic — leave empty to fall back to the English tags above.') },
         { key: 'blocks', label: t('Article content'), type: 'blocks', hint: t('Build the article from heading, paragraph and image blocks, in the order they should appear.') },
+        { key: 'blocks_ar', label: t('Article content (Arabic)'), type: 'blocks', hint: t('Shown when the site is set to Arabic — leave empty to fall back to the English content above.') },
         { key: 'published_at', label: t('Published date'), type: 'date', half: true },
         { key: 'sort_order', label: t('Sort order'), type: 'number', half: true },
         { key: 'published', label: t('Published'), type: 'bool', half: true }

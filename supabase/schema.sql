@@ -132,12 +132,16 @@ create table if not exists public.blog_posts (
   id            uuid primary key default gen_random_uuid(),
   slug          text unique not null,
   title         text not null,
+  title_ar      text,                                -- Arabic title; falls back to `title` when empty
   excerpt       text,
+  excerpt_ar    text,
   cover         text,                               -- Unsplash id or full URL
   author_name   text,
   author_avatar text,
   tags          text[] default '{}',
+  tags_ar       text[] default '{}',
   blocks        jsonb default '[]'::jsonb,           -- [{type:'heading'|'paragraph'|'image', text, image}], in display order
+  blocks_ar     jsonb default '[]'::jsonb,           -- Arabic article body; falls back to `blocks` when empty
   published_at  timestamptz default now(),           -- editable "posted on" date, independent of created_at
   sort_order    int default 0,
   published     boolean default true,
@@ -151,12 +155,16 @@ create table if not exists public.blog_posts (
 -- "create table if not exists" leaves an existing table untouched)
 alter table public.blog_posts add column if not exists slug          text unique;
 alter table public.blog_posts add column if not exists title         text;
+alter table public.blog_posts add column if not exists title_ar      text;
 alter table public.blog_posts add column if not exists excerpt       text;
+alter table public.blog_posts add column if not exists excerpt_ar    text;
 alter table public.blog_posts add column if not exists cover         text;
 alter table public.blog_posts add column if not exists author_name   text;
 alter table public.blog_posts add column if not exists author_avatar text;
 alter table public.blog_posts add column if not exists tags          text[] default '{}';
+alter table public.blog_posts add column if not exists tags_ar       text[] default '{}';
 alter table public.blog_posts add column if not exists blocks        jsonb default '[]'::jsonb;
+alter table public.blog_posts add column if not exists blocks_ar     jsonb default '[]'::jsonb;
 alter table public.blog_posts add column if not exists published_at  timestamptz default now();
 alter table public.blog_posts add column if not exists sort_order    int default 0;
 alter table public.blog_posts add column if not exists published     boolean default true;

@@ -36,10 +36,14 @@
     return {
       id: r.slug || r.id,
       dbId: r.id,
-      title: r.title, excerpt: r.excerpt || '', cover: r.cover || '',
+      title: r.title, titleAr: r.title_ar || '',
+      excerpt: r.excerpt || '', excerptAr: r.excerpt_ar || '',
+      cover: r.cover || '',
       authorName: r.author_name || '', authorAvatar: r.author_avatar || '',
       tags: Array.isArray(r.tags) ? r.tags : [],
+      tagsAr: Array.isArray(r.tags_ar) ? r.tags_ar : [],
       blocks: Array.isArray(r.blocks) ? r.blocks : [],
+      blocksAr: Array.isArray(r.blocks_ar) ? r.blocks_ar : [],
       publishedAt: r.published_at || r.created_at || null
     };
   }
