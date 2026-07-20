@@ -6,9 +6,13 @@
    fetched live from Supabase (same public anon key already used
    in config.js) so it stays correct as content is added/removed
    in the admin panel, with no manual regeneration step.
+
+   The site's own URL is derived from the incoming request's Host
+   header rather than hardcoded, so this keeps working unchanged
+   once a custom domain (e.g. aqar-factory.com) is pointed at this
+   Vercel project — no code edit needed at migration time.
    ============================================================ */
 
-const SITE_URL = 'https://aqar-factory-property.vercel.app';
 const SUPA_URL = 'https://dwufpgsqblwjgmzoseev.supabase.co';
 const SUPA_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR3dWZwZ3NxYmx3amdtem9zZWV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5ODgyNTMsImV4cCI6MjA5ODU2NDI1M30.dvO4voO8tRIo-99kHJ3o_x3YvSiaEnq8I0gOmgf1YOY';
 
@@ -33,6 +37,9 @@ function urlEntry(loc, lastmod, priority) {
 }
 
 module.exports = async function handler(req, res) {
+  const host = req.headers['x-forwarded-host'] || req.headers.host;
+  const SITE_URL = `https://${host}`;
+
   const [projects, posts] = await Promise.all([fetchSlugs('projects'), fetchSlugs('blog_posts')]);
 
   const staticPages = [
