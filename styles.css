@@ -303,7 +303,7 @@ em{font-style:normal}
   font-size:clamp(2.6rem,7vw,5.4rem);line-height:1;letter-spacing:-.03em;color:#fff;
   text-shadow:0 6px 40px rgba(15,55,90,.35);
 }
-.hero-title>span{display:block;color:#0d2233;min-height:1.04em}
+.hero-title>span{display:block;color:var(--sky);min-height:1.04em}
 .hero-title .tw{display:inline}
 .hero-title .caret{
   display:inline-block;width:.055em;height:.82em;background:currentColor;
