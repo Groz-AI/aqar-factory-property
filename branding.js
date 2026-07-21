@@ -17,6 +17,23 @@
 (function () {
   'use strict';
 
+  // self-referencing canonical tag, kept in sync with the current URL so
+  // search engines index project.html?id=… / blog-post.html?slug=… as
+  // distinct pages instead of collapsing them onto the bare static file.
+  // Built from location.origin so it tracks whichever domain serves the
+  // page (vercel.app today, a future custom domain later) with no edits.
+  // Only the id/slug params are meaningful content identifiers — any other
+  // query string (tracking params, etc.) is dropped from the canonical URL.
+  (function setCanonical() {
+    const keep = new URLSearchParams();
+    const qs = new URLSearchParams(location.search);
+    ['id', 'slug'].forEach(k => { if (qs.has(k)) keep.set(k, qs.get(k)); });
+    const qstr = keep.toString();
+    let link = document.querySelector('link[rel="canonical"]');
+    if (!link) { link = document.createElement('link'); link.rel = 'canonical'; document.head.appendChild(link); }
+    link.href = location.origin + location.pathname + (qstr ? '?' + qstr : '');
+  })();
+
   const DEFAULT = (window.FALLBACK && window.FALLBACK.content && window.FALLBACK.content.company) || {};
 
   const esc = (s) => String(s == null ? '' : s)

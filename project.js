@@ -43,6 +43,9 @@ let project = null;
 
 function populate() {
   document.title = `${project.name} — Aqar Factory`;
+  const metaDesc = document.querySelector('meta[name="description"]');
+  const desc = project.tagline || (project.about && project.about[0]) || '';
+  if (metaDesc && desc) metaDesc.setAttribute('content', desc.length > 160 ? desc.slice(0, 157) + '…' : desc);
 
   const heroImg = document.getElementById('heroImg');
   if (heroImg._tid) clearInterval(heroImg._tid);
