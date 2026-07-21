@@ -69,8 +69,12 @@ function render() {
 
 /* ---------- header + mobile nav ---------- */
 const nav = document.getElementById('nav');
-document.getElementById('navToggle').addEventListener('click', () => nav.classList.toggle('open'));
+const navToggle = document.getElementById('navToggle');
+navToggle.addEventListener('click', () => nav.classList.toggle('open'));
 nav.addEventListener('click', e => { if (e.target.tagName === 'A') nav.classList.remove('open'); });
+document.addEventListener('click', e => {
+  if (nav.classList.contains('open') && !nav.contains(e.target) && !navToggle.contains(e.target)) nav.classList.remove('open');
+});
 
 const header = document.getElementById('header');
 const onHeaderScroll = () => header.classList.toggle('scrolled', window.scrollY > 30);

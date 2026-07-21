@@ -43,6 +43,39 @@
   </div>
 </header>
 
+<script>
+// Paint the last-known brand (name/logo) from cache immediately — this runs
+// before the Supabase CDN script and the rest of the store stack even start
+// loading (they're all near the end of <body>), which is what previously let
+// the default placeholder logo/name flash on reload before branding.js could
+// correct it. See branding.js for the full apply()/refresh() cycle.
+(function () {
+  try {
+    var c = JSON.parse(localStorage.getItem('realteek_brand_cache'));
+    if (!c || (!c.name && !c.logo)) return;
+    document.querySelectorAll('.brand-name').forEach(function (el) {
+      el.textContent = c.name || '';
+      el.style.display = c.name ? '' : 'none';
+    });
+    document.querySelectorAll('.brand').forEach(function (el) {
+      el.classList.toggle('brand--logo-only', !c.name);
+    });
+    if (c.logo) {
+      var src = /^(https?:)?\/\//.test(c.logo) || /^data:/.test(c.logo)
+        ? c.logo
+        : 'https://images.unsplash.com/photo-' + c.logo + '?auto=format&fit=crop&w=160&q=80';
+      document.querySelectorAll('.brand-mark').forEach(function (m) {
+        m.innerHTML = '';
+        var img = document.createElement('img');
+        img.src = src; img.alt = '';
+        img.style.cssText = 'width:100%;height:100%;object-fit:contain;display:block';
+        m.appendChild(img);
+      });
+    }
+  } catch (_) {}
+})();
+</script>
+
 <!-- ============ HERO ============ -->
 <section class="hero" id="hero">
   <div class="hero-sky" aria-hidden="true"></div>

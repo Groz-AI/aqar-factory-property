@@ -38,6 +38,39 @@
   </div>
 </header>
 
+<script>
+// Paint the last-known brand (name/logo) from cache immediately — this runs
+// before the Supabase CDN script and the rest of the store stack even start
+// loading (they're all near the end of <body>), which is what previously let
+// the default placeholder logo/name flash on reload before branding.js could
+// correct it. See branding.js for the full apply()/refresh() cycle.
+(function () {
+  try {
+    var c = JSON.parse(localStorage.getItem('realteek_brand_cache'));
+    if (!c || (!c.name && !c.logo)) return;
+    document.querySelectorAll('.brand-name').forEach(function (el) {
+      el.textContent = c.name || '';
+      el.style.display = c.name ? '' : 'none';
+    });
+    document.querySelectorAll('.brand').forEach(function (el) {
+      el.classList.toggle('brand--logo-only', !c.name);
+    });
+    if (c.logo) {
+      var src = /^(https?:)?\/\//.test(c.logo) || /^data:/.test(c.logo)
+        ? c.logo
+        : 'https://images.unsplash.com/photo-' + c.logo + '?auto=format&fit=crop&w=160&q=80';
+      document.querySelectorAll('.brand-mark').forEach(function (m) {
+        m.innerHTML = '';
+        var img = document.createElement('img');
+        img.src = src; img.alt = '';
+        img.style.cssText = 'width:100%;height:100%;object-fit:contain;display:block';
+        m.appendChild(img);
+      });
+    }
+  } catch (_) {}
+})();
+</script>
+
 <!-- HERO -->
 <section class="subpage-hero" style="--bg:url('https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1700&q=80')">
   <div class="container subpage-hero-in">
@@ -187,6 +220,9 @@
   var nav=document.getElementById('nav'),tgl=document.getElementById('navToggle');
   if(tgl)tgl.addEventListener('click',function(){nav.classList.toggle('open');});
   nav.addEventListener('click',function(e){if(e.target.tagName==='A')nav.classList.remove('open');});
+  document.addEventListener('click',function(e){
+    if(nav.classList.contains('open')&&!nav.contains(e.target)&&(!tgl||!tgl.contains(e.target)))nav.classList.remove('open');
+  });
 
   var ro=new IntersectionObserver(function(es){es.forEach(function(en){if(en.isIntersecting){en.target.classList.add('in');ro.unobserve(en.target);}});},{threshold:.16});
   document.querySelectorAll('.reveal').forEach(function(el){ro.observe(el);});
