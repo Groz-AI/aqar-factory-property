@@ -178,10 +178,20 @@
     }
   };
 
+  // page keys assignable to a Staff admin — matches the RESOURCES keys /
+  // go(view) names for every sidebar item except overview/settings/users,
+  // which are never assignable (personal-account-only, or Owner-only).
+  const PAGE_KEYS = ['projects', 'cities', 'testimonials', 'developers', 'posts', 'inquiries', 'newsletter', 'content'];
+  const PAGE_LABELS = () => ({
+    projects: t('Projects'), cities: t('Cities'), testimonials: t('Testimonials'),
+    developers: t('Developers'), posts: t('Blog'), inquiries: t('Inquiries'),
+    newsletter: t('Newsletter'), content: t('Site content')
+  });
+
   // ============================================================
   // STATE
   // ============================================================
-  const state = { view: 'overview', user: null, cache: {}, query: '' };
+  const state = { view: 'overview', user: null, cache: {}, query: '', currentAdmin: { role: 'staff', permissions: [], active: true } };
 
   // ============================================================
   // AUTH GUARD
@@ -201,9 +211,42 @@
     $('#userName').textContent = email.split('@')[0] || 'Admin';
     $('#userAv').textContent = (email[0] || 'A').toUpperCase();
 
+    // Local (offline demo) mode has one hardcoded credential and no real
+    // per-user roles to protect — treat it as a full-access Owner so every
+    // existing page keeps working, and hide the Users page (see go()/
+    // applyPermissionVisibility() — nothing meaningful to manage there).
+    if (localMode) {
+      state.currentAdmin = { role: 'owner', permissions: PAGE_KEYS.slice(), active: true };
+    } else {
+      try {
+        const { data: me } = await sb.from('admins').select('role,permissions,active')
+          .eq('user_id', session.user.id).single();
+        if (me) state.currentAdmin = { role: me.role, permissions: me.permissions || [], active: me.active };
+      } catch (_) { /* schema not migrated to RBAC yet, or a transient error — keep the safe staff-with-no-pages default */ }
+    }
+
     wireChrome();
+    applyPermissionVisibility();
     await refreshCounts();
     go('overview');
+  }
+
+  // ---------- RBAC: what the signed-in admin can see/access ----------
+  function canAccessView(view) {
+    if (view === 'overview' || view === 'settings') return true;
+    if (view === 'users') return state.currentAdmin.role === 'owner' && !localMode;
+    return state.currentAdmin.role === 'owner' || state.currentAdmin.permissions.includes(view);
+  }
+
+  // hides sidebar buttons the current admin can't reach — a UX nicety, not
+  // the security boundary (that's the DB-level RLS policies in schema.sql;
+  // see canAccessView()'s use in go() for the client-side backstop, and
+  // has_page()/is_owner() for the real one).
+  function applyPermissionVisibility() {
+    $$('.sb-link').forEach(btn => {
+      const v = btn.dataset.view;
+      btn.style.display = canAccessView(v) ? '' : 'none';
+    });
   }
 
   // shown only when keys are missing — the public site still works on fallback
@@ -237,7 +280,10 @@
     $('#drawerClose').addEventListener('click', closeDrawer);
     $('#drawerCancel').addEventListener('click', closeDrawer);
     $('#overlay').addEventListener('click', closeDrawer);
-    $('#primaryAction').addEventListener('click', () => { if (RESOURCES[state.view]) openForm(state.view, null); });
+    $('#primaryAction').addEventListener('click', () => {
+      if (state.view === 'users') openUserForm(null);
+      else if (RESOURCES[state.view]) openForm(state.view, null);
+    });
 
     // visibility is handled by CSS (@media in admin.css) so it stays correct
     // if the window is resized after load, not just at initial page load
@@ -250,6 +296,14 @@
   }
 
   function go(view) {
+    // covers a view forced via console (e.g. go('inquiries') on a staffer
+    // without that page) — the real boundary is the DB-level RLS policies;
+    // this just avoids rendering a view the UI shouldn't have offered.
+    if (!canAccessView(view)) {
+      toast(t('You don’t have access to that section'), 'err');
+      view = 'overview';
+    }
+
     state.view = view;
     state.query = '';
     $$('.sb-link').forEach(b => b.classList.toggle('active', b.dataset.view === view));
@@ -261,6 +315,11 @@
     else if (view === 'inquiries') { renderInquiries(); pa.style.display = 'none'; }
     else if (view === 'newsletter') { renderNewsletter(); pa.style.display = 'none'; }
     else if (view === 'settings') { renderSettings(); pa.style.display = 'none'; }
+    else if (view === 'users') {
+      $('#primaryAction').querySelector('span').textContent = t('Add') + ' ' + t('user');
+      pa.style.display = 'inline-flex';
+      renderUsers();
+    }
     else if (RESOURCES[view]) {
       const r = RESOURCES[view];
       $('#primaryAction').querySelector('span').textContent = t('Add') + ' ' + r.singular.toLowerCase();
@@ -1322,6 +1381,212 @@
     paintNewsletter();
     refreshCounts();
     toast(t('Subscriber removed'));
+  }
+
+  // ============================================================
+  // USERS (admin accounts, roles & permissions) — Owner only.
+  // Permission edits, deactivate/reactivate and promote/demote are plain
+  // `admins` row updates, protected by the "owner write admins" RLS policy
+  // in schema.sql — no serverless round-trip. Create/reset-password/delete
+  // touch auth.users, so those go through api/admin-users.js (service role).
+  // ============================================================
+  const ROLE_LABEL = () => ({ owner: t('Owner'), staff: t('Staff') });
+
+  async function renderUsers() {
+    $('#viewTitle').textContent = t('Users');
+    $('#viewSub').textContent = t('Manage who can sign in to this dashboard and what they can access');
+    $('#content').innerHTML = `<div class="panel"><div id="usersWrap"><div class="empty-row"><span class="spinner" style="border-color:rgba(0,0,0,.15);border-top-color:var(--sky)"></span></div></div></div>`;
+    const { data, error } = await sb.from('admins').select('*').order('created_at', { ascending: true });
+    if (error) {
+      $('#usersWrap').innerHTML = `<div class="empty-row">${t('Couldn’t load users:')} ${esc(error.message)}<br><span class="field-hint">${t('If you haven’t yet, run the updated')} <code>supabase/schema.sql</code> ${t('in your Supabase SQL editor.')}</span></div>`;
+      return;
+    }
+    state.cache.users = data || [];
+    paintUsers();
+  }
+
+  function paintUsers() {
+    const rows = state.cache.users || [];
+    if (!rows.length) { $('#usersWrap').innerHTML = `<div class="empty-row">${t('No users yet.')}</div>`; return; }
+
+    const labels = PAGE_LABELS();
+    const roleLabel = ROLE_LABEL();
+    const activeOwners = rows.filter(r => r.role === 'owner' && r.active).length;
+
+    const body = rows.map(r => {
+      const isMe = state.user && r.user_id === state.user.id;
+      const isLastOwner = r.role === 'owner' && r.active && activeOwners <= 1;
+      const perms = (r.permissions || []).map(p => `<span class="tag-mini">${esc(labels[p] || p)}</span>`).join(' ')
+        || `<span style="color:var(--ink-soft)">—</span>`;
+
+      const editBtn = r.role === 'staff'
+        ? `<button class="icon-btn" data-edit-perms="${r.user_id}" title="${esc(t('Edit permissions'))}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>` : '';
+      const resetBtn = `<button class="icon-btn" data-reset="${r.user_id}" title="${esc(t('Reset password'))}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg></button>`;
+      const toggleBtn = `<button class="icon-btn" data-toggle-active="${r.user_id}" title="${esc(r.active ? t('Deactivate') : t('Reactivate'))}">${r.active
+        ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/></svg>'
+        : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg>'}</button>`;
+      const promoteBtn = r.role === 'staff'
+        ? `<button class="icon-btn" data-promote="${r.user_id}" title="${esc(t('Promote to Owner'))}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>` : '';
+      const demoteBtn = (r.role === 'owner' && !isMe && !isLastOwner)
+        ? `<button class="icon-btn" data-demote="${r.user_id}" title="${esc(t('Demote to Staff'))}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M19 12l-7 7-7-7"/></svg></button>` : '';
+      const deleteBtn = (!isMe && !isLastOwner)
+        ? `<button class="icon-btn del" data-delete="${r.user_id}" title="${esc(t('Delete'))}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>` : '';
+
+      return `<tr>
+        <td><div class="name">${esc(r.email || '—')}</div>${isMe ? `<div style="color:var(--ink-soft);font-size:.8rem">${esc(t('You'))}</div>` : ''}</td>
+        <td><span class="pill ${r.role === 'owner' ? 'on' : ''}"><i></i>${esc(roleLabel[r.role] || r.role)}</span></td>
+        <td>${r.role === 'owner' ? `<span style="color:var(--ink-soft)">${esc(t('All pages'))}</span>` : perms}</td>
+        <td><span class="pill ${r.active ? 'on' : 'off'}"><i></i>${r.active ? esc(t('Active')) : esc(t('Deactivated'))}</span></td>
+        <td><div class="row-actions">${editBtn}${resetBtn}${toggleBtn}${promoteBtn}${demoteBtn}${deleteBtn}</div></td>
+      </tr>`;
+    }).join('');
+
+    $('#usersWrap').innerHTML = `<table class="tbl"><thead><tr><th>${t('Email')}</th><th>${t('Role')}</th><th>${t('Pages')}</th><th>${t('Status')}</th><th></th></tr></thead><tbody>${body}</tbody></table>`;
+
+    const wrap = $('#usersWrap');
+    $$('[data-edit-perms]', wrap).forEach(b => b.addEventListener('click', () => openUserForm(rows.find(x => x.user_id === b.dataset.editPerms))));
+    $$('[data-reset]', wrap).forEach(b => b.addEventListener('click', () => resetUserPassword(b.dataset.reset)));
+    $$('[data-toggle-active]', wrap).forEach(b => b.addEventListener('click', () => toggleUserActive(b.dataset.toggleActive, rows.find(x => x.user_id === b.dataset.toggleActive))));
+    $$('[data-promote]', wrap).forEach(b => b.addEventListener('click', () => promoteUser(b.dataset.promote)));
+    $$('[data-demote]', wrap).forEach(b => b.addEventListener('click', () => demoteUser(b.dataset.demote)));
+    $$('[data-delete]', wrap).forEach(b => b.addEventListener('click', () => deleteUser(b.dataset.delete)));
+  }
+
+  function pageChecklistHTML(selected) {
+    const labels = PAGE_LABELS();
+    return PAGE_KEYS.map(k => `
+      <label style="display:flex;align-items:center;gap:.5rem;padding:.4em 0">
+        <input type="checkbox" value="${k}" ${selected.includes(k) ? 'checked' : ''}>
+        <span>${esc(labels[k])}</span>
+      </label>`).join('');
+  }
+
+  function openUserForm(row) {
+    $('#drawerSave').disabled = false;
+    $('#drawerSave').textContent = t('Save');
+    $('#drawerTitle').textContent = row ? t('Edit permissions') : (t('Add') + ' ' + t('user'));
+    const selected = (row && row.permissions) || [];
+    $('#drawerBody').innerHTML = row
+      ? `<div class="field"><label>${esc(t('Email'))}</label><input type="text" value="${esc(row.email || '')}" disabled></div>
+         <div class="field"><label>${esc(t('Pages this user can access'))}</label><div id="u_pages">${pageChecklistHTML(selected)}</div></div>`
+      : `<div class="field"><label for="u_email">${esc(t('Email'))}</label><input type="email" id="u_email" autocomplete="off"></div>
+         <div class="field"><label for="u_password">${esc(t('Password'))}</label><input type="text" id="u_password" autocomplete="off">
+           <div class="field-hint">${esc(t('At least 6 characters. They can sign in immediately with this email + password.'))}</div>
+         </div>
+         <div class="field"><label>${esc(t('Pages this user can access'))}</label><div id="u_pages">${pageChecklistHTML(selected)}</div></div>`;
+    $('#drawerSave').onclick = () => saveUserForm(row);
+    openDrawer();
+  }
+
+  async function saveUserForm(row) {
+    const btn = $('#drawerSave');
+    const permissions = $$('#u_pages input[type="checkbox"]:checked').map(i => i.value);
+
+    if (row) {
+      btn.disabled = true;
+      const { error } = await sb.from('admins').update({ permissions }).eq('user_id', row.user_id);
+      btn.disabled = false;
+      if (error) { toast(error.message, 'err'); return; }
+      closeDrawer();
+      toast(t('Permissions updated'));
+      renderUsers();
+      return;
+    }
+
+    const email = ($('#u_email').value || '').trim().toLowerCase();
+    const password = $('#u_password').value || '';
+    if (!/^\S+@\S+\.\S+$/.test(email)) { toast(t('Enter a valid email'), 'err'); return; }
+    if (password.length < 6) { toast(t('Password must be at least 6 characters'), 'err'); return; }
+
+    const original = btn.textContent;
+    btn.disabled = true; btn.textContent = t('Saving…');
+    try {
+      const { data: { session } } = await sb.auth.getSession();
+      const res = await fetch('/api/admin-users', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'create', callerToken: session.access_token, email, password, permissions })
+      });
+      const out = await res.json();
+      btn.disabled = false; btn.textContent = original;
+      if (!res.ok || out.error) {
+        toast(out.error === 'not_configured'
+          ? t('User accounts aren’t fully set up yet — ask the site owner to finish the server setup.')
+          : (out.message || t('Could not create user')), 'err');
+        return;
+      }
+      closeDrawer();
+      toast(t('User created'));
+      renderUsers();
+    } catch (_) {
+      btn.disabled = false; btn.textContent = original;
+      toast(t('Network error — please try again'), 'err');
+    }
+  }
+
+  async function resetUserPassword(userId) {
+    const newPassword = prompt(t('Enter a new password for this user (at least 6 characters):'));
+    if (newPassword == null) return;
+    if (newPassword.length < 6) { toast(t('Password must be at least 6 characters'), 'err'); return; }
+    try {
+      const { data: { session } } = await sb.auth.getSession();
+      const res = await fetch('/api/admin-users', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'reset_password', callerToken: session.access_token, userId, newPassword })
+      });
+      const out = await res.json();
+      if (!res.ok || out.error) { toast(out.message || t('Could not reset password'), 'err'); return; }
+      toast(t('Password updated'));
+    } catch (_) {
+      toast(t('Network error — please try again'), 'err');
+    }
+  }
+
+  async function toggleUserActive(userId, row) {
+    const next = !row.active;
+    if (!next && !confirm(t('Deactivate this user? They will be signed out immediately and can’t log in until reactivated.'))) return;
+    const { error } = await sb.from('admins').update({ active: next }).eq('user_id', userId);
+    if (error) { toast(error.message, 'err'); return; }
+    toast(next ? t('User reactivated') : t('User deactivated'));
+    renderUsers();
+  }
+
+  async function promoteUser(userId) {
+    if (!confirm(t('Promote this user to Owner? They will gain full, unrestricted access to everything, including managing other users.'))) return;
+    const { error } = await sb.from('admins').update({ role: 'owner', permissions: [] }).eq('user_id', userId);
+    if (error) { toast(error.message, 'err'); return; }
+    toast(t('User promoted to Owner'));
+    renderUsers();
+  }
+
+  async function demoteUser(userId) {
+    if (!confirm(t('Demote this Owner to Staff? They will lose all access until you assign specific pages.'))) return;
+    const { error } = await sb.from('admins').update({ role: 'staff', permissions: [] }).eq('user_id', userId);
+    if (error) { toast(error.message, 'err'); return; }
+    toast(t('User demoted to Staff'));
+    renderUsers();
+  }
+
+  async function deleteUser(userId) {
+    if (!confirm(t('Permanently delete this user? This can’t be undone.'))) return;
+    try {
+      const { data: { session } } = await sb.auth.getSession();
+      const res = await fetch('/api/admin-users', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'delete', callerToken: session.access_token, userId })
+      });
+      const out = await res.json();
+      if (!res.ok || out.error) {
+        const msg = out.error === 'cannot_delete_self' ? t('You can’t delete your own account')
+          : out.error === 'last_owner' ? t('Can’t delete the last remaining Owner')
+          : (out.message || t('Could not delete user'));
+        toast(msg, 'err');
+        return;
+      }
+      toast(t('User deleted'));
+      renderUsers();
+    } catch (_) {
+      toast(t('Network error — please try again'), 'err');
+    }
   }
 
   // ---------- icons ----------

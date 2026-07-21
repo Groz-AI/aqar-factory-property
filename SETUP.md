@@ -70,6 +70,45 @@ You can change your admin **email and password** any time from
 
 ---
 
+## Multi-user admin accounts with per-page permissions (optional)
+
+By default there's one admin, with full access to everything (an **Owner**).
+If you want to hand out scoped logins to other people — e.g. someone who
+should only touch the Blog, or only see Inquiries — the admin dashboard has
+a **Users** page (Owner-only) for that: create a login (email + password),
+tick which pages they can access, and they can sign in immediately with
+exactly that access. You can also deactivate/reactivate, reset a password,
+promote a Staff member to Owner (or demote back), and delete a user, all
+from that page.
+
+Two things this needs beyond the base setup above:
+
+1. **Re-run `supabase/schema.sql`** (it's safe to run again — every
+   statement is idempotent) so it adds the `role`/`permissions`/`active`
+   columns and the new access-control policies. Your existing admin account
+   is automatically upgraded to Owner the moment this runs, with no other
+   change — nothing else in the dashboard is affected.
+2. **Add two environment variables in your Vercel project** (Settings →
+   Environment Variables → add for Production, then redeploy) — these power
+   `api/admin-users.js`, the one part of Users management (creating a login,
+   resetting someone else's password, deleting a login) that needs Supabase's
+   Admin API rather than the regular browser client:
+   - `SUPABASE_URL` — Supabase → **Project Settings → API → Project URL**
+     (same value as `config.js`'s `window.SUPA.url`).
+   - `SUPABASE_SERVICE_ROLE_KEY` — Supabase → **Project Settings → API →
+     service_role secret**. **Treat this like a root database password** —
+     it bypasses every Row Level Security rule in `schema.sql`. Only ever put
+     it in Vercel's server-side environment variables, never in `config.js`
+     or any other file that ships to the browser.
+
+Until both env vars are set, the Users page still works for everything that
+doesn't touch a login directly (editing permissions, deactivating/
+reactivating, promoting/demoting) — creating, resetting a password, or
+deleting a user will show a friendly "ask the site owner to finish setup"
+message instead of erroring.
+
+---
+
 ## Keeping the free tier alive (important)
 
 Supabase pauses a **free** project after ~7 days of no activity. Two safety nets:

@@ -13,11 +13,56 @@ create table if not exists public.admins (
   created_at timestamptz default now()
 );
 
--- Is the current request made by an admin?
+-- ---------- roles & per-page permissions ----------
+-- role: 'owner' has unconditional full access and is the only role that can
+-- manage other admin users. 'staff' is restricted to whatever page keys are
+-- listed in `permissions` (e.g. ["projects","cities"]). `active=false` locks
+-- an account out immediately (checked by is_admin() below) without deleting it.
+-- Defaulting role to 'owner' means re-running this file against an existing
+-- database backfills the pre-existing admin row to Owner automatically, with
+-- no access change and no manual follow-up.
+alter table public.admins add column if not exists role        text not null default 'owner' check (role in ('owner','staff'));
+alter table public.admins add column if not exists permissions jsonb not null default '[]'::jsonb;
+alter table public.admins add column if not exists active      boolean not null default true;
+
+-- Is the current request made by an active admin (any role)?
 create or replace function public.is_admin()
 returns boolean
 language sql stable security definer set search_path = public as $$
-  select exists (select 1 from public.admins where user_id = auth.uid());
+  select exists (select 1 from public.admins where user_id = auth.uid() and active = true);
+$$;
+
+-- Is the current request made by an active Owner?
+create or replace function public.is_owner()
+returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (select 1 from public.admins where user_id = auth.uid() and active = true and role = 'owner');
+$$;
+
+-- Does the current request's admin (Owner, or Staff with this page granted)
+-- have access to a specific admin page? `page` matches the dashboard's page
+-- keys: projects | cities | testimonials | developers | posts | inquiries |
+-- newsletter | content.
+create or replace function public.has_page(page text)
+returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (
+    select 1 from public.admins
+    where user_id = auth.uid() and active = true and (role = 'owner' or permissions ? page)
+  );
+$$;
+
+-- Media uploads are shared across several content pages with no per-file page
+-- tag, so storage access is coarser than has_page(): granted to anyone with
+-- at least one content-editing page (not Inquiries/Newsletter-only staff).
+create or replace function public.has_any_content_access()
+returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (
+    select 1 from public.admins
+    where user_id = auth.uid() and active = true
+      and (role = 'owner' or permissions ?| array['projects','cities','testimonials','developers','posts','content'])
+  );
 $$;
 
 -- updated_at touch trigger
@@ -195,6 +240,11 @@ end $$;
 -- ROW LEVEL SECURITY
 -- public can read published rows; only admins can write.
 -- ============================================================
+-- reads stay broad (any active admin, not scoped per-page): the dashboard
+-- already relies on cross-table reads regardless of write scope (e.g. the
+-- Projects form's city picker reads `cities` even for a staffer who can only
+-- write `projects`), and there's no security benefit to scoping reads — the
+-- risk this feature closes is unscoped *writes*, not reads.
 do $$
 declare t text;
 begin
@@ -206,26 +256,53 @@ begin
     execute format(
       'create policy "read published" on public.%I
          for select using (published = true or public.is_admin());', t);
-
-    execute format('drop policy if exists "admin write" on public.%I;', t);
-    execute format(
-      'create policy "admin write" on public.%I
-         for all using (public.is_admin()) with check (public.is_admin());', t);
   end loop;
 end $$;
 
--- content_blocks: world-readable, admin-writable
+-- per-page write policies — one explicit block per table (not a loop) since
+-- the dashboard's page key for blog_posts is "posts", not the table name.
+drop policy if exists "admin write" on public.projects;
+create policy "admin write" on public.projects
+  for all using (public.has_page('projects')) with check (public.has_page('projects'));
+
+drop policy if exists "admin write" on public.cities;
+create policy "admin write" on public.cities
+  for all using (public.has_page('cities')) with check (public.has_page('cities'));
+
+drop policy if exists "admin write" on public.testimonials;
+create policy "admin write" on public.testimonials
+  for all using (public.has_page('testimonials')) with check (public.has_page('testimonials'));
+
+drop policy if exists "admin write" on public.developers;
+create policy "admin write" on public.developers
+  for all using (public.has_page('developers')) with check (public.has_page('developers'));
+
+drop policy if exists "admin write" on public.blog_posts;
+create policy "admin write" on public.blog_posts
+  for all using (public.has_page('posts')) with check (public.has_page('posts'));
+
+-- content_blocks: world-readable, admin-writable (page key "content")
 alter table public.content_blocks enable row level security;
 drop policy if exists "read content" on public.content_blocks;
 create policy "read content" on public.content_blocks for select using (true);
 drop policy if exists "admin write content" on public.content_blocks;
 create policy "admin write content" on public.content_blocks
-  for all using (public.is_admin()) with check (public.is_admin());
+  for all using (public.has_page('content')) with check (public.has_page('content'));
 
--- admins: a user may read their own admin row (so the app can check status)
+-- admins: a user may read their own row (so the app can check status);
+-- an Owner may read every row (needed for the Users management page).
+-- Writes are Owner-only — used for permission edits, deactivate/reactivate
+-- and promote/demote, which go straight through the anon-key client;
+-- create/reset-password/delete instead go through the service-role
+-- serverless endpoint (api/admin-users.js), which bypasses RLS entirely.
 alter table public.admins enable row level security;
 drop policy if exists "read own admin" on public.admins;
-create policy "read own admin" on public.admins for select using (user_id = auth.uid());
+drop policy if exists "read admins" on public.admins;
+create policy "read admins" on public.admins
+  for select using (user_id = auth.uid() or public.is_owner());
+drop policy if exists "owner write admins" on public.admins;
+create policy "owner write admins" on public.admins
+  for all using (public.is_owner()) with check (public.is_owner());
 
 -- ============================================================
 -- STORAGE — public "media" bucket for image uploads
@@ -240,15 +317,15 @@ create policy "media public read" on storage.objects
 
 drop policy if exists "media admin write" on storage.objects;
 create policy "media admin write" on storage.objects
-  for insert with check (bucket_id = 'media' and public.is_admin());
+  for insert with check (bucket_id = 'media' and public.has_any_content_access());
 
 drop policy if exists "media admin update" on storage.objects;
 create policy "media admin update" on storage.objects
-  for update using (bucket_id = 'media' and public.is_admin());
+  for update using (bucket_id = 'media' and public.has_any_content_access());
 
 drop policy if exists "media admin delete" on storage.objects;
 create policy "media admin delete" on storage.objects
-  for delete using (bucket_id = 'media' and public.is_admin());
+  for delete using (bucket_id = 'media' and public.has_any_content_access());
 
 -- ============================================================
 -- INQUIRIES — contact-form submissions
@@ -275,15 +352,15 @@ create policy "public submit inquiry" on public.inquiries
 
 drop policy if exists "admin read inquiries" on public.inquiries;
 create policy "admin read inquiries" on public.inquiries
-  for select using (public.is_admin());
+  for select using (public.has_page('inquiries'));
 
 drop policy if exists "admin update inquiries" on public.inquiries;
 create policy "admin update inquiries" on public.inquiries
-  for update using (public.is_admin()) with check (public.is_admin());
+  for update using (public.has_page('inquiries')) with check (public.has_page('inquiries'));
 
 drop policy if exists "admin delete inquiries" on public.inquiries;
 create policy "admin delete inquiries" on public.inquiries
-  for delete using (public.is_admin());
+  for delete using (public.has_page('inquiries'));
 
 -- ============================================================
 -- NEWSLETTER — footer signup-form subscribers
@@ -303,11 +380,11 @@ create policy "public subscribe" on public.newsletter_subscribers
 
 drop policy if exists "admin read subscribers" on public.newsletter_subscribers;
 create policy "admin read subscribers" on public.newsletter_subscribers
-  for select using (public.is_admin());
+  for select using (public.has_page('newsletter'));
 
 drop policy if exists "admin delete subscribers" on public.newsletter_subscribers;
 create policy "admin delete subscribers" on public.newsletter_subscribers
-  for delete using (public.is_admin());
+  for delete using (public.has_page('newsletter'));
 
 -- ============================================================
 -- REALTIME — let the public site receive live updates when an
