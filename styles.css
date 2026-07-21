@@ -760,7 +760,13 @@ em{font-style:normal}
 }
 @media(max-width:760px){
   .nav{
-    position:fixed;inset:0 0 0 auto;width:min(80vw,320px);background:#fff;flex-direction:column;
+    /* explicit viewport-relative height instead of top:0;bottom:0 auto-sizing —
+       .site-header.scrolled's backdrop-filter makes it a new containing block
+       for this fixed element (per spec, filter/backdrop-filter on an ancestor
+       does that), so "bottom:0" was resolving against the short header box
+       instead of the real viewport and collapsing the drawer to header-height. */
+    position:fixed;top:0;right:0;left:auto;height:100vh;height:100dvh;
+    width:min(80vw,320px);background:#fff;flex-direction:column;
     align-items:stretch;padding:100px 32px;gap:.4rem;transform:translateX(100%);
     transition:transform .4s var(--ease);box-shadow:var(--shadow-lg);z-index:90;
     border:none;border-radius:0;
