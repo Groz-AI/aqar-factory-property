@@ -210,7 +210,12 @@
     'WhatsApp us': 'راسلنا عبر واتساب',
     'Usually replies in minutes': 'عادة ما يتم الرد خلال دقائق',
 
-    // ---------- header WhatsApp quick-contact ----------
+    // ---------- header contact popup (WhatsApp / Call) ----------
+    'Contact us': 'تواصل معنا',
+    'WhatsApp': 'واتساب',
+    'Chat with us': 'تحدث معنا',
+    'Call us': 'اتصل بنا',
+    'Speak to our team': 'تحدث مع فريقنا',
     'Chat on WhatsApp': 'الدردشة عبر واتساب',
     'Chat with us on WhatsApp': 'تحدث معنا عبر واتساب',
     'Your name': 'اسمك',

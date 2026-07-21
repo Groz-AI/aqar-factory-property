@@ -209,22 +209,45 @@ em{font-style:normal}
 .site-header.scrolled .lang-switch[data-lang="en"] .ls-en,.site-header.scrolled .lang-switch[data-lang="ar"] .ls-ar,
 .site-header.solid .lang-switch[data-lang="en"] .ls-en,.site-header.solid .lang-switch[data-lang="ar"] .ls-ar{color:#fff}
 
-/* WhatsApp quick-contact button — header, pulsing WhatsApp-green ring.
-   Hidden by default (inline style) until whatsapp-widget.js confirms a
-   number is configured in the company profile. */
+/* Header contact button — opens a 2-option popup (WhatsApp / Call), or
+   acts directly if only one contact method is configured. Hidden by
+   default (inline style) until whatsapp-widget.js confirms at least one
+   number is configured in the company profile. Brand-colored since it now
+   represents "contact us" generally, not WhatsApp specifically — the
+   WhatsApp-green stays scoped to the WhatsApp option/icon/modal only. */
 .wa-header-btn{
   position:relative;width:40px;height:40px;border-radius:50%;flex:none;
-  display:grid;place-items:center;background:#25D366;color:#fff;border:none;cursor:pointer;
+  display:grid;place-items:center;background:var(--sky);color:#fff;border:none;cursor:pointer;
   transition:transform .25s var(--ease);
 }
 .wa-header-btn:hover{transform:translateY(-2px)}
 .wa-header-btn svg{position:relative;z-index:1;width:20px;height:20px}
 .wa-header-glow{position:absolute;inset:0;border-radius:50%;animation:waRingPulse 2.4s ease-out infinite}
 @keyframes waRingPulse{
-  0%{box-shadow:0 0 0 0 rgba(37,211,102,.55)}
-  70%,100%{box-shadow:0 0 0 12px rgba(37,211,102,0)}
+  0%{box-shadow:0 0 0 0 rgba(219,19,81,.55)}
+  70%,100%{box-shadow:0 0 0 12px rgba(219,19,81,0)}
 }
 @media(prefers-reduced-motion:reduce){.wa-header-glow{animation:none}}
+
+/* 2-option contact popup (WhatsApp / Call), anchored near the header button */
+.contact-popup{
+  position:fixed;z-index:410;background:#fff;border-radius:16px;
+  box-shadow:0 30px 70px -24px rgba(10,20,30,.4);padding:8px;min-width:224px;
+  display:none;flex-direction:column;gap:2px;
+  opacity:0;transform:translateY(-6px);transition:opacity .18s,transform .18s;
+}
+.contact-popup.open{display:flex;opacity:1;transform:none}
+.contact-popup-opt{
+  display:flex;align-items:center;gap:.7rem;padding:.65em .7em;border-radius:12px;
+  border:none;background:none;cursor:pointer;text-align:start;transition:background .15s;width:100%;
+}
+.contact-popup-opt:hover{background:var(--paper)}
+.contact-popup-ic{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;flex:none;color:#fff}
+.contact-popup-ic.wa{background:#25D366}
+.contact-popup-ic.call{background:var(--sky)}
+.contact-popup-ic svg{width:19px;height:19px}
+.contact-popup-opt b{display:block;font-size:.92rem;font-family:"Bricolage Grotesque",sans-serif;color:var(--ink)}
+.contact-popup-opt small{display:block;color:var(--ink-soft);font-size:.78rem}
 
 /* WhatsApp lead-form modal */
 .wa-modal{position:fixed;inset:0;z-index:400;display:grid;place-items:center;padding:20px;visibility:hidden;pointer-events:none}
