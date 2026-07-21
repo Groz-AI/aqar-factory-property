@@ -28,10 +28,7 @@ function formatDate(iso) {
 }
 
 function cardHTML(p) {
-  const tags = (pick(p, 'tags', 'tagsAr') || []).slice(0, 3).map(tag => `<span class="blog-tag">${tag}</span>`).join('');
-  const avatar = p.authorAvatar
-    ? `<img class="blog-card-avatar" src="${U(p.authorAvatar, 80)}" alt="" loading="lazy">`
-    : `<span class="blog-card-avatar blog-card-avatar-fallback">${(p.authorName || '·').charAt(0)}</span>`;
+  const tags = (pick(p, 'tags', 'tagsAr') || []).map(tag => `<span class="blog-tag">${tag}</span>`).join('');
   return `
   <a class="blog-card reveal" href="blog-post.html?slug=${encodeURIComponent(p.id)}">
     <div class="blog-card-img" style="background-image:url('${U(p.cover, 800)}')"></div>
@@ -40,7 +37,7 @@ function cardHTML(p) {
       <h3>${pick(p, 'title', 'titleAr') || ''}</h3>
       <p class="blog-card-excerpt">${pick(p, 'excerpt', 'excerptAr') || ''}</p>
       <div class="blog-card-foot">
-        <div class="blog-card-author">${avatar}<span>${p.authorName || ''}</span></div>
+        <div class="blog-card-author"><span>${p.authorName || ''}</span></div>
         <span class="blog-card-date">${formatDate(p.publishedAt)}</span>
       </div>
     </div>

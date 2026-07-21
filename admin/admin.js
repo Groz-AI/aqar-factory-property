@@ -166,11 +166,10 @@
         { key: 'excerpt', label: t('Excerpt'), type: 'textarea', hint: t('Short summary shown on the blog listing card and search previews') },
         { key: 'excerpt_ar', label: t('Excerpt (Arabic)'), type: 'textarea', hint: t('Shown when the site is set to Arabic — leave empty to fall back to the English excerpt above.') },
         { key: 'cover', label: t('Cover image'), type: 'image' },
-        { key: 'author_name', label: t('Author name'), type: 'text', half: true },
-        { key: 'author_avatar', label: t('Author avatar'), type: 'image', half: true },
+        { key: 'author_name', label: t('Author name'), type: 'text' },
         { key: 'tags', label: t('Tag keywords'), type: 'tags' },
         { key: 'tags_ar', label: t('Tag keywords (Arabic)'), type: 'tags', hint: t('Shown when the site is set to Arabic — leave empty to fall back to the English tags above.') },
-        { key: 'blocks', label: t('Article content'), type: 'blocks', hint: t('Build the article from heading, paragraph and image blocks, in the order they should appear.') },
+        { key: 'blocks', label: t('Article content'), type: 'blocks', hint: t('Build the article from heading, paragraph, image, quote, list and video blocks, in the order they should appear. Paragraphs and quotes support bold, italic and links.') },
         { key: 'blocks_ar', label: t('Article content (Arabic)'), type: 'blocks', hint: t('Shown when the site is set to Arabic — leave empty to fall back to the English content above.') },
         { key: 'published_at', label: t('Published date'), type: 'date', half: true },
         { key: 'sort_order', label: t('Sort order'), type: 'number', half: true },
@@ -455,6 +454,9 @@
           <button type="button" class="btn btn-ghost btn-sm" id="${id}_add_heading">+ ${t('Heading')}</button>
           <button type="button" class="btn btn-ghost btn-sm" id="${id}_add_paragraph">+ ${t('Paragraph')}</button>
           <button type="button" class="btn btn-ghost btn-sm" id="${id}_add_image">+ ${t('Image')}</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="${id}_add_quote">+ ${t('Quote')}</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="${id}_add_list">+ ${t('List')}</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="${id}_add_video">+ ${t('Video')}</button>
         </div>
         <input type="file" id="${id}_file" accept="image/*" style="display:none">
         ${hint}</div>`;
@@ -647,7 +649,38 @@
     const wrap = $('#' + id + '_wrap'), file = $('#' + id + '_file');
     if (!wrap) return;
     let uploadTarget = null;
-    const typeLabel = ty => ty === 'heading' ? t('Heading') : ty === 'image' ? t('Image') : t('Paragraph');
+    const TYPE_LABELS = { heading: t('Heading'), image: t('Image'), quote: t('Quote'), list: t('List'), video: t('Video'), paragraph: t('Paragraph') };
+    const typeLabel = ty => TYPE_LABELS[ty] || t('Paragraph');
+
+    // wraps the current textarea selection in a tag (bold/italic), or prompts
+    // for a URL and wraps it in a link — inserted as literal HTML, rendered
+    // as-is on the article page (same trusted-admin-content model already
+    // used for project "about" paragraphs elsewhere in this app)
+    function applyFormat(textarea, kind) {
+      const start = textarea.selectionStart, end = textarea.selectionEnd;
+      const val = textarea.value;
+      let open, close;
+      if (kind === 'a') {
+        const url = window.prompt(t('Link URL (https://…)'), 'https://');
+        if (!url) return;
+        open = `<a href="${esc(url)}" target="_blank" rel="noopener">`; close = '</a>';
+      } else if (kind === 'i') { open = '<i>'; close = '</i>'; }
+      else { open = '<b>'; close = '</b>'; }
+      const placeholder = kind === 'a' ? t('link text') : kind === 'i' ? t('italic text') : t('bold text');
+      const selected = val.slice(start, end) || placeholder;
+      textarea.value = val.slice(0, start) + open + selected + close + val.slice(end);
+      textarea.dispatchEvent(new Event('input'));
+      const cursor = start + open.length + selected.length + close.length;
+      textarea.focus();
+      textarea.setSelectionRange(cursor, cursor);
+    }
+
+    const fmtRow = i => `<div class="block-fmt-row">
+      <button type="button" class="fmt-btn" data-fmt="b" data-bidx="${i}" title="${esc(t('Bold'))}"><b>B</b></button>
+      <button type="button" class="fmt-btn" data-fmt="i" data-bidx="${i}" title="${esc(t('Italic'))}"><i>I</i></button>
+      <button type="button" class="fmt-btn" data-fmt="a" data-bidx="${i}" title="${esc(t('Link'))}">${t('Link')}</button>
+    </div>`;
+
     const paint = () => {
       wrap.innerHTML = uploads[key].length ? uploads[key].map((b, i) => {
         const moveUp = i > 0 ? `<button type="button" class="icon-btn" data-bup="${i}" title="${esc(t('Move up'))}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>` : '';
@@ -660,8 +693,16 @@
             <img class="block-img-prev" src="${esc(imgUrl(b.image, 200))}" alt="" data-bpick="${i}" title="${esc(t('Click to choose an existing image'))}">
             <button type="button" class="btn btn-ghost btn-sm" data-bupload="${i}">${t('Upload…')}</button>
           </div>`;
+        } else if (b.type === 'list') {
+          body = `<textarea placeholder="${esc(t('One item per line'))}" data-btext="${i}">${esc(b.text)}</textarea>
+            <div class="field-hint">${esc(t('Each line becomes one bullet point'))}</div>`;
+        } else if (b.type === 'video') {
+          body = `<input type="text" placeholder="${esc(t('YouTube or Vimeo URL'))}" value="${esc(b.text)}" data-btext="${i}">
+            <div class="field-hint">${esc(t('Paste a normal YouTube or Vimeo link — it is embedded automatically'))}</div>`;
+        } else if (b.type === 'quote') {
+          body = `${fmtRow(i)}<textarea placeholder="${esc(t('Quote text'))}" data-btext="${i}">${esc(b.text)}</textarea>`;
         } else {
-          body = `<textarea placeholder="${esc(t('Paragraph text'))}" data-btext="${i}">${esc(b.text)}</textarea>`;
+          body = `${fmtRow(i)}<textarea placeholder="${esc(t('Paragraph text'))}" data-btext="${i}">${esc(b.text)}</textarea>`;
         }
         return `<div class="block-row" data-i="${i}">
           <div class="block-row-head">
@@ -670,8 +711,13 @@
           </div>
           ${body}
         </div>`;
-      }).join('') : `<div class="field-hint">${esc(t('No blocks yet — add a heading, paragraph or image below.'))}</div>`;
+      }).join('') : `<div class="field-hint">${esc(t('No blocks yet — add a heading, paragraph, image, quote, list or video below.'))}</div>`;
       $$('[data-btext]', wrap).forEach(node => node.addEventListener('input', () => { uploads[key][+node.dataset.btext].text = node.value; }));
+      $$('[data-fmt]', wrap).forEach(b => b.addEventListener('click', () => {
+        const idx = +b.dataset.bidx;
+        const textarea = wrap.querySelector(`[data-btext="${idx}"]`);
+        if (textarea) { applyFormat(textarea, b.dataset.fmt); uploads[key][idx].text = textarea.value; }
+      }));
       $$('[data-bupload]', wrap).forEach(b => b.addEventListener('click', () => { uploadTarget = +b.dataset.bupload; file.click(); }));
       $$('[data-bpick]', wrap).forEach(img => img.addEventListener('click', () => {
         const i = +img.dataset.bpick;
@@ -690,9 +736,13 @@
       }));
     };
     const addHeading = $('#' + id + '_add_heading'), addParagraph = $('#' + id + '_add_paragraph'), addImage = $('#' + id + '_add_image');
+    const addQuote = $('#' + id + '_add_quote'), addList = $('#' + id + '_add_list'), addVideo = $('#' + id + '_add_video');
     if (addHeading) addHeading.addEventListener('click', () => { uploads[key].push({ type: 'heading', text: '', image: '' }); paint(); });
     if (addParagraph) addParagraph.addEventListener('click', () => { uploads[key].push({ type: 'paragraph', text: '', image: '' }); paint(); });
     if (addImage) addImage.addEventListener('click', () => { uploads[key].push({ type: 'image', text: '', image: '' }); paint(); });
+    if (addQuote) addQuote.addEventListener('click', () => { uploads[key].push({ type: 'quote', text: '', image: '' }); paint(); });
+    if (addList) addList.addEventListener('click', () => { uploads[key].push({ type: 'list', text: '', image: '' }); paint(); });
+    if (addVideo) addVideo.addEventListener('click', () => { uploads[key].push({ type: 'video', text: '', image: '' }); paint(); });
     file.addEventListener('change', async () => {
       if (!file.files[0] || uploadTarget == null) return;
       pendingUploads++;
