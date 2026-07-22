@@ -137,7 +137,7 @@
       fields: [
         { key: 'name', label: t('Name'), type: 'text', required: true, half: true },
         { key: 'sort_order', label: t('Sort order'), type: 'number', half: true },
-        { key: 'published', label: t('Published'), type: 'bool', half: true, hint: t('Turn off to remove it from the Projects form’s Category dropdown without deleting projects that already use it') }
+        { key: 'published', label: t('Published'), type: 'bool', half: true, default: true, hint: t('Turn off to remove it from the Projects form’s Category dropdown without deleting projects that already use it') }
       ]
     },
     testimonials: {
@@ -510,7 +510,12 @@
     const flush = () => { if (buf.length) { body.appendChild(el('div', { class: 'grid-2' }, buf.join(''))); buf = []; } };
 
     r.fields.forEach(f => {
-      const html = fieldHTML(f, row ? row[f.key] : undefined);
+      // most fields start blank/unchecked on a brand-new row (draft-first —
+      // right for content like projects/posts); a field can opt out via
+      // `default` when there's no meaningful "draft" state (e.g. categories'
+      // Published toggle, where a hidden-by-default new category is just a
+      // confusing dead end, not a deliberate draft).
+      const html = fieldHTML(f, row ? row[f.key] : f.default);
       if (f.half) buf.push(html);
       else { flush(); body.insertAdjacentHTML('beforeend', html); }
     });
