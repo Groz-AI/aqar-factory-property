@@ -420,7 +420,7 @@ create policy "admin delete subscribers" on public.newsletter_subscribers
 do $$
 declare t text;
 begin
-  foreach t in array array['content_blocks','projects','cities','categories','testimonials','developers','blog_posts']
+  foreach t in array array['content_blocks','projects','cities','categories','testimonials','developers','blog_posts','inquiries','newsletter_subscribers']
   loop
     begin
       execute format('alter publication supabase_realtime add table public.%I;', t);
