@@ -74,6 +74,28 @@ begin new.updated_at = now(); return new; end $$;
 -- CONTENT TABLES
 -- ============================================================
 
+-- Project categories — an admin-managed list feeding the Projects form's
+-- Category dropdown. projects.category stays a plain text column (matching
+-- whichever category name was picked); deleting a category here does not
+-- change any project that already used its name.
+create table if not exists public.categories (
+  id          uuid primary key default gen_random_uuid(),
+  name        text not null,
+  sort_order  int default 0,
+  published   boolean default true,
+  created_at  timestamptz default now(),
+  updated_at  timestamptz default now()
+);
+
+-- seed the categories that used to be hardcoded in the admin form, so an
+-- existing install's projects keep matching an entry after this migration
+insert into public.categories (name, sort_order)
+select v.name, v.sort_order from (values
+  ('Residential', 0), ('Commercial', 1), ('Mixed-use', 2),
+  ('Hospitality', 3), ('Retail', 4), ('Office', 5)
+) as v(name, sort_order)
+where not exists (select 1 from public.categories);
+
 -- Cities — top of the hierarchy: City -> Projects -> Units
 create table if not exists public.cities (
   id          uuid primary key default gen_random_uuid(),
@@ -143,9 +165,10 @@ update public.projects pr
 
 create index if not exists idx_projects_city_id    on public.projects(city_id);
 
--- the old standalone units/listings module — no longer part of the site
+-- the old standalone units/listings module — no longer part of the site.
+-- (its "categories" table is NOT dropped here anymore — that name is now
+-- reused above for the admin-managed project-category taxonomy.)
 drop table if exists public.properties cascade;
-drop table if exists public.categories cascade;
 
 -- Testimonials
 create table if not exists public.testimonials (
@@ -227,7 +250,7 @@ create table if not exists public.content_blocks (
 do $$
 declare t text;
 begin
-  foreach t in array array['projects','cities','testimonials','developers','blog_posts','content_blocks']
+  foreach t in array array['projects','cities','categories','testimonials','developers','blog_posts','content_blocks']
   loop
     execute format(
       'drop trigger if exists trg_touch_%1$s on public.%1$s;
@@ -248,7 +271,7 @@ end $$;
 do $$
 declare t text;
 begin
-  foreach t in array array['projects','cities','testimonials','developers','blog_posts']
+  foreach t in array array['projects','cities','categories','testimonials','developers','blog_posts']
   loop
     execute format('alter table public.%I enable row level security;', t);
 
@@ -276,6 +299,10 @@ create policy "admin write" on public.testimonials
 drop policy if exists "admin write" on public.developers;
 create policy "admin write" on public.developers
   for all using (public.has_page('developers')) with check (public.has_page('developers'));
+
+drop policy if exists "admin write" on public.categories;
+create policy "admin write" on public.categories
+  for all using (public.has_page('categories')) with check (public.has_page('categories'));
 
 drop policy if exists "admin write" on public.blog_posts;
 create policy "admin write" on public.blog_posts
@@ -393,7 +420,7 @@ create policy "admin delete subscribers" on public.newsletter_subscribers
 do $$
 declare t text;
 begin
-  foreach t in array array['content_blocks','projects','cities','testimonials','developers','blog_posts']
+  foreach t in array array['content_blocks','projects','cities','categories','testimonials','developers','blog_posts']
   loop
     begin
       execute format('alter publication supabase_realtime add table public.%I;', t);

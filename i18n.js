@@ -293,6 +293,8 @@
     'Dashboard': 'لوحة التحكم',
     'Content': 'المحتوى',
     'Cities': 'المدن',
+    'Categories': 'الفئات',
+    'Turn off to remove it from the Projects form’s Category dropdown without deleting projects that already use it': 'أوقف هذا الخيار لإزالتها من قائمة الفئات في نموذج المشاريع، دون حذف المشاريع التي تستخدمها بالفعل',
     'Testimonials': 'آراء العملاء',
     'Developers': 'المطورون',
     'Post': 'مقال',

@@ -32,6 +32,15 @@
   };
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
+  // name -> URL slug: lowercase, spaces/anything non-alphanumeric collapsed
+  // to a single dash (drops accents/non-Latin characters rather than
+  // percent-encoding them, so the slug stays a clean, readable ASCII string)
+  const slugify = (s) => String(s || '')
+    .trim().toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/[\s-]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+
   // resolve an image ref (unsplash id OR full url) to a preview url
   const imgUrl = (ref, w = 200) => {
     if (!ref) return '';
@@ -118,6 +127,19 @@
         { key: 'published', label: t('Published'), type: 'bool', half: true }
       ]
     },
+    categories: {
+      label: t('Categories'), singular: t('Category'), table: 'categories', icon: 'grid',
+      columns: [
+        { key: 'name', label: t('Name'), type: 'name' },
+        { key: 'sort_order', label: t('Sort order') },
+        { key: 'published', label: t('Status'), type: 'pill' }
+      ],
+      fields: [
+        { key: 'name', label: t('Name'), type: 'text', required: true, half: true },
+        { key: 'sort_order', label: t('Sort order'), type: 'number', half: true },
+        { key: 'published', label: t('Published'), type: 'bool', half: true, hint: t('Turn off to remove it from the Projects form’s Category dropdown without deleting projects that already use it') }
+      ]
+    },
     testimonials: {
       label: t('Testimonials'), singular: t('Testimonial'), table: 'testimonials', icon: 'quote',
       columns: [
@@ -181,9 +203,9 @@
   // page keys assignable to a Staff admin — matches the RESOURCES keys /
   // go(view) names for every sidebar item except overview/settings/users,
   // which are never assignable (personal-account-only, or Owner-only).
-  const PAGE_KEYS = ['projects', 'cities', 'testimonials', 'developers', 'posts', 'inquiries', 'newsletter', 'content'];
+  const PAGE_KEYS = ['projects', 'cities', 'categories', 'testimonials', 'developers', 'posts', 'inquiries', 'newsletter', 'content'];
   const PAGE_LABELS = () => ({
-    projects: t('Projects'), cities: t('Cities'), testimonials: t('Testimonials'),
+    projects: t('Projects'), cities: t('Cities'), categories: t('Categories'), testimonials: t('Testimonials'),
     developers: t('Developers'), posts: t('Blog'), inquiries: t('Inquiries'),
     newsletter: t('Newsletter'), content: t('Site content')
   });
@@ -464,8 +486,8 @@
     const body = $('#drawerBody');
     body.innerHTML = '';
 
-    // Projects link to a City — populate that dropdown from the live table
-    // right before rendering the form.
+    // Projects link to a City, and pick a Category — populate both dropdowns
+    // from their live tables right before rendering the form.
     if (view === 'projects') {
       const { data } = await sb.from('cities').select('id,name').order('name', { ascending: true }).then(res => res, () => ({ data: [] }));
       dynamicCitiesList = data || [];
@@ -474,6 +496,14 @@
         cityField.options = [{ value: '', label: '— No linked city —' }]
           .concat(dynamicCitiesList.map(c => ({ value: c.id, label: c.name })));
       }
+
+      const { data: cats } = await sb.from('categories').select('name').eq('published', true)
+        .order('sort_order', { ascending: true }).then(res => res, () => ({ data: [] }));
+      const categoryField = r.fields.find(f => f.key === 'category');
+      // fieldHTML's generic select renderer already keeps a stale/unmatched
+      // saved value selected as an extra option, so a project whose category
+      // was since renamed/unpublished/deleted doesn't silently reset on save
+      if (categoryField) categoryField.options = (cats || []).map(c => c.name);
     }
 
     let buf = [];
@@ -494,6 +524,19 @@
       if (f.type === 'consultants') wireConsultants('f_' + f.key, f.key, (row && row[f.key]) || []);
       if (f.type === 'blocks') wireBlocks('f_' + f.key, f.key, (row && row[f.key]) || []);
     });
+
+    // auto-fill the Slug from the Name as you type — only until the admin
+    // edits Slug themselves, and never for a project that already has one
+    // (an existing project's live URL shouldn't change just because the
+    // display name was tweaked).
+    if (view === 'projects') {
+      const nameInput = $('#f_name'), slugInput = $('#f_slug');
+      if (nameInput && slugInput) {
+        let slugDirty = !!(row && row.slug);
+        slugInput.addEventListener('input', () => { slugDirty = true; });
+        nameInput.addEventListener('input', () => { if (!slugDirty) slugInput.value = slugify(nameInput.value); });
+      }
+    }
 
     $('#drawerSave').onclick = () => saveForm(view);
     openDrawer();

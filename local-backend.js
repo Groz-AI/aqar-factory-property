@@ -70,9 +70,16 @@
       });
     }
 
+    // starter category list — mirrors the same default seeded in schema.sql
+    // for cloud installs, so local/demo mode has a manageable list too
+    const categories = withMeta(
+      ['Residential', 'Commercial', 'Mixed-use', 'Hospitality', 'Retail', 'Office'].map(name => ({ name }))
+    );
+
     return {
       projects,
       cities,
+      categories,
       testimonials: withMeta(F.testimonials),
       developers:   withMeta(F.developers),
       content_blocks,
