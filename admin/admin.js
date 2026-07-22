@@ -250,7 +250,39 @@
     wireChrome();
     applyPermissionVisibility();
     await refreshCounts();
+    wireRealtimeCounts();
     go('overview');
+  }
+
+  // keeps sidebar badge counts (and the Overview stat cards / currently-open
+  // list) correct automatically — without this, a change made in another
+  // tab, by another admin, or directly in Supabase only shows up after a
+  // manual reload, since refreshCounts() otherwise only runs on boot or
+  // right after this tab's own save/delete.
+  function wireRealtimeCounts() {
+    if (!cloud || !sb || typeof sb.channel !== 'function') return;
+    try {
+      const tables = [...new Set(Object.keys(RESOURCES).map(k => RESOURCES[k].table).concat(['inquiries', 'newsletter_subscribers']))];
+      let debounceT;
+      const ch = sb.channel('realteek-admin-counts');
+      tables.forEach(table => {
+        ch.on('postgres_changes', { event: '*', schema: 'public', table }, () => {
+          clearTimeout(debounceT);
+          debounceT = setTimeout(async () => {
+            await refreshCounts();
+            const changedView = Object.keys(RESOURCES).find(k => RESOURCES[k].table === table);
+            // only re-paint what's currently on screen, and never while the
+            // drawer's open, so an in-progress add/edit is never clobbered
+            if ($('#drawer').classList.contains('open')) return;
+            if (state.view === 'overview') renderOverview();
+            else if (changedView && state.view === changedView) renderList(changedView);
+            else if (state.view === 'inquiries' && table === 'inquiries') renderInquiries();
+            else if (state.view === 'newsletter' && table === 'newsletter_subscribers') renderNewsletter();
+          }, 500);
+        });
+      });
+      ch.subscribe();
+    } catch (_) { /* realtime not available — counts still refresh on next load/edit */ }
   }
 
   // ---------- RBAC: what the signed-in admin can see/access ----------
