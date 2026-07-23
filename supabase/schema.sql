@@ -155,6 +155,21 @@ alter table public.projects   add column if not exists brochure_pdf text;       
 alter table public.projects   add column if not exists consultants  jsonb default '[]'::jsonb; -- [{name, logo}] shown in the sidebar
 alter table public.projects   add column if not exists developer_logo text;                  -- developer's logo, shown on the project card
 alter table public.projects   add column if not exists unit_types  text[] default '{}';      -- unit types available, e.g. Villas, Apartments, Duplex
+alter table public.projects   add column if not exists about_blocks    jsonb default '[]'::jsonb; -- rich-content blocks (same shape as blog_posts.blocks) replacing the plain `about` text[]
+alter table public.projects   add column if not exists about_blocks_ar jsonb default '[]'::jsonb; -- Arabic version; falls back to about_blocks when empty
+
+-- one-time backfill: turn each existing about[] paragraph into a paragraph
+-- block, so existing projects keep their content after switching the admin
+-- form over to the block editor (guarded so it only runs once — re-running
+-- this file after an admin has started using the block editor won't
+-- clobber their work with a fresh re-derivation from the old text column)
+update public.projects
+   set about_blocks = (
+     select coalesce(jsonb_agg(jsonb_build_object('type', 'paragraph', 'text', p)), '[]'::jsonb)
+     from unnest(about) as p
+   )
+ where (about_blocks is null or about_blocks = '[]'::jsonb)
+   and about is not null and array_length(about, 1) > 0;
 
 -- best-effort backfill: link existing rows to a city by matching their free text
 update public.projects pr

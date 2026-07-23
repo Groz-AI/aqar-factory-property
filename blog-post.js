@@ -30,36 +30,10 @@ function formatDate(iso) {
 let ALL = [];
 let post = null;
 
-// recognizes a plain YouTube/Vimeo link and turns it into an embeddable
-// player URL; anything else is passed through as-is (already an embed URL)
-function toEmbedURL(url) {
-  url = String(url || '').trim();
-  let m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([\w-]{11})/);
-  if (m) return `https://www.youtube.com/embed/${m[1]}`;
-  m = url.match(/vimeo\.com\/(?:video\/)?(\d+)/);
-  if (m) return `https://player.vimeo.com/video/${m[1]}`;
-  return url;
-}
-
-// paragraph/quote text can contain admin-inserted <b>/<i>/<a> tags from the
-// blocks editor's formatting toolbar, so it's rendered as trusted HTML
-// rather than escaped — same trusted-admin-content model already used for
-// project "about" paragraphs elsewhere in this app.
-function blockHTML(b) {
-  if (!b) return '';
-  if (b.type === 'heading') return b.text ? `<h2>${esc(b.text)}</h2>` : '';
-  if (b.type === 'image') return b.image ? `<figure class="blog-block-image"><img src="${U(b.image, 1200)}" alt="" loading="lazy"></figure>` : '';
-  if (b.type === 'quote') return b.text ? `<blockquote class="blog-block-quote">${b.text}</blockquote>` : '';
-  if (b.type === 'list') {
-    const items = String(b.text || '').split('\n').map(s => s.trim()).filter(Boolean);
-    return items.length ? `<ul class="blog-block-list">${items.map(li => `<li>${esc(li)}</li>`).join('')}</ul>` : '';
-  }
-  if (b.type === 'video') {
-    const src = toEmbedURL(b.text);
-    return src ? `<div class="blog-block-video"><iframe src="${esc(src)}" loading="lazy" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen title="video"></iframe></div>` : '';
-  }
-  return b.text ? `<p>${b.text}</p>` : '';
-}
+// block rendering (heading/paragraph/image/quote/list/video/table/icon-row/
+// divider/callout/columns/button) lives in the shared blocks-render.js
+// (window.renderBlocks) so this article page and the project detail page
+// never drift apart.
 
 function cardHTML(p) {
   const tags = (pick(p, 'tags', 'tagsAr') || []).map(tag => `<span class="blog-tag">${tag}</span>`).join('');
@@ -96,7 +70,7 @@ function populate() {
   document.getElementById('authorName').textContent = post.authorName || '';
   document.getElementById('postDate').textContent = formatDate(post.publishedAt);
 
-  document.getElementById('articleBody').innerHTML = (pick(post, 'blocks', 'blocksAr') || []).map(blockHTML).join('');
+  document.getElementById('articleBody').innerHTML = window.renderBlocks(pick(post, 'blocks', 'blocksAr'));
 
   const related = ALL.filter(p => p.id !== post.id).slice(0, 3);
   const relatedWrap = document.getElementById('relatedPosts');

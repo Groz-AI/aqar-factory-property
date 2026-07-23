@@ -10,6 +10,18 @@ const arrowSVG = `<svg viewBox="0 0 24 24" fill="none"><path d="M7 17 17 7M9 7h8
 const statusClass = s => (s || '').toLowerCase().replace(/[^a-z]/g, '-');
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
+const isAr = () => !!(window.i18n && window.i18n.lang === 'ar');
+// prefer the Arabic "about" blocks when the site is in Arabic mode and
+// they're filled in, otherwise fall back to the English ones — same
+// pattern as the blog article's bilingual title/excerpt/tags/blocks
+function pick(p, key, arKey) {
+  if (isAr()) {
+    const v = p[arKey];
+    if (Array.isArray(v) ? v.length : v) return v;
+  }
+  return p[key];
+}
+
 /* ---------- animated cover: cross-fades through the project's own gallery ---------- */
 function projectImages(p) {
   const imgs = (p.gallery || []).filter(Boolean);
@@ -62,7 +74,7 @@ function populate() {
     <span class="dbadge">${project.status || ''}</span>
     <span class="dbadge">${project.year || ''}</span>`;
 
-  document.getElementById('about').innerHTML = (project.about || []).map(p => `<p>${p}</p>`).join('');
+  document.getElementById('about').innerHTML = window.renderBlocks(pick(project, 'aboutBlocks', 'aboutBlocksAr'));
   document.getElementById('amenities').innerHTML = (project.amenities || []).map(a =>
     `<div class="amenity"><span class="ic">${checkSVG}</span>${a}</div>`).join('');
 

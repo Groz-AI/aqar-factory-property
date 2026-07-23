@@ -23,7 +23,15 @@
       cityId: r.city_id || null,
       name: r.name, category: r.category, unitTypes: r.unit_types || [], city: r.city, location: r.location,
       country: r.country, year: r.year, status: r.status, tagline: r.tagline, cover: r.cover,
-      about: r.about || [], amenities: r.amenities || [], developer: r.developer, developerLogo: r.developer_logo || '',
+      about: r.about || [],
+      // rich-content blocks for the About section; if a project hasn't been
+      // opened in the new block editor yet (about_blocks empty), synthesize
+      // one paragraph block per legacy about[] entry so it still renders
+      aboutBlocks: (Array.isArray(r.about_blocks) && r.about_blocks.length)
+        ? r.about_blocks
+        : (r.about || []).map(p => ({ type: 'paragraph', text: p })),
+      aboutBlocksAr: Array.isArray(r.about_blocks_ar) ? r.about_blocks_ar : [],
+      amenities: r.amenities || [], developer: r.developer, developerLogo: r.developer_logo || '',
       gallery: r.gallery || [], coords: [r.lat || 0, r.lng || 0],
       priceValue: Number(r.price_value) || 0, areaValue: Number(r.area_value) || 0, isRental: !!r.is_rental,
       brochurePdf: r.brochure_pdf || '', consultants: Array.isArray(r.consultants) ? r.consultants : [],

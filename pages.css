@@ -226,22 +226,38 @@
 .blog-post-byline b{display:block;font-family:"Bricolage Grotesque",sans-serif}
 .blog-post-date{opacity:.85;font-size:.85rem}
 
-/* article body */
+/* article body — .rich-content is the shared base typography for any
+   rendered block content (blog articles via .blog-article, and the
+   project detail page's #about), so both surfaces stay visually
+   consistent and get new block-type styles for free */
 .blog-post-layout{display:flex;justify-content:center;padding:56px 0 10px}
-.blog-article{max-width:720px;width:100%;font-size:1.08rem;line-height:1.85;color:var(--ink)}
-.blog-article h2{font-family:"Bricolage Grotesque",sans-serif;font-size:1.5rem;font-weight:700;letter-spacing:-.01em;margin:2.3rem 0 1.1rem}
-.blog-article h2:first-child{margin-top:0}
-.blog-article p{color:var(--ink-soft);margin-bottom:1.3rem}
+.blog-article, .rich-content{max-width:720px;width:100%;font-size:1.08rem;line-height:1.85;color:var(--ink)}
+.blog-article h2, .rich-content h2{font-family:"Bricolage Grotesque",sans-serif;font-size:1.5rem;font-weight:700;letter-spacing:-.01em;margin:2.3rem 0 1.1rem}
+.blog-article h2:first-child, .rich-content h2:first-child{margin-top:0}
+.blog-article p, .rich-content p{color:var(--ink-soft);margin-bottom:1.3rem}
 .blog-block-image{margin:2.2rem 0}
 .blog-block-image img{width:100%;border-radius:18px;display:block;box-shadow:var(--shadow-sm)}
-.blog-article a{color:var(--sky-deep);text-decoration:underline;text-underline-offset:2px}
+.blog-article a, .rich-content a{color:var(--sky-deep);text-decoration:underline;text-underline-offset:2px}
 .blog-block-quote{margin:2.2rem 0;padding:.2rem 1.6rem;border-left:3px solid var(--sky);font-family:"Fraunces",serif;font-style:italic;font-size:1.28rem;line-height:1.6;color:var(--ink)}
 [dir="rtl"] .blog-block-quote{border-left:none;border-right:3px solid var(--sky)}
-.blog-article ul.blog-block-list{margin:0 0 1.3rem;padding-left:1.3rem;color:var(--ink-soft)}
-[dir="rtl"] .blog-article ul.blog-block-list{padding-left:0;padding-right:1.3rem}
-.blog-article ul.blog-block-list li{margin-bottom:.5rem}
+.blog-article ul.blog-block-list, .rich-content ul.blog-block-list{margin:0 0 1.3rem;padding-left:1.3rem;color:var(--ink-soft)}
+[dir="rtl"] .blog-article ul.blog-block-list, [dir="rtl"] .rich-content ul.blog-block-list{padding-left:0;padding-right:1.3rem}
+.blog-article ul.blog-block-list li, .rich-content ul.blog-block-list li{margin-bottom:.5rem}
 .blog-block-video{position:relative;width:100%;aspect-ratio:16/9;margin:2.2rem 0;border-radius:18px;overflow:hidden;box-shadow:var(--shadow-sm);background:var(--paper)}
 .blog-block-video iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+
+/* ---- new block types (Table / Icon row / Divider / Callout / Columns / Button) ---- */
+.block-table{width:100%;margin:2.2rem 0;border-collapse:collapse;border-radius:12px;overflow:hidden;box-shadow:var(--shadow-sm)}
+.block-table td{border:1px solid var(--line);padding:.7em 1em;vertical-align:top}
+.block-icon-row{display:flex;flex-wrap:wrap;gap:1.6rem;margin:2rem 0}
+.block-icon-item{display:flex;align-items:center;gap:.55rem;font-weight:600;color:var(--ink)}
+.block-icon-item svg{width:22px;height:22px;color:var(--sky);flex:none}
+.block-divider{border:none;border-top:1px solid var(--line);margin:2.4rem 0}
+.block-callout{margin:2.2rem 0;padding:1.2em 1.4em;border-radius:14px;border-inline-start:4px solid var(--sky);background:var(--sky-soft);color:var(--ink)}
+.block-columns{display:grid;grid-template-columns:1fr 1fr;gap:1.6rem;margin:2.2rem 0}
+.block-columns img{width:100%;border-radius:14px;display:block}
+.block-button{display:inline-flex;align-items:center;gap:.5rem;margin:1rem 0 2rem;padding:.8em 1.6em;border-radius:999px;background:var(--sky);color:#fff;font-weight:700;text-decoration:none!important}
+@media(max-width:640px){.block-columns{grid-template-columns:1fr}}
 
 /* ============================================================
    LIGHTBOX

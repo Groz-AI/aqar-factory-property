@@ -41,6 +41,21 @@
     .replace(/[\s-]+/g, '-')
     .replace(/^-+|-+$/g, '');
 
+  // is a block worth keeping on save? most types are keyed on text/image,
+  // but several new block types carry their content in other properties
+  function hasBlockContent(b) {
+    if (!b) return false;
+    if (b.type === 'divider') return true;
+    if (b.type === 'table') return Array.isArray(b.cells) && b.cells.length > 0;
+    if (b.type === 'icon-row') return Array.isArray(b.items) && b.items.some(it => it && (it.label || it.icon));
+    if (b.type === 'columns') {
+      const has = (slot) => slot && (slot.text || slot.image);
+      return has(b.left) || has(b.right);
+    }
+    if (b.type === 'button') return !!(b.label && b.url);
+    return !!(b.text || b.image);
+  }
+
   // resolve an image ref (unsplash id OR full url) to a preview url
   const imgUrl = (ref, w = 200) => {
     if (!ref) return '';
@@ -92,7 +107,8 @@
         { key: 'year', label: t('Year'), type: 'number', half: true },
         { key: 'cover', label: t('Cover image'), type: 'image' },
         { key: 'gallery', label: t('Gallery'), type: 'gallery' },
-        { key: 'about', label: t('About (one paragraph per line)'), type: 'lines' },
+        { key: 'about_blocks', label: t('About'), type: 'blocks', hint: t('Build the description from any mix of blocks below — paragraphs and quotes support bold, italic, links, color, size and alignment.') },
+        { key: 'about_blocks_ar', label: t('About (Arabic)'), type: 'blocks', hint: t('Shown when the site is set to Arabic — leave empty to fall back to the English content above.') },
         { key: 'amenities', label: t('Amenities'), type: 'tags' },
         { key: 'price', label: t('Price (display)'), type: 'text', half: true, hint: t('e.g. EGP 3.2M') },
         { key: 'price_value', label: t('Price value (number)'), type: 'number', half: true },
@@ -587,7 +603,28 @@
       return `<div class="field"><label for="${id}">${esc(f.label)}</label><input type="date" id="${id}" value="${esc(dateVal)}">${hint}</div>`;
     }
     if (f.type === 'blocks') {
+      const alignLeftSVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h10M4 18h13"/></svg>';
+      const alignCenterSVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M7 12h10M5.5 18h13"/></svg>';
+      const alignRightSVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M10 12h10M7 18h13"/></svg>';
       return `<div class="field"><label>${esc(f.label)}</label>
+        <div class="blocks-toolbar" id="${id}_toolbar">
+          <button type="button" class="fmt-btn" data-cmd="bold" title="${esc(t('Bold'))}"><b>B</b></button>
+          <button type="button" class="fmt-btn" data-cmd="italic" title="${esc(t('Italic'))}"><i>I</i></button>
+          <input type="color" class="fmt-color" id="${id}_color" title="${esc(t('Font color'))}" value="#131a21">
+          <select class="fmt-size" id="${id}_size" title="${esc(t('Font size'))}">
+            <option value="0.85em">${t('Small')}</option>
+            <option value="1em" selected>${t('Normal')}</option>
+            <option value="1.25em">${t('Large')}</option>
+            <option value="1.6em">${t('X-Large')}</option>
+          </select>
+          <button type="button" class="fmt-btn" data-align="left" title="${esc(t('Align left'))}">${alignLeftSVG}</button>
+          <button type="button" class="fmt-btn" data-align="center" title="${esc(t('Align center'))}">${alignCenterSVG}</button>
+          <button type="button" class="fmt-btn" data-align="right" title="${esc(t('Align right'))}">${alignRightSVG}</button>
+          <button type="button" class="fmt-btn" id="${id}_linkBtn" title="${esc(t('Link'))}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
+          <button type="button" class="fmt-btn" id="${id}_iconBtn" title="${esc(t('Insert icon'))}">${window.ICON_LIBRARY.star}</button>
+          <div class="icon-popover" id="${id}_iconPopover" hidden></div>
+          <span class="field-hint" style="margin:0 0 0 auto">${esc(t('Select text first, then apply formatting'))}</span>
+        </div>
         <div class="blocks-edit" id="${id}_wrap"></div>
         <div class="blocks-add-row">
           <button type="button" class="btn btn-ghost btn-sm" id="${id}_add_heading">+ ${t('Heading')}</button>
@@ -596,6 +633,12 @@
           <button type="button" class="btn btn-ghost btn-sm" id="${id}_add_quote">+ ${t('Quote')}</button>
           <button type="button" class="btn btn-ghost btn-sm" id="${id}_add_list">+ ${t('List')}</button>
           <button type="button" class="btn btn-ghost btn-sm" id="${id}_add_video">+ ${t('Video')}</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="${id}_add_table">+ ${t('Table')}</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="${id}_add_iconrow">+ ${t('Icon row')}</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="${id}_add_divider">+ ${t('Divider')}</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="${id}_add_callout">+ ${t('Callout')}</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="${id}_add_columns">+ ${t('Columns')}</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="${id}_add_button">+ ${t('Button')}</button>
         </div>
         <input type="file" id="${id}_file" accept="image/*" style="display:none">
         ${hint}</div>`;
@@ -781,52 +824,147 @@
 
   // ---------- blog article content field wiring (repeatable heading/paragraph/image blocks) ----------
   function wireBlocks(id, stateKey, initial) {
+    // preserve every property a block may carry (align/color/items/rows/
+    // cols/cells/left/right/label/url, on top of the original type/text/
+    // image) — only type/text/image get defaults, everything else passes
+    // through as-is for whichever block type actually uses it
     uploads[stateKey] = Array.isArray(initial)
-      ? initial.map(b => ({ type: (b && b.type) || 'paragraph', text: (b && b.text) || '', image: (b && b.image) || '' }))
+      ? initial.map(b => Object.assign({ type: 'paragraph', text: '', image: '' }, b))
       : [];
     const key = stateKey;
     const wrap = $('#' + id + '_wrap'), file = $('#' + id + '_file');
     if (!wrap) return;
-    let uploadTarget = null;
-    const TYPE_LABELS = { heading: t('Heading'), image: t('Image'), quote: t('Quote'), list: t('List'), video: t('Video'), paragraph: t('Paragraph') };
+    let uploadTarget = null; // a block index (image block) or "i:side" string (columns image slot)
+    let dragIndex = null;
+    let activeBlockIndex = null; // which block's text last had focus — align applies to this one
+    let savedRange = null; // last non-collapsed selection made inside this editor, kept fresh
+    // so a toolbar click (which can steal focus, e.g. the native color
+    // picker) still has something valid to restore before execCommand
+    const TYPE_LABELS = {
+      heading: t('Heading'), image: t('Image'), quote: t('Quote'), list: t('List'), video: t('Video'), paragraph: t('Paragraph'),
+      table: t('Table'), 'icon-row': t('Icon row'), divider: t('Divider'), callout: t('Callout'), columns: t('Columns'), button: t('Button')
+    };
     const typeLabel = ty => TYPE_LABELS[ty] || t('Paragraph');
 
-    // wraps the current textarea selection in a tag (bold/italic), or prompts
-    // for a URL and wraps it in a link — inserted as literal HTML, rendered
-    // as-is on the article page (same trusted-admin-content model already
-    // used for project "about" paragraphs elsewhere in this app)
-    function applyFormat(textarea, kind) {
-      const start = textarea.selectionStart, end = textarea.selectionEnd;
-      const val = textarea.value;
-      let open, close;
-      if (kind === 'a') {
-        const url = window.prompt(t('Link URL (https://…)'), 'https://');
-        if (!url) return;
-        open = `<a href="${esc(url)}" target="_blank" rel="noopener">`; close = '</a>';
-      } else if (kind === 'i') { open = '<i>'; close = '</i>'; }
-      else { open = '<b>'; close = '</b>'; }
-      const placeholder = kind === 'a' ? t('link text') : kind === 'i' ? t('italic text') : t('bold text');
-      const selected = val.slice(start, end) || placeholder;
-      textarea.value = val.slice(0, start) + open + selected + close + val.slice(end);
-      textarea.dispatchEvent(new Event('input'));
-      const cursor = start + open.length + selected.length + close.length;
-      textarea.focus();
-      textarea.setSelectionRange(cursor, cursor);
+    document.addEventListener('selectionchange', () => {
+      const sel = document.getSelection();
+      if (!sel || !sel.rangeCount || sel.isCollapsed) return;
+      const range = sel.getRangeAt(0);
+      const node = range.commonAncestorContainer;
+      const el = node.nodeType === 1 ? node : node.parentElement;
+      if (el && wrap.contains(el)) savedRange = range.cloneRange();
+    });
+    function restoreSelection() {
+      if (!savedRange) return false;
+      const sel = document.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(savedRange);
+      return true;
+    }
+    // any block-level editable (heading input, or a paragraph/quote/callout
+    // contenteditable) reports itself as "active" on focus, so the Align
+    // buttons know which block to apply to
+    function trackBlock(el, i) { el.addEventListener('focus', () => { activeBlockIndex = i; }); }
+
+    function resizeTableBlock(b, rows, cols) {
+      rows = Math.max(1, Math.min(20, rows || 1));
+      cols = Math.max(1, Math.min(8, cols || 1));
+      const old = Array.isArray(b.cells) ? b.cells : [];
+      const cells = [];
+      for (let r = 0; r < rows; r++) {
+        const row = [];
+        for (let c = 0; c < cols; c++) row.push((old[r] && old[r][c]) ? old[r][c] : { text: '', bg: '' });
+        cells.push(row);
+      }
+      b.rows = rows; b.cols = cols; b.cells = cells;
     }
 
-    const fmtRow = i => `<div class="block-fmt-row">
-      <button type="button" class="fmt-btn" data-fmt="b" data-bidx="${i}" title="${esc(t('Bold'))}"><b>B</b></button>
-      <button type="button" class="fmt-btn" data-fmt="i" data-bidx="${i}" title="${esc(t('Italic'))}"><i>I</i></button>
-      <button type="button" class="fmt-btn" data-fmt="a" data-bidx="${i}" title="${esc(t('Link'))}">${t('Link')}</button>
-    </div>`;
+    // ---------- shared icon popover (toolbar "insert icon" + icon-row item picker) ----------
+    const iconPopover = $('#' + id + '_iconPopover');
+    function openIconPopover(anchorEl, onPick) {
+      if (!iconPopover) return;
+      iconPopover.innerHTML = Object.keys(window.ICON_LIBRARY).map(k =>
+        `<button type="button" class="icon-pick-opt" data-pick="${k}" title="${esc(k)}">${window.ICON_LIBRARY[k]}</button>`).join('');
+      $$('[data-pick]', iconPopover).forEach(b => b.addEventListener('click', () => { onPick(b.dataset.pick); iconPopover.hidden = true; }));
+      if (anchorEl) {
+        const r = anchorEl.getBoundingClientRect();
+        iconPopover.style.position = 'fixed';
+        iconPopover.style.top = (r.bottom + 6) + 'px';
+        iconPopover.style.left = r.left + 'px';
+      } else {
+        iconPopover.style.position = '';
+        iconPopover.style.top = '';
+        iconPopover.style.left = '';
+      }
+      iconPopover.hidden = false;
+    }
+    document.addEventListener('click', (e) => {
+      if (iconPopover && !iconPopover.hidden && !iconPopover.contains(e.target) && !e.target.closest('[data-iconpick]') && e.target.id !== id + '_iconBtn') {
+        iconPopover.hidden = true;
+      }
+    });
+
+    // ---------- shared rich-text toolbar (bold/italic/link/color/size/align/icon) ----------
+    const toolbar = $('#' + id + '_toolbar');
+    if (toolbar) {
+      $$('[data-cmd]', toolbar).forEach(btn => {
+        btn.addEventListener('mousedown', e => e.preventDefault());
+        btn.addEventListener('click', () => { if (restoreSelection()) document.execCommand(btn.dataset.cmd); });
+      });
+      const linkBtn = $('#' + id + '_linkBtn');
+      if (linkBtn) {
+        linkBtn.addEventListener('mousedown', e => e.preventDefault());
+        linkBtn.addEventListener('click', () => {
+          const url = window.prompt(t('Link URL (https://…)'), 'https://');
+          if (url && restoreSelection()) document.execCommand('createLink', false, url);
+        });
+      }
+      const colorInput = $('#' + id + '_color');
+      if (colorInput) colorInput.addEventListener('input', () => { if (restoreSelection()) document.execCommand('foreColor', false, colorInput.value); });
+      const sizeSelect = $('#' + id + '_size');
+      if (sizeSelect) sizeSelect.addEventListener('change', () => {
+        if (!restoreSelection()) return;
+        const sel = document.getSelection();
+        if (!sel.rangeCount || sel.isCollapsed) return;
+        const range = sel.getRangeAt(0);
+        const span = document.createElement('span');
+        span.style.fontSize = sizeSelect.value;
+        span.appendChild(range.extractContents());
+        range.insertNode(span);
+        const host = span.parentElement && span.parentElement.closest('[contenteditable]');
+        if (host) host.dispatchEvent(new Event('input'));
+      });
+      $$('[data-align]', toolbar).forEach(btn => {
+        btn.addEventListener('mousedown', e => e.preventDefault());
+        btn.addEventListener('click', () => {
+          if (activeBlockIndex == null || !uploads[key][activeBlockIndex]) return;
+          const align = btn.dataset.align;
+          uploads[key][activeBlockIndex].align = align;
+          const target = wrap.querySelector(`[data-btext="${activeBlockIndex}"]`);
+          if (target) target.style.textAlign = align;
+        });
+      });
+      const iconBtn = $('#' + id + '_iconBtn');
+      if (iconBtn) {
+        iconBtn.addEventListener('mousedown', e => e.preventDefault());
+        iconBtn.addEventListener('click', () => {
+          const range = savedRange;
+          openIconPopover(null, (k) => {
+            if (range) { document.getSelection().removeAllRanges(); document.getSelection().addRange(range); }
+            document.execCommand('insertHTML', false, `<span class="inline-icon">${window.ICON_LIBRARY[k]}</span>`);
+          });
+        });
+      }
+    }
 
     const paint = () => {
       wrap.innerHTML = uploads[key].length ? uploads[key].map((b, i) => {
         const moveUp = i > 0 ? `<button type="button" class="icon-btn" data-bup="${i}" title="${esc(t('Move up'))}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>` : '';
         const moveDown = i < uploads[key].length - 1 ? `<button type="button" class="icon-btn" data-bdown="${i}" title="${esc(t('Move down'))}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M19 12l-7 7-7-7"/></svg></button>` : '';
+        const alignStyle = b.align ? ` style="text-align:${esc(b.align)}"` : '';
         let body;
         if (b.type === 'heading') {
-          body = `<input type="text" placeholder="${esc(t('Heading text'))}" value="${esc(b.text)}" data-btext="${i}">`;
+          body = `<input type="text" placeholder="${esc(t('Heading text'))}" value="${esc(b.text)}" data-btext="${i}"${alignStyle}>`;
         } else if (b.type === 'image') {
           body = `<div class="block-img-row">
             <img class="block-img-prev" src="${esc(imgUrl(b.image, 200))}" alt="" data-bpick="${i}" title="${esc(t('Click to choose an existing image'))}">
@@ -838,25 +976,72 @@
         } else if (b.type === 'video') {
           body = `<input type="text" placeholder="${esc(t('YouTube or Vimeo URL'))}" value="${esc(b.text)}" data-btext="${i}">
             <div class="field-hint">${esc(t('Paste a normal YouTube or Vimeo link — it is embedded automatically'))}</div>`;
+        } else if (b.type === 'divider') {
+          body = `<div class="field-hint">${esc(t('A horizontal line — no options needed'))}</div>`;
+        } else if (b.type === 'button') {
+          body = `<input type="text" placeholder="${esc(t('Button label'))}" value="${esc(b.label || '')}" data-blabel="${i}">
+            <input type="text" placeholder="${esc(t('URL (https://…)'))}" value="${esc(b.url || '')}" data-burl="${i}" style="margin-top:8px">`;
+        } else if (b.type === 'callout') {
+          body = `<div class="callout-color-row"><label>${t('Background color')} <input type="color" class="callout-color" data-ccolor="${i}" value="${esc(b.color || '#fce6eb')}"></label></div>
+            <div class="rte" contenteditable="true" data-btext="${i}"${alignStyle}>${b.text || ''}</div>`;
+        } else if (b.type === 'icon-row') {
+          if (!Array.isArray(b.items) || !b.items.length) b.items = [{ icon: 'star', label: '' }];
+          body = `<div class="icon-row-edit">${b.items.map((it, ii) => `
+            <div class="icon-row-item">
+              <button type="button" class="icon-pick-trigger" data-iconpick="${i}:${ii}" title="${esc(t('Choose icon'))}">${window.ICON_LIBRARY[it.icon] || window.ICON_LIBRARY.star}</button>
+              <input type="text" placeholder="${esc(t('Label'))}" value="${esc(it.label || '')}" data-ilabel="${i}:${ii}">
+              <button type="button" class="icon-btn del" data-irm="${i}:${ii}" title="${esc(t('Remove'))}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+            </div>`).join('')}
+            <button type="button" class="btn btn-ghost btn-sm" data-iadd="${i}">+ ${t('Add item')}</button>
+          </div>`;
+        } else if (b.type === 'columns') {
+          if (!b.left) b.left = { type: 'paragraph', text: '' };
+          if (!b.right) b.right = { type: 'paragraph', text: '' };
+          const slotHTML = (slot, side) => `
+            <div class="column-slot">
+              <div class="column-slot-tabs">
+                <button type="button" class="tab-btn${slot.type !== 'image' ? ' active' : ''}" data-ctype="${i}:${side}:paragraph">${t('Text')}</button>
+                <button type="button" class="tab-btn${slot.type === 'image' ? ' active' : ''}" data-ctype="${i}:${side}:image">${t('Image')}</button>
+              </div>
+              ${slot.type === 'image'
+                ? `<div class="block-img-row"><img class="block-img-prev" src="${esc(imgUrl(slot.image, 200))}" data-cpick="${i}:${side}" title="${esc(t('Click to choose an existing image'))}"><button type="button" class="btn btn-ghost btn-sm" data-cupload="${i}:${side}">${t('Upload…')}</button></div>`
+                : `<div class="rte" contenteditable="true" data-ctext="${i}:${side}">${slot.text || ''}</div>`}
+            </div>`;
+          body = `<div class="columns-edit">${slotHTML(b.left, 'left')}${slotHTML(b.right, 'right')}</div>`;
+        } else if (b.type === 'table') {
+          if (!Array.isArray(b.cells) || !b.cells.length) resizeTableBlock(b, b.rows || 2, b.cols || 2);
+          const rows = b.rows, cols = b.cols;
+          const tbody = b.cells.map((row, ri) => `<tr>${row.map((cell, ci) => `<td>
+              <input type="color" class="cell-color" data-tcolor="${i}:${ri}:${ci}" value="${esc(cell.bg || '#ffffff')}" title="${esc(t('Cell color'))}">
+              <div class="rte cell-rte" contenteditable="true" data-ttext="${i}:${ri}:${ci}">${cell.text || ''}</div>
+            </td>`).join('')}</tr>`).join('');
+          body = `
+            <div class="table-size-row">
+              <label>${t('Rows')} <input type="number" min="1" max="20" value="${rows}" class="table-rows" data-tdim="${i}"></label>
+              <label>${t('Columns')} <input type="number" min="1" max="8" value="${cols}" class="table-cols" data-tdim="${i}"></label>
+              <button type="button" class="btn btn-ghost btn-sm" data-tapply="${i}">${t('Apply size')}</button>
+            </div>
+            <table class="block-table-edit"><tbody>${tbody}</tbody></table>`;
         } else if (b.type === 'quote') {
-          body = `${fmtRow(i)}<textarea placeholder="${esc(t('Quote text'))}" data-btext="${i}">${esc(b.text)}</textarea>`;
+          body = `<div class="rte" contenteditable="true" data-btext="${i}"${alignStyle}>${b.text || ''}</div>`;
         } else {
-          body = `${fmtRow(i)}<textarea placeholder="${esc(t('Paragraph text'))}" data-btext="${i}">${esc(b.text)}</textarea>`;
+          body = `<div class="rte" contenteditable="true" data-btext="${i}"${alignStyle}>${b.text || ''}</div>`;
         }
         return `<div class="block-row" data-i="${i}">
           <div class="block-row-head">
+            <button type="button" class="drag-handle" draggable="true" data-drag="${i}" title="${esc(t('Drag to reorder'))}"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.3"/><circle cx="15" cy="6" r="1.3"/><circle cx="9" cy="12" r="1.3"/><circle cx="15" cy="12" r="1.3"/><circle cx="9" cy="18" r="1.3"/><circle cx="15" cy="18" r="1.3"/></svg></button>
             <span class="block-type-badge">${esc(typeLabel(b.type))}</span>
             <div class="block-row-actions">${moveUp}${moveDown}<button type="button" class="icon-btn del" data-brm="${i}" title="${esc(t('Remove'))}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button></div>
           </div>
           ${body}
         </div>`;
-      }).join('') : `<div class="field-hint">${esc(t('No blocks yet — add a heading, paragraph, image, quote, list or video below.'))}</div>`;
-      $$('[data-btext]', wrap).forEach(node => node.addEventListener('input', () => { uploads[key][+node.dataset.btext].text = node.value; }));
-      $$('[data-fmt]', wrap).forEach(b => b.addEventListener('click', () => {
-        const idx = +b.dataset.bidx;
-        const textarea = wrap.querySelector(`[data-btext="${idx}"]`);
-        if (textarea) { applyFormat(textarea, b.dataset.fmt); uploads[key][idx].text = textarea.value; }
-      }));
+      }).join('') : `<div class="field-hint">${esc(t('No blocks yet — add one from the buttons below.'))}</div>`;
+
+      $$('[data-btext]', wrap).forEach(node => {
+        const isCE = node.hasAttribute('contenteditable');
+        node.addEventListener('input', () => { uploads[key][+node.dataset.btext].text = isCE ? node.innerHTML : node.value; });
+        trackBlock(node, +node.dataset.btext);
+      });
       $$('[data-bupload]', wrap).forEach(b => b.addEventListener('click', () => { uploadTarget = +b.dataset.bupload; file.click(); }));
       $$('[data-bpick]', wrap).forEach(img => img.addEventListener('click', () => {
         const i = +img.dataset.bpick;
@@ -873,22 +1058,117 @@
         [uploads[key][i], uploads[key][i + 1]] = [uploads[key][i + 1], uploads[key][i]];
         paint();
       }));
+
+      // drag-to-reorder — kept alongside the up/down buttons above as a
+      // keyboard-accessible fallback (drag-and-drop alone locks out anyone
+      // who can't use a mouse)
+      $$('[data-drag]', wrap).forEach(handle => {
+        handle.addEventListener('dragstart', (e) => { dragIndex = +handle.dataset.drag; e.dataTransfer.effectAllowed = 'move'; });
+      });
+      $$('.block-row', wrap).forEach(row => {
+        row.addEventListener('dragover', (e) => { e.preventDefault(); row.classList.add('drag-over'); });
+        row.addEventListener('dragleave', () => row.classList.remove('drag-over'));
+        row.addEventListener('drop', (e) => {
+          e.preventDefault();
+          row.classList.remove('drag-over');
+          const dropIndex = +row.dataset.i;
+          if (dragIndex === null || dragIndex === dropIndex) return;
+          const [moved] = uploads[key].splice(dragIndex, 1);
+          uploads[key].splice(dropIndex, 0, moved);
+          dragIndex = null;
+          paint();
+        });
+      });
+
+      // table
+      $$('[data-tapply]', wrap).forEach(btn => btn.addEventListener('click', () => {
+        const i = +btn.dataset.tapply;
+        const rowsInput = wrap.querySelector(`.table-rows[data-tdim="${i}"]`);
+        const colsInput = wrap.querySelector(`.table-cols[data-tdim="${i}"]`);
+        resizeTableBlock(uploads[key][i], +rowsInput.value, +colsInput.value);
+        paint();
+      }));
+      $$('[data-ttext]', wrap).forEach(el => el.addEventListener('input', () => {
+        const [i, ri, ci] = el.dataset.ttext.split(':').map(Number);
+        uploads[key][i].cells[ri][ci].text = el.innerHTML;
+      }));
+      $$('[data-tcolor]', wrap).forEach(inp => inp.addEventListener('input', () => {
+        const [i, ri, ci] = inp.dataset.tcolor.split(':').map(Number);
+        uploads[key][i].cells[ri][ci].bg = inp.value;
+      }));
+
+      // icon row
+      $$('[data-iadd]', wrap).forEach(btn => btn.addEventListener('click', () => {
+        const i = +btn.dataset.iadd;
+        uploads[key][i].items.push({ icon: 'star', label: '' });
+        paint();
+      }));
+      $$('[data-irm]', wrap).forEach(btn => btn.addEventListener('click', () => {
+        const [i, ii] = btn.dataset.irm.split(':').map(Number);
+        uploads[key][i].items.splice(ii, 1);
+        paint();
+      }));
+      $$('[data-ilabel]', wrap).forEach(inp => inp.addEventListener('input', () => {
+        const [i, ii] = inp.dataset.ilabel.split(':').map(Number);
+        uploads[key][i].items[ii].label = inp.value;
+      }));
+      $$('[data-iconpick]', wrap).forEach(btn => btn.addEventListener('click', () => {
+        const [i, ii] = btn.dataset.iconpick.split(':').map(Number);
+        openIconPopover(btn, (k) => { uploads[key][i].items[ii].icon = k; paint(); });
+      }));
+
+      // columns
+      $$('[data-ctype]', wrap).forEach(btn => btn.addEventListener('click', () => {
+        const [i, side, newType] = btn.dataset.ctype.split(':');
+        uploads[key][+i][side].type = newType;
+        paint();
+      }));
+      $$('[data-ctext]', wrap).forEach(el => el.addEventListener('input', () => {
+        const [i, side] = el.dataset.ctext.split(':');
+        uploads[key][+i][side].text = el.innerHTML;
+      }));
+      $$('[data-cupload]', wrap).forEach(btn => btn.addEventListener('click', () => { uploadTarget = btn.dataset.cupload; file.click(); }));
+      $$('[data-cpick]', wrap).forEach(img => img.addEventListener('click', () => {
+        const [i, side] = img.dataset.cpick.split(':');
+        openMediaPicker('image', (url) => { uploads[key][+i][side].image = url; paint(); });
+      }));
+
+      // callout / button
+      $$('[data-ccolor]', wrap).forEach(inp => inp.addEventListener('input', () => { uploads[key][+inp.dataset.ccolor].color = inp.value; }));
+      $$('[data-blabel]', wrap).forEach(inp => inp.addEventListener('input', () => { uploads[key][+inp.dataset.blabel].label = inp.value; }));
+      $$('[data-burl]', wrap).forEach(inp => inp.addEventListener('input', () => { uploads[key][+inp.dataset.burl].url = inp.value; }));
     };
-    const addHeading = $('#' + id + '_add_heading'), addParagraph = $('#' + id + '_add_paragraph'), addImage = $('#' + id + '_add_image');
-    const addQuote = $('#' + id + '_add_quote'), addList = $('#' + id + '_add_list'), addVideo = $('#' + id + '_add_video');
-    if (addHeading) addHeading.addEventListener('click', () => { uploads[key].push({ type: 'heading', text: '', image: '' }); paint(); });
-    if (addParagraph) addParagraph.addEventListener('click', () => { uploads[key].push({ type: 'paragraph', text: '', image: '' }); paint(); });
-    if (addImage) addImage.addEventListener('click', () => { uploads[key].push({ type: 'image', text: '', image: '' }); paint(); });
-    if (addQuote) addQuote.addEventListener('click', () => { uploads[key].push({ type: 'quote', text: '', image: '' }); paint(); });
-    if (addList) addList.addEventListener('click', () => { uploads[key].push({ type: 'list', text: '', image: '' }); paint(); });
-    if (addVideo) addVideo.addEventListener('click', () => { uploads[key].push({ type: 'video', text: '', image: '' }); paint(); });
+
+    const addType = (type, extra) => { uploads[key].push(Object.assign({ type, text: '', image: '' }, extra)); paint(); };
+    const bind = (suffix, type, extra) => { const b = $('#' + id + '_add_' + suffix); if (b) b.addEventListener('click', () => addType(type, extra)); };
+    bind('heading', 'heading');
+    bind('paragraph', 'paragraph');
+    bind('image', 'image');
+    bind('quote', 'quote');
+    bind('list', 'list');
+    bind('video', 'video');
+    bind('table', 'table', { rows: 2, cols: 2 });
+    bind('iconrow', 'icon-row', { items: [{ icon: 'star', label: '' }] });
+    bind('divider', 'divider');
+    bind('callout', 'callout', { color: '#fce6eb' });
+    bind('columns', 'columns', { left: { type: 'paragraph', text: '' }, right: { type: 'paragraph', text: '' } });
+    bind('button', 'button', { label: '', url: '' });
+
     file.addEventListener('change', async () => {
       if (!file.files[0] || uploadTarget == null) return;
       pendingUploads++;
       const url = await uploadFile(file.files[0], 'image');
       pendingUploads--;
       file.value = '';
-      if (url) { uploads[key][uploadTarget].image = url; paint(); toast(t('Image uploaded — remember to Save')); }
+      if (!url) return;
+      if (typeof uploadTarget === 'string' && uploadTarget.includes(':')) {
+        const [i, side] = uploadTarget.split(':');
+        uploads[key][+i][side].image = url;
+      } else {
+        uploads[key][uploadTarget].image = url;
+      }
+      paint();
+      toast(t('Image uploaded — remember to Save'));
     });
     paint();
   }
@@ -1003,7 +1283,7 @@
       if (f.type === 'bool') { out[f.key] = node.checked; continue; }
       if (f.type === 'gallery') { out[f.key] = uploads[f.key] || []; continue; }
       if (f.type === 'consultants') { out[f.key] = (uploads[f.key] || []).filter(c => c.name || c.logo); continue; }
-      if (f.type === 'blocks') { out[f.key] = (uploads[f.key] || []).filter(b => b.text || b.image); continue; }
+      if (f.type === 'blocks') { out[f.key] = (uploads[f.key] || []).filter(hasBlockContent); continue; }
       let v = node ? node.value : '';
       if (f.type === 'date') { out[f.key] = v || null; continue; }
       if (f.type === 'number') { out[f.key] = v === '' ? null : Number(v); continue; }
