@@ -907,7 +907,7 @@
         <div class="bs-body">
           <div class="bs-sidebar" id="${id}_bsSidebar"></div>
           <div class="bs-canvas" id="${id}_bsCanvas"></div>
-          <iframe class="bs-preview-frame" id="${id}_bsPreviewFrame" hidden title="${esc(t('Preview'))}"></iframe>
+          <div class="bs-preview-frame bs-hidden" id="${id}_bsPreviewFrame"></div>
         </div>
         <div class="bs-foot"><button type="button" class="btn btn-primary" id="${id}_bsDone">${esc(t('Done'))}</button></div>
       </div>
@@ -1240,21 +1240,35 @@
       try {
         const html = window.renderBlocks(arr());
         const dir = activeLang === 'ar' ? 'rtl' : 'ltr';
-        // absolute URLs, resolved from *this* page's location — relying on an
-        // iframe[srcdoc]'s implicit base-URL inheritance for a bare "../styles.css"
-        // is spec-correct but has been unreliable in practice, so remove the
-        // ambiguity entirely rather than debug it per-browser
+        // a same-document Shadow DOM instead of an iframe[srcdoc] — some
+        // corporate security policies silently block/sandbox srcdoc iframes
+        // (no console error, since the failure is in the frame's own
+        // isolated context), so avoid a separate browsing context entirely
         const styleHref = new URL('../styles.css', location.href).href;
         const pagesHref = new URL('../pages.css', location.href).href;
         const fontLinks = `<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
           <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Bricolage+Grotesque:opsz,wght@12..96,300..800&family=Hanken+Grotesk:wght@300..700&family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">`;
-        previewFrame.srcdoc = `<!doctype html><html lang="${dir === 'rtl' ? 'ar' : 'en'}" dir="${dir}"><head><meta charset="utf-8">${fontLinks}
-          <link rel="stylesheet" href="${esc(styleHref)}"><link rel="stylesheet" href="${esc(pagesHref)}">
-          <style>body{background:#fff;padding:48px 24px}.bs-preview-wrap{max-width:720px;margin:0 auto}</style>
-          </head><body><div class="bs-preview-wrap ${esc(previewClass)}">${html || `<p style="color:#999;font-family:sans-serif">${esc(t('Nothing to preview yet — add a block first.'))}</p>`}</div></body></html>`;
+        // the shadow tree has no <html>/<body>, so styles.css's :root{...} and
+        // body{...} rules never match inside it — redeclare the custom
+        // properties on :host (they still cascade to every descendant) and
+        // the base font/color explicitly, everything else (.rich-content,
+        // .block-*, ...) is a plain class selector and works as-is
+        const hostVars = `--sky:#db1351;--sky-deep:#9E0E3B;--sky-soft:#FCE6EB;--ink:#131A21;--ink-soft:#A0AAB5;--paper:#F0F2F5;--white:#ffffff;--black:#0A0E14;--gold:#CF9C47;--teal:#38A19B;--line:rgba(12,22,32,.09);--shadow-sm:0 2px 8px rgba(12,22,32,.05);--shadow-md:0 18px 40px -22px rgba(12,22,32,.28);--shadow-lg:0 40px 80px -30px rgba(12,22,32,.35);--r:22px;--container:1200px;--ease:cubic-bezier(.22,.61,.36,1)`;
+        let shadow = previewFrame.shadowRoot;
+        if (!shadow) shadow = previewFrame.attachShadow({ mode: 'open' });
+        shadow.innerHTML = `${fontLinks}<link rel="stylesheet" href="${esc(styleHref)}"><link rel="stylesheet" href="${esc(pagesHref)}">
+          <style>
+            :host{${hostVars};display:block;height:100%;overflow-y:auto;background:#fff}
+            .bs-preview-wrap{font-family:"Hanken Grotesk",system-ui,sans-serif;font-size:1.08rem;line-height:1.85;color:var(--ink);max-width:720px;margin:0 auto;padding:48px 24px}
+            [dir="rtl"] .bs-preview-wrap{font-family:"Cairo","Hanken Grotesk",system-ui,sans-serif}
+          </style>
+          <div class="bs-preview-wrap ${esc(previewClass)}" dir="${dir}">${html || `<p style="color:#999">${esc(t('Nothing to preview yet — add a block first.'))}</p>`}</div>`;
       } catch (e) {
         console.error('Block preview failed:', e);
-        previewFrame.srcdoc = `<!doctype html><body style="font-family:sans-serif;padding:24px;color:#900">${esc(t('Preview failed:'))} ${esc(e.message || e)}</body>`;
+        previewFrame.innerHTML = '';
+        if (previewFrame.shadowRoot) previewFrame.shadowRoot.innerHTML = '';
+        previewFrame.textContent = `${t('Preview failed:')} ${e.message || e}`;
+        previewFrame.style.cssText = 'padding:24px;color:#900;font-family:sans-serif';
       }
     }
     function setMode(mode) {
