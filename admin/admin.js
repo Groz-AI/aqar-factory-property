@@ -1237,14 +1237,25 @@
     $$('[data-lang]', overlay.querySelector('#' + id + '_bsLangTabs')).forEach(btn => btn.addEventListener('click', () => setLang(btn.dataset.lang)));
 
     function paintPreview() {
-      const html = window.renderBlocks(arr());
-      const dir = activeLang === 'ar' ? 'rtl' : 'ltr';
-      const fontLinks = `<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Bricolage+Grotesque:opsz,wght@12..96,300..800&family=Hanken+Grotesk:wght@300..700&family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">`;
-      previewFrame.srcdoc = `<!doctype html><html lang="${dir === 'rtl' ? 'ar' : 'en'}" dir="${dir}"><head><meta charset="utf-8">${fontLinks}
-        <link rel="stylesheet" href="../styles.css"><link rel="stylesheet" href="../pages.css">
-        <style>body{background:#fff;padding:48px 24px}.bs-preview-wrap{max-width:720px;margin:0 auto}</style>
-        </head><body><div class="bs-preview-wrap ${esc(previewClass)}">${html || ''}</div></body></html>`;
+      try {
+        const html = window.renderBlocks(arr());
+        const dir = activeLang === 'ar' ? 'rtl' : 'ltr';
+        // absolute URLs, resolved from *this* page's location — relying on an
+        // iframe[srcdoc]'s implicit base-URL inheritance for a bare "../styles.css"
+        // is spec-correct but has been unreliable in practice, so remove the
+        // ambiguity entirely rather than debug it per-browser
+        const styleHref = new URL('../styles.css', location.href).href;
+        const pagesHref = new URL('../pages.css', location.href).href;
+        const fontLinks = `<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+          <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Bricolage+Grotesque:opsz,wght@12..96,300..800&family=Hanken+Grotesk:wght@300..700&family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">`;
+        previewFrame.srcdoc = `<!doctype html><html lang="${dir === 'rtl' ? 'ar' : 'en'}" dir="${dir}"><head><meta charset="utf-8">${fontLinks}
+          <link rel="stylesheet" href="${esc(styleHref)}"><link rel="stylesheet" href="${esc(pagesHref)}">
+          <style>body{background:#fff;padding:48px 24px}.bs-preview-wrap{max-width:720px;margin:0 auto}</style>
+          </head><body><div class="bs-preview-wrap ${esc(previewClass)}">${html || `<p style="color:#999;font-family:sans-serif">${esc(t('Nothing to preview yet — add a block first.'))}</p>`}</div></body></html>`;
+      } catch (e) {
+        console.error('Block preview failed:', e);
+        previewFrame.srcdoc = `<!doctype html><body style="font-family:sans-serif;padding:24px;color:#900">${esc(t('Preview failed:'))} ${esc(e.message || e)}</body>`;
+      }
     }
     function setMode(mode) {
       activeMode = mode;

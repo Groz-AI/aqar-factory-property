@@ -381,6 +381,8 @@
     'Preview': 'معاينة',
     'Add a block': 'إضافة عنصر',
     'No blocks yet — pick a type from the list to start.': 'لا توجد عناصر بعد — اختر نوعًا من القائمة للبدء.',
+    'Nothing to preview yet — add a block first.': 'لا يوجد شيء لمعاينته بعد — أضف عنصرًا أولاً.',
+    'Preview failed:': 'فشلت المعاينة:',
     'Click to choose an existing image': 'اضغط لاختيار صورة موجودة',
     'Leads': 'العملاء المحتملون',
     'Inquiries': 'الاستفسارات',
