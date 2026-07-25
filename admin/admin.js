@@ -107,8 +107,7 @@
         { key: 'year', label: t('Year'), type: 'number', half: true },
         { key: 'cover', label: t('Cover image'), type: 'image' },
         { key: 'gallery', label: t('Gallery'), type: 'gallery' },
-        { key: 'about_blocks', label: t('About'), type: 'blocks', hint: t('Build the description from any mix of blocks below — paragraphs and quotes support bold, italic, links, color, size and alignment.') },
-        { key: 'about_blocks_ar', label: t('About (Arabic)'), type: 'blocks', hint: t('Shown when the site is set to Arabic — leave empty to fall back to the English content above.') },
+        { key: 'about_blocks', arKey: 'about_blocks_ar', label: t('About'), type: 'blocks-i18n', previewClass: 'rich-content', hint: t('Opens a full-screen editor — build the description from any mix of blocks, edit English and Arabic side by side, and preview exactly how it will look on the site.') },
         { key: 'amenities', label: t('Amenities'), type: 'tags' },
         { key: 'price', label: t('Price (display)'), type: 'text', half: true, hint: t('e.g. EGP 3.2M') },
         { key: 'price_value', label: t('Price value (number)'), type: 'number', half: true },
@@ -207,8 +206,7 @@
         { key: 'author_name', label: t('Author name'), type: 'text' },
         { key: 'tags', label: t('Tag keywords'), type: 'tags' },
         { key: 'tags_ar', label: t('Tag keywords (Arabic)'), type: 'tags', hint: t('Shown when the site is set to Arabic — leave empty to fall back to the English tags above.') },
-        { key: 'blocks', label: t('Article content'), type: 'blocks', hint: t('Build the article from heading, paragraph, image, quote, list and video blocks, in the order they should appear. Paragraphs and quotes support bold, italic and links.') },
-        { key: 'blocks_ar', label: t('Article content (Arabic)'), type: 'blocks', hint: t('Shown when the site is set to Arabic — leave empty to fall back to the English content above.') },
+        { key: 'blocks', arKey: 'blocks_ar', label: t('Article content'), type: 'blocks-i18n', previewClass: 'blog-article', hint: t('Opens a full-screen editor — build the article from any mix of blocks, edit English and Arabic side by side, and preview exactly how it will look on the site.') },
         { key: 'published_at', label: t('Published date'), type: 'date', half: true },
         { key: 'sort_order', label: t('Sort order'), type: 'number', half: true },
         { key: 'published', label: t('Published'), type: 'bool', half: true }
@@ -575,7 +573,7 @@
       if (f.type === 'gallery') wireGallery('f_' + f.key, f.key, (row && row[f.key]) || []);
       if (f.type === 'pdf') wirePdf('f_' + f.key, row ? row[f.key] : '');
       if (f.type === 'consultants') wireConsultants('f_' + f.key, f.key, (row && row[f.key]) || []);
-      if (f.type === 'blocks') wireBlocks('f_' + f.key, f.key, (row && row[f.key]) || []);
+      if (f.type === 'blocks-i18n') wireBlocksStudio('f_' + f.key, f.key, f.arKey, (row && row[f.key]) || [], (row && row[f.arKey]) || [], f.label, f.previewClass);
     });
 
     // auto-fill the Slug from the Name as you type — only until the admin
@@ -602,14 +600,10 @@
       const dateVal = val ? String(val).slice(0, 10) : '';
       return `<div class="field"><label for="${id}">${esc(f.label)}</label><input type="date" id="${id}" value="${esc(dateVal)}">${hint}</div>`;
     }
-    if (f.type === 'blocks') {
+    if (f.type === 'blocks-i18n') {
       return `<div class="field"><label>${esc(f.label)}</label>
-        <div class="blocks-list" id="${id}_wrap"></div>
-        <div class="blocks-add-wrap">
-          <button type="button" class="btn btn-ghost btn-sm" id="${id}_addBtn">+ ${esc(t('Add block'))}</button>
-          <div class="block-type-popover" id="${id}_typePopover" hidden></div>
-        </div>
-        <input type="file" id="${id}_file" accept="image/*" style="display:none">
+        <div class="blocks-i18n-summary" id="${id}_summary">${esc(t('No content yet'))}</div>
+        <button type="button" class="btn btn-ghost btn-sm" id="${id}_openBtn">${esc(t('Open editor'))}</button>
         ${hint}</div>`;
     }
     if (f.type === 'bool') {
@@ -805,25 +799,21 @@
     alignRight: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M10 12h10M7 18h13"/></svg>'
   };
 
-  // one block, all its options, one window: clicking a block in the compact
-  // list (or "+ Add block") opens a single popup with its text, formatting
-  // toolbar, color/alignment and any type-specific fields together, instead
-  // of the old layout of a field-wide toolbar + always-visible per-block
-  // controls + a separate row of add buttons
-  function wireBlocks(id, stateKey, initial) {
-    // preserve every property a block may carry (align/color/items/rows/
-    // cols/cells/left/right/label/url, on top of the original type/text/
-    // image) — only type/text/image get defaults, everything else passes
-    // through as-is for whichever block type actually uses it
-    uploads[stateKey] = Array.isArray(initial)
-      ? initial.map(b => Object.assign({ type: 'paragraph', text: '', image: '' }, b))
-      : [];
-    const key = stateKey;
-    const wrap = $('#' + id + '_wrap'), file = $('#' + id + '_file');
-    if (!wrap) return;
-    let uploadTarget = null; // 'main' (block image) or 'col:left'/'col:right' (columns image slot)
-    let dragIndex = null;
-    let activeModalIndex = null; // which block the popup currently has open
+  // one full-screen studio per bilingual "blocks" field: a language tab
+  // (English/Arabic) switches which array is being edited, a left/right
+  // sidebar lists block types to insert, the main canvas is the live,
+  // directly-editable block list (WYSIWYG — see the formatting take effect
+  // as you type), and a Preview mode swaps the canvas for an iframe that
+  // renders the real public-site CSS (pages.css) so "what you see is what
+  // ships" instead of guessing from the admin's own styling
+  function wireBlocksStudio(id, enKey, arKey, enInitial, arInitial, fieldLabel, previewClass) {
+    uploads[enKey] = Array.isArray(enInitial) ? enInitial.map(b => Object.assign({ type: 'paragraph', text: '', image: '' }, b)) : [];
+    uploads[arKey] = Array.isArray(arInitial) ? arInitial.map(b => Object.assign({ type: 'paragraph', text: '', image: '' }, b)) : [];
+    previewClass = previewClass || 'rich-content';
+
+    const openBtn = $('#' + id + '_openBtn');
+    const summaryEl = $('#' + id + '_summary');
+    if (!openBtn) return;
 
     const TYPE_LABELS = {
       heading: t('Heading'), image: t('Image'), quote: t('Quote'), list: t('List'), video: t('Video'), paragraph: t('Paragraph'),
@@ -859,23 +849,79 @@
       b.rows = rows; b.cols = cols; b.cells = cells;
     }
 
-    // one-line summary shown in the compact list row
-    function previewFor(b) {
-      const strip = s => String(s || '').replace(/<[^>]+>/g, '').trim();
-      switch (b.type) {
-        case 'heading': return b.text || t('(empty)');
-        case 'image': return b.image ? t('Image selected') : t('No image chosen');
-        case 'list': return (b.text || '').split('\n').map(s => s.trim()).filter(Boolean).join(' · ') || t('(empty)');
-        case 'video': return b.text || t('(empty)');
-        case 'divider': return t('A horizontal line — no options needed');
-        case 'button': return b.label ? `${b.label} → ${b.url || ''}` : t('(empty)');
-        case 'callout': return strip(b.text) || t('(empty)');
-        case 'icon-row': return (b.items || []).map(it => it.label).filter(Boolean).join(' · ') || t('(empty)');
-        case 'columns': return [strip(b.left && b.left.text), strip(b.right && b.right.text)].filter(Boolean).join(' | ') || t('(empty)');
-        case 'table': return `${b.rows || 0} × ${b.cols || 0}`;
-        default: return strip(b.text) || t('(empty)');
-      }
+    function updateSummary() {
+      if (!summaryEl) return;
+      const en = uploads[enKey].filter(hasBlockContent).length;
+      const ar = uploads[arKey].filter(hasBlockContent).length;
+      summaryEl.textContent = (en || ar)
+        ? `${en} ${t('blocks (English)')} · ${ar} ${t('blocks (Arabic)')}`
+        : t('No content yet');
     }
+    updateSummary();
+
+    // ---------- the full-screen studio (built once, reused across opens) ----------
+    let activeLang = 'en';
+    let activeMode = 'edit';
+    let dragIndex = null;
+    let savedRange = null;
+    let uploadTarget = null; // block index, or "i:side" for a columns image slot
+    let uploadTargetLang = 'en';
+
+    const already = document.getElementById(id + '_bsOverlay');
+    if (already) already.remove();
+    const overlay = document.createElement('div');
+    overlay.className = 'bs-overlay';
+    overlay.id = id + '_bsOverlay';
+    overlay.innerHTML = `
+      <div class="bs-modal">
+        <div class="bs-head">
+          <b class="bricolage bs-title">${esc(fieldLabel)}</b>
+          <div class="bs-lang-tabs" id="${id}_bsLangTabs">
+            <button type="button" class="bs-tab active" data-lang="en">English</button>
+            <button type="button" class="bs-tab" data-lang="ar">العربية</button>
+          </div>
+          <div class="bs-mode-tabs" id="${id}_bsModeTabs">
+            <button type="button" class="bs-tab active" data-mode="edit">${esc(t('Edit'))}</button>
+            <button type="button" class="bs-tab" data-mode="preview">${esc(t('Preview'))}</button>
+          </div>
+          <button type="button" class="icon-btn" id="${id}_bsClose" title="${esc(t('Close'))}">×</button>
+        </div>
+        <div class="bs-toolbar" id="${id}_bsToolbar">
+          <button type="button" class="fmt-btn" data-cmd="bold" title="${esc(t('Bold'))}"><b>B</b></button>
+          <button type="button" class="fmt-btn" data-cmd="italic" title="${esc(t('Italic'))}"><i>I</i></button>
+          <input type="color" class="fmt-color" id="${id}_bsColor" title="${esc(t('Font color'))}" value="#131a21">
+          <select class="fmt-size" id="${id}_bsSize" title="${esc(t('Font size'))}">
+            <option value="0.85em">${t('Small')}</option>
+            <option value="1em" selected>${t('Normal')}</option>
+            <option value="1.25em">${t('Large')}</option>
+            <option value="1.6em">${t('X-Large')}</option>
+          </select>
+          <button type="button" class="fmt-btn" data-align="left" title="${esc(t('Align left'))}">${BLOCK_SVG.alignLeft}</button>
+          <button type="button" class="fmt-btn" data-align="center" title="${esc(t('Align center'))}">${BLOCK_SVG.alignCenter}</button>
+          <button type="button" class="fmt-btn" data-align="right" title="${esc(t('Align right'))}">${BLOCK_SVG.alignRight}</button>
+          <button type="button" class="fmt-btn" id="${id}_bsLinkBtn" title="${esc(t('Link'))}">${BLOCK_SVG.link}</button>
+          <button type="button" class="fmt-btn" id="${id}_bsIconBtn" title="${esc(t('Insert icon'))}">${window.ICON_LIBRARY.star}</button>
+          <div class="icon-popover" id="${id}_bsIconPopover" hidden></div>
+          <span class="field-hint" style="margin:0 0 0 auto">${esc(t('Select text first, then apply formatting'))}</span>
+        </div>
+        <div class="bs-body">
+          <div class="bs-sidebar" id="${id}_bsSidebar"></div>
+          <div class="bs-canvas" id="${id}_bsCanvas"></div>
+          <iframe class="bs-preview-frame" id="${id}_bsPreviewFrame" hidden title="${esc(t('Preview'))}"></iframe>
+        </div>
+        <div class="bs-foot"><button type="button" class="btn btn-primary" id="${id}_bsDone">${esc(t('Done'))}</button></div>
+      </div>
+      <input type="file" id="${id}_bsFile" accept="image/*" style="display:none">`;
+    document.body.appendChild(overlay);
+
+    const canvas = overlay.querySelector('#' + id + '_bsCanvas');
+    const sidebar = overlay.querySelector('#' + id + '_bsSidebar');
+    const toolbar = overlay.querySelector('#' + id + '_bsToolbar');
+    const previewFrame = overlay.querySelector('#' + id + '_bsPreviewFrame');
+    const file = overlay.querySelector('#' + id + '_bsFile');
+
+    const currentKey = () => activeLang === 'ar' ? arKey : enKey;
+    const arr = () => uploads[currentKey()];
 
     // ---------- shared icon popover (toolbar "insert icon" + icon-row item picker) ----------
     function openIconPopoverIn(popoverEl, anchorEl, onPick) {
@@ -898,327 +944,179 @@
       }), 0);
     }
 
-    // ---------- the single-block editor popup ----------
-    function ensureBlockModal() {
-      const already = document.getElementById(id + '_bmOverlay');
-      if (already) already.remove();
-      const overlay = document.createElement('div');
-      overlay.className = 'bm-overlay';
-      overlay.id = id + '_bmOverlay';
-      overlay.innerHTML = `
-        <div class="bm-modal">
-          <div class="bm-head"><b class="bricolage" id="${id}_bmTitle"></b><button type="button" class="icon-btn" id="${id}_bmClose">×</button></div>
-          <div class="bm-body" id="${id}_bmBody"></div>
-          <div class="bm-foot"><button type="button" class="btn btn-primary" id="${id}_bmDone">${esc(t('Done'))}</button></div>
-        </div>`;
-      document.body.appendChild(overlay);
-      const state = {
-        overlay,
-        title: overlay.querySelector('#' + id + '_bmTitle'),
-        body: overlay.querySelector('#' + id + '_bmBody'),
-        cleanup: null
-      };
-      const close = () => {
-        overlay.classList.remove('open');
-        if (state.cleanup) { state.cleanup(); state.cleanup = null; }
-        paint();
-      };
-      overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
-      overlay.querySelector('#' + id + '_bmClose').addEventListener('click', close);
-      overlay.querySelector('#' + id + '_bmDone').addEventListener('click', close);
-      document.addEventListener('keydown', e => { if (e.key === 'Escape' && overlay.classList.contains('open')) close(); });
-      return state;
+    // ---------- sticky rich-text toolbar — applies to whatever has focus/selection in the canvas ----------
+    let activeBlockIndex = null;
+    document.addEventListener('selectionchange', () => {
+      const sel = document.getSelection();
+      if (!sel || !sel.rangeCount || sel.isCollapsed) return;
+      const range = sel.getRangeAt(0);
+      const node = range.commonAncestorContainer;
+      const elNode = node.nodeType === 1 ? node : node.parentElement;
+      if (elNode && canvas.contains(elNode)) savedRange = range.cloneRange();
+    });
+    function restoreSelection() {
+      if (!savedRange) return false;
+      const sel = document.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(savedRange);
+      return true;
     }
-    const bm = ensureBlockModal();
+    function trackBlock(node, i) { node.addEventListener('focus', () => { activeBlockIndex = i; }); }
 
-    function richToolbarHTML() {
-      return `<div class="blocks-toolbar" id="${id}_bmToolbar">
-        <button type="button" class="fmt-btn" data-cmd="bold" title="${esc(t('Bold'))}"><b>B</b></button>
-        <button type="button" class="fmt-btn" data-cmd="italic" title="${esc(t('Italic'))}"><i>I</i></button>
-        <input type="color" class="fmt-color" id="${id}_bmColor" title="${esc(t('Font color'))}" value="#131a21">
-        <select class="fmt-size" id="${id}_bmSize" title="${esc(t('Font size'))}">
-          <option value="0.85em">${t('Small')}</option>
-          <option value="1em" selected>${t('Normal')}</option>
-          <option value="1.25em">${t('Large')}</option>
-          <option value="1.6em">${t('X-Large')}</option>
-        </select>
-        <button type="button" class="fmt-btn" id="${id}_bmLinkBtn" title="${esc(t('Link'))}">${BLOCK_SVG.link}</button>
-        <button type="button" class="fmt-btn" id="${id}_bmIconBtn" title="${esc(t('Insert icon'))}">${window.ICON_LIBRARY.star}</button>
-        <div class="icon-popover" id="${id}_bmIconPopover" hidden></div>
-        <span class="field-hint" style="margin:0 0 0 auto">${esc(t('Select text first, then apply formatting'))}</span>
-      </div>`;
-    }
-    function alignRowHTML() {
-      return `<div class="block-align-row">
-        <span class="field-hint" style="margin-inline-end:auto">${esc(t('Alignment'))}</span>
-        <button type="button" class="fmt-btn" data-align="left" title="${esc(t('Align left'))}">${BLOCK_SVG.alignLeft}</button>
-        <button type="button" class="fmt-btn" data-align="center" title="${esc(t('Align center'))}">${BLOCK_SVG.alignCenter}</button>
-        <button type="button" class="fmt-btn" data-align="right" title="${esc(t('Align right'))}">${BLOCK_SVG.alignRight}</button>
-      </div>`;
-    }
-
-    function blockModalBodyHTML(b) {
-      if (b.type === 'heading') {
-        return `<input type="text" id="${id}_bmField" placeholder="${esc(t('Heading text'))}" value="${esc(b.text)}">${alignRowHTML()}`;
-      }
-      if (b.type === 'image') {
-        return `<div class="block-img-row">
-          <img class="block-img-prev" id="${id}_bmImgPrev" src="${esc(imgUrl(b.image, 240))}" alt="" title="${esc(t('Click to choose an existing image'))}">
-          <button type="button" class="btn btn-ghost btn-sm" id="${id}_bmUpload">${t('Upload…')}</button>
-        </div>`;
-      }
-      if (b.type === 'list') {
-        return `<textarea id="${id}_bmField" placeholder="${esc(t('One item per line'))}">${esc(b.text)}</textarea>
-          <div class="field-hint">${esc(t('Each line becomes one bullet point'))}</div>`;
-      }
-      if (b.type === 'video') {
-        return `<input type="text" id="${id}_bmField" placeholder="${esc(t('YouTube or Vimeo URL'))}" value="${esc(b.text)}">
-          <div class="field-hint">${esc(t('Paste a normal YouTube or Vimeo link — it is embedded automatically'))}</div>`;
-      }
-      if (b.type === 'divider') {
-        return `<div class="field-hint">${esc(t('A horizontal line — no options needed'))}</div>`;
-      }
-      if (b.type === 'button') {
-        return `<div class="field"><label>${t('Button label')}</label><input type="text" id="${id}_bmLabel" value="${esc(b.label || '')}"></div>
-          <div class="field"><label>${t('URL (https://…)')}</label><input type="text" id="${id}_bmUrl" value="${esc(b.url || '')}"></div>`;
-      }
-      if (b.type === 'callout') {
-        return `${richToolbarHTML()}
-          <div class="callout-color-row"><label>${t('Background color')} <input type="color" class="callout-color" id="${id}_bmColor2" value="${esc(b.color || '#fce6eb')}"></label></div>
-          <div class="rte" id="${id}_bmField" contenteditable="true">${b.text || ''}</div>
-          ${alignRowHTML()}`;
-      }
-      if (b.type === 'icon-row') {
-        if (!Array.isArray(b.items) || !b.items.length) b.items = [{ icon: 'star', label: '' }];
-        return `<div class="icon-row-edit">${b.items.map((it, ii) => `
-            <div class="icon-row-item">
-              <button type="button" class="icon-pick-trigger" data-iconpick="${ii}" title="${esc(t('Choose icon'))}">${window.ICON_LIBRARY[it.icon] || window.ICON_LIBRARY.star}</button>
-              <input type="text" placeholder="${esc(t('Label'))}" value="${esc(it.label || '')}" data-ilabel="${ii}">
-              <button type="button" class="icon-btn del" data-irm="${ii}" title="${esc(t('Remove'))}">${BLOCK_SVG.remove}</button>
-            </div>`).join('')}
-          <button type="button" class="btn btn-ghost btn-sm" id="${id}_bmIaddBtn">+ ${t('Add item')}</button>
-          <div class="icon-popover" id="${id}_bmIconPopover2" hidden></div>
-        </div>`;
-      }
-      if (b.type === 'columns') {
-        if (!b.left) b.left = { type: 'paragraph', text: '' };
-        if (!b.right) b.right = { type: 'paragraph', text: '' };
-        const slotHTML = (slot, side) => `
-          <div class="column-slot">
-            <div class="column-slot-tabs">
-              <button type="button" class="tab-btn${slot.type !== 'image' ? ' active' : ''}" data-ctype="${side}:paragraph">${t('Text')}</button>
-              <button type="button" class="tab-btn${slot.type === 'image' ? ' active' : ''}" data-ctype="${side}:image">${t('Image')}</button>
-            </div>
-            ${slot.type === 'image'
-              ? `<div class="block-img-row"><img class="block-img-prev" data-cpick="${side}" src="${esc(imgUrl(slot.image, 200))}" title="${esc(t('Click to choose an existing image'))}"><button type="button" class="btn btn-ghost btn-sm" data-cupload="${side}">${t('Upload…')}</button></div>`
-              : `<div class="rte" contenteditable="true" data-ctext="${side}">${slot.text || ''}</div>`}
-          </div>`;
-        return `${richToolbarHTML()}<div class="columns-edit">${slotHTML(b.left, 'left')}${slotHTML(b.right, 'right')}</div>`;
-      }
-      if (b.type === 'table') {
-        if (!Array.isArray(b.cells) || !b.cells.length) resizeTableBlock(b, b.rows || 2, b.cols || 2);
-        const tbody = b.cells.map((row, ri) => `<tr>${row.map((cell, ci) => `<td>
-            <input type="color" class="cell-color" data-tcolor="${ri}:${ci}" value="${esc(cell.bg || '#ffffff')}" title="${esc(t('Cell color'))}">
-            <div class="rte cell-rte" contenteditable="true" data-ttext="${ri}:${ci}">${cell.text || ''}</div>
-          </td>`).join('')}</tr>`).join('');
-        return `${richToolbarHTML()}
-          <div class="table-size-row">
-            <label>${t('Rows')} <input type="number" min="1" max="20" value="${b.rows}" id="${id}_bmRows"></label>
-            <label>${t('Columns')} <input type="number" min="1" max="8" value="${b.cols}" id="${id}_bmCols"></label>
-            <button type="button" class="btn btn-ghost btn-sm" id="${id}_bmApply">${t('Apply size')}</button>
-          </div>
-          <table class="block-table-edit"><tbody>${tbody}</tbody></table>`;
-      }
-      // paragraph / quote / default
-      return `${richToolbarHTML()}<div class="rte" id="${id}_bmField" contenteditable="true">${b.text || ''}</div>${alignRowHTML()}`;
-    }
-
-    function wireBlockModalBody(b) {
-      const body = bm.body;
-      let savedRange = null;
-      const onSelChange = () => {
-        const sel = document.getSelection();
-        if (!sel || !sel.rangeCount || sel.isCollapsed) return;
-        const range = sel.getRangeAt(0);
-        const node = range.commonAncestorContainer;
-        const elNode = node.nodeType === 1 ? node : node.parentElement;
-        if (elNode && body.contains(elNode)) savedRange = range.cloneRange();
-      };
-      document.addEventListener('selectionchange', onSelChange);
-      bm.cleanup = () => document.removeEventListener('selectionchange', onSelChange);
-      function restoreSelection() {
-        if (!savedRange) return false;
-        const sel = document.getSelection();
-        sel.removeAllRanges();
-        sel.addRange(savedRange);
-        return true;
-      }
-
-      // main text field (heading input / list textarea / video input / plain rte)
-      const mainField = $('#' + id + '_bmField', body);
-      if (mainField) {
-        const isCE = mainField.hasAttribute('contenteditable');
-        mainField.addEventListener('input', () => { b.text = isCE ? mainField.innerHTML : mainField.value; });
-      }
-
-      // alignment — applies to this block's single main text field
-      $$('[data-align]', body).forEach(btn => {
-        btn.addEventListener('mousedown', e => e.preventDefault());
-        btn.addEventListener('click', () => {
-          const align = btn.dataset.align;
-          b.align = align;
-          if (mainField) mainField.style.textAlign = align;
-        });
+    $$('[data-cmd]', toolbar).forEach(btn => {
+      btn.addEventListener('mousedown', e => e.preventDefault());
+      btn.addEventListener('click', () => { if (restoreSelection()) document.execCommand(btn.dataset.cmd); });
+    });
+    const linkBtn = overlay.querySelector('#' + id + '_bsLinkBtn');
+    linkBtn.addEventListener('mousedown', e => e.preventDefault());
+    linkBtn.addEventListener('click', () => {
+      const url = window.prompt(t('Link URL (https://…)'), 'https://');
+      if (url && restoreSelection()) document.execCommand('createLink', false, url);
+    });
+    const colorInput = overlay.querySelector('#' + id + '_bsColor');
+    colorInput.addEventListener('input', () => { if (restoreSelection()) document.execCommand('foreColor', false, colorInput.value); });
+    const sizeSelect = overlay.querySelector('#' + id + '_bsSize');
+    sizeSelect.addEventListener('change', () => {
+      if (!restoreSelection()) return;
+      const sel = document.getSelection();
+      if (!sel.rangeCount || sel.isCollapsed) return;
+      const range = sel.getRangeAt(0);
+      const span = document.createElement('span');
+      span.style.fontSize = sizeSelect.value;
+      span.appendChild(range.extractContents());
+      range.insertNode(span);
+      const host = span.parentElement && span.parentElement.closest('[contenteditable]');
+      if (host) host.dispatchEvent(new Event('input'));
+    });
+    $$('[data-align]', toolbar).forEach(btn => {
+      btn.addEventListener('mousedown', e => e.preventDefault());
+      btn.addEventListener('click', () => {
+        if (activeBlockIndex == null || !arr()[activeBlockIndex]) return;
+        const align = btn.dataset.align;
+        arr()[activeBlockIndex].align = align;
+        const target = canvas.querySelector(`[data-btext="${activeBlockIndex}"]`);
+        if (target) target.style.textAlign = align;
       });
-
-      // rich toolbar — applies to whichever contenteditable in this popup has selection
-      const toolbar = $('#' + id + '_bmToolbar', body);
-      if (toolbar) {
-        $$('[data-cmd]', toolbar).forEach(btn => {
-          btn.addEventListener('mousedown', e => e.preventDefault());
-          btn.addEventListener('click', () => { if (restoreSelection()) document.execCommand(btn.dataset.cmd); });
-        });
-        const linkBtn = $('#' + id + '_bmLinkBtn', body);
-        if (linkBtn) {
-          linkBtn.addEventListener('mousedown', e => e.preventDefault());
-          linkBtn.addEventListener('click', () => {
-            const url = window.prompt(t('Link URL (https://…)'), 'https://');
-            if (url && restoreSelection()) document.execCommand('createLink', false, url);
-          });
-        }
-        const colorInput = $('#' + id + '_bmColor', body);
-        if (colorInput) colorInput.addEventListener('input', () => { if (restoreSelection()) document.execCommand('foreColor', false, colorInput.value); });
-        const sizeSelect = $('#' + id + '_bmSize', body);
-        if (sizeSelect) sizeSelect.addEventListener('change', () => {
-          if (!restoreSelection()) return;
-          const sel = document.getSelection();
-          if (!sel.rangeCount || sel.isCollapsed) return;
-          const range = sel.getRangeAt(0);
-          const span = document.createElement('span');
-          span.style.fontSize = sizeSelect.value;
-          span.appendChild(range.extractContents());
-          range.insertNode(span);
-          const host = span.parentElement && span.parentElement.closest('[contenteditable]');
-          if (host) host.dispatchEvent(new Event('input'));
-        });
-        const iconPopover = $('#' + id + '_bmIconPopover', body);
-        const iconBtn = $('#' + id + '_bmIconBtn', body);
-        if (iconBtn && iconPopover) {
-          iconBtn.addEventListener('mousedown', e => e.preventDefault());
-          iconBtn.addEventListener('click', () => {
-            const range = savedRange;
-            openIconPopoverIn(iconPopover, iconBtn, (k) => {
-              if (range) { document.getSelection().removeAllRanges(); document.getSelection().addRange(range); }
-              document.execCommand('insertHTML', false, `<span class="inline-icon">${window.ICON_LIBRARY[k]}</span>`);
-            });
-          });
-        }
-      }
-
-      // image block
-      const imgPrev = $('#' + id + '_bmImgPrev', body);
-      const uploadBtn = $('#' + id + '_bmUpload', body);
-      if (imgPrev) imgPrev.addEventListener('click', () => openMediaPicker('image', (url) => { b.image = url; imgPrev.src = imgUrl(url, 240); }));
-      if (uploadBtn) uploadBtn.addEventListener('click', () => { uploadTarget = 'main'; file.click(); });
-
-      // button block
-      const labelInp = $('#' + id + '_bmLabel', body);
-      const urlInp = $('#' + id + '_bmUrl', body);
-      if (labelInp) labelInp.addEventListener('input', () => { b.label = labelInp.value; });
-      if (urlInp) urlInp.addEventListener('input', () => { b.url = urlInp.value; });
-
-      // callout color
-      const calloutColor = $('#' + id + '_bmColor2', body);
-      if (calloutColor) calloutColor.addEventListener('input', () => { b.color = calloutColor.value; });
-
-      // icon row
-      const iaddBtn = $('#' + id + '_bmIaddBtn', body);
-      if (iaddBtn) iaddBtn.addEventListener('click', () => { b.items.push({ icon: 'star', label: '' }); openBlockModal(activeModalIndex); });
-      $$('[data-ilabel]', body).forEach(inp => inp.addEventListener('input', () => { b.items[+inp.dataset.ilabel].label = inp.value; }));
-      $$('[data-irm]', body).forEach(btn => btn.addEventListener('click', () => { b.items.splice(+btn.dataset.irm, 1); openBlockModal(activeModalIndex); }));
-      $$('[data-iconpick]', body).forEach(btn => btn.addEventListener('click', () => {
-        const ii = +btn.dataset.iconpick;
-        const pop = $('#' + id + '_bmIconPopover2', body);
-        openIconPopoverIn(pop, btn, (k) => { b.items[ii].icon = k; openBlockModal(activeModalIndex); });
-      }));
-
-      // columns
-      $$('[data-ctype]', body).forEach(btn => btn.addEventListener('click', () => {
-        const [side, newType] = btn.dataset.ctype.split(':');
-        b[side].type = newType;
-        openBlockModal(activeModalIndex);
-      }));
-      $$('[data-ctext]', body).forEach(elx => elx.addEventListener('input', () => { b[elx.dataset.ctext].text = elx.innerHTML; }));
-      $$('[data-cupload]', body).forEach(btn => btn.addEventListener('click', () => { uploadTarget = 'col:' + btn.dataset.cupload; file.click(); }));
-      $$('[data-cpick]', body).forEach(img => img.addEventListener('click', () => {
-        const side = img.dataset.cpick;
-        openMediaPicker('image', (url) => { b[side].image = url; img.src = imgUrl(url, 200); });
-      }));
-
-      // table
-      const applyBtn = $('#' + id + '_bmApply', body);
-      if (applyBtn) applyBtn.addEventListener('click', () => {
-        const rowsInput = $('#' + id + '_bmRows', body);
-        const colsInput = $('#' + id + '_bmCols', body);
-        resizeTableBlock(b, +rowsInput.value, +colsInput.value);
-        openBlockModal(activeModalIndex);
+    });
+    const iconPopover = overlay.querySelector('#' + id + '_bsIconPopover');
+    const iconBtn = overlay.querySelector('#' + id + '_bsIconBtn');
+    iconBtn.addEventListener('mousedown', e => e.preventDefault());
+    iconBtn.addEventListener('click', () => {
+      const range = savedRange;
+      openIconPopoverIn(iconPopover, iconBtn, (k) => {
+        if (range) { document.getSelection().removeAllRanges(); document.getSelection().addRange(range); }
+        document.execCommand('insertHTML', false, `<span class="inline-icon">${window.ICON_LIBRARY[k]}</span>`);
       });
-      $$('[data-ttext]', body).forEach(elx => elx.addEventListener('input', () => {
-        const [ri, ci] = elx.dataset.ttext.split(':').map(Number);
-        b.cells[ri][ci].text = elx.innerHTML;
-      }));
-      $$('[data-tcolor]', body).forEach(inp => inp.addEventListener('input', () => {
-        const [ri, ci] = inp.dataset.tcolor.split(':').map(Number);
-        b.cells[ri][ci].bg = inp.value;
-      }));
-    }
+    });
 
-    function openBlockModal(i) {
-      const b = uploads[key][i];
-      if (!b) return;
-      if (bm.cleanup) { bm.cleanup(); bm.cleanup = null; }
-      activeModalIndex = i;
-      bm.title.textContent = typeLabel(b.type);
-      bm.body.innerHTML = blockModalBodyHTML(b);
-      wireBlockModalBody(b);
-      bm.overlay.classList.add('open');
-    }
-
-    // ---------- compact block list ----------
-    const paint = () => {
-      wrap.innerHTML = uploads[key].length ? uploads[key].map((b, i) => {
+    // ---------- canvas: the full, directly-editable block list ----------
+    const paintCanvas = () => {
+      const list = arr();
+      canvas.dir = activeLang === 'ar' ? 'rtl' : 'ltr';
+      canvas.innerHTML = list.length ? list.map((b, i) => {
         const moveUp = i > 0 ? `<button type="button" class="icon-btn" data-bup="${i}" title="${esc(t('Move up'))}">${BLOCK_SVG.moveUp}</button>` : '';
-        const moveDown = i < uploads[key].length - 1 ? `<button type="button" class="icon-btn" data-bdown="${i}" title="${esc(t('Move down'))}">${BLOCK_SVG.moveDown}</button>` : '';
+        const moveDown = i < list.length - 1 ? `<button type="button" class="icon-btn" data-bdown="${i}" title="${esc(t('Move down'))}">${BLOCK_SVG.moveDown}</button>` : '';
+        const alignStyle = b.align ? ` style="text-align:${esc(b.align)}"` : '';
+        let body;
+        if (b.type === 'heading') {
+          body = `<input type="text" placeholder="${esc(t('Heading text'))}" value="${esc(b.text)}" data-btext="${i}"${alignStyle}>`;
+        } else if (b.type === 'image') {
+          body = `<div class="block-img-row">
+            <img class="block-img-prev" src="${esc(imgUrl(b.image, 200))}" alt="" data-bpick="${i}" title="${esc(t('Click to choose an existing image'))}">
+            <button type="button" class="btn btn-ghost btn-sm" data-bupload="${i}">${t('Upload…')}</button>
+          </div>`;
+        } else if (b.type === 'list') {
+          body = `<textarea placeholder="${esc(t('One item per line'))}" data-btext="${i}">${esc(b.text)}</textarea>
+            <div class="field-hint">${esc(t('Each line becomes one bullet point'))}</div>`;
+        } else if (b.type === 'video') {
+          body = `<input type="text" placeholder="${esc(t('YouTube or Vimeo URL'))}" value="${esc(b.text)}" data-btext="${i}">
+            <div class="field-hint">${esc(t('Paste a normal YouTube or Vimeo link — it is embedded automatically'))}</div>`;
+        } else if (b.type === 'divider') {
+          body = `<div class="field-hint">${esc(t('A horizontal line — no options needed'))}</div>`;
+        } else if (b.type === 'button') {
+          body = `<input type="text" placeholder="${esc(t('Button label'))}" value="${esc(b.label || '')}" data-blabel="${i}">
+            <input type="text" placeholder="${esc(t('URL (https://…)'))}" value="${esc(b.url || '')}" data-burl="${i}" style="margin-top:8px">`;
+        } else if (b.type === 'callout') {
+          body = `<div class="callout-color-row"><label>${t('Background color')} <input type="color" class="callout-color" data-ccolor="${i}" value="${esc(b.color || '#fce6eb')}"></label></div>
+            <div class="rte" contenteditable="true" data-btext="${i}"${alignStyle}>${b.text || ''}</div>`;
+        } else if (b.type === 'icon-row') {
+          if (!Array.isArray(b.items) || !b.items.length) b.items = [{ icon: 'star', label: '' }];
+          body = `<div class="icon-row-edit">${b.items.map((it, ii) => `
+            <div class="icon-row-item">
+              <button type="button" class="icon-pick-trigger" data-iconpick="${i}:${ii}" title="${esc(t('Choose icon'))}">${window.ICON_LIBRARY[it.icon] || window.ICON_LIBRARY.star}</button>
+              <input type="text" placeholder="${esc(t('Label'))}" value="${esc(it.label || '')}" data-ilabel="${i}:${ii}">
+              <button type="button" class="icon-btn del" data-irm="${i}:${ii}" title="${esc(t('Remove'))}">${BLOCK_SVG.remove}</button>
+            </div>`).join('')}
+            <button type="button" class="btn btn-ghost btn-sm" data-iadd="${i}">+ ${t('Add item')}</button>
+          </div>`;
+        } else if (b.type === 'columns') {
+          if (!b.left) b.left = { type: 'paragraph', text: '' };
+          if (!b.right) b.right = { type: 'paragraph', text: '' };
+          const slotHTML = (slot, side) => `
+            <div class="column-slot">
+              <div class="column-slot-tabs">
+                <button type="button" class="tab-btn${slot.type !== 'image' ? ' active' : ''}" data-ctype="${i}:${side}:paragraph">${t('Text')}</button>
+                <button type="button" class="tab-btn${slot.type === 'image' ? ' active' : ''}" data-ctype="${i}:${side}:image">${t('Image')}</button>
+              </div>
+              ${slot.type === 'image'
+                ? `<div class="block-img-row"><img class="block-img-prev" src="${esc(imgUrl(slot.image, 200))}" data-cpick="${i}:${side}" title="${esc(t('Click to choose an existing image'))}"><button type="button" class="btn btn-ghost btn-sm" data-cupload="${i}:${side}">${t('Upload…')}</button></div>`
+                : `<div class="rte" contenteditable="true" data-ctext="${i}:${side}">${slot.text || ''}</div>`}
+            </div>`;
+          body = `<div class="columns-edit">${slotHTML(b.left, 'left')}${slotHTML(b.right, 'right')}</div>`;
+        } else if (b.type === 'table') {
+          if (!Array.isArray(b.cells) || !b.cells.length) resizeTableBlock(b, b.rows || 2, b.cols || 2);
+          const rows = b.rows, cols = b.cols;
+          const tbody = b.cells.map((row, ri) => `<tr>${row.map((cell, ci) => `<td>
+              <input type="color" class="cell-color" data-tcolor="${i}:${ri}:${ci}" value="${esc(cell.bg || '#ffffff')}" title="${esc(t('Cell color'))}">
+              <div class="rte cell-rte" contenteditable="true" data-ttext="${i}:${ri}:${ci}">${cell.text || ''}</div>
+            </td>`).join('')}</tr>`).join('');
+          body = `
+            <div class="table-size-row">
+              <label>${t('Rows')} <input type="number" min="1" max="20" value="${rows}" class="table-rows" data-tdim="${i}"></label>
+              <label>${t('Columns')} <input type="number" min="1" max="8" value="${cols}" class="table-cols" data-tdim="${i}"></label>
+              <button type="button" class="btn btn-ghost btn-sm" data-tapply="${i}">${t('Apply size')}</button>
+            </div>
+            <table class="block-table-edit"><tbody>${tbody}</tbody></table>`;
+        } else {
+          // quote / paragraph (default)
+          body = `<div class="rte" contenteditable="true" data-btext="${i}"${alignStyle}>${b.text || ''}</div>`;
+        }
         return `<div class="block-row" data-i="${i}">
-          <button type="button" class="drag-handle" draggable="true" data-drag="${i}" title="${esc(t('Drag to reorder'))}">${BLOCK_SVG.dragHandle}</button>
-          <button type="button" class="block-row-main" data-bedit="${i}">
+          <div class="block-row-head">
+            <button type="button" class="drag-handle" draggable="true" data-drag="${i}" title="${esc(t('Drag to reorder'))}">${BLOCK_SVG.dragHandle}</button>
             <span class="block-type-badge">${esc(typeLabel(b.type))}</span>
-            <span class="block-row-preview">${esc(previewFor(b))}</span>
-          </button>
-          <div class="block-row-actions">${moveUp}${moveDown}<button type="button" class="icon-btn del" data-brm="${i}" title="${esc(t('Remove'))}">${BLOCK_SVG.trash}</button></div>
+            <div class="block-row-actions">${moveUp}${moveDown}<button type="button" class="icon-btn del" data-brm="${i}" title="${esc(t('Remove'))}">${BLOCK_SVG.trash}</button></div>
+          </div>
+          ${body}
         </div>`;
-      }).join('') : `<div class="field-hint">${esc(t('No blocks yet — click “+ Add block” to start.'))}</div>`;
+      }).join('') : `<div class="field-hint bs-empty-hint">${esc(t('No blocks yet — pick a type from the list to start.'))}</div>`;
 
-      $$('[data-bedit]', wrap).forEach(btn => btn.addEventListener('click', () => openBlockModal(+btn.dataset.bedit)));
-      $$('[data-brm]', wrap).forEach(btn => btn.addEventListener('click', () => { uploads[key].splice(+btn.dataset.brm, 1); paint(); }));
-      $$('[data-bup]', wrap).forEach(btn => btn.addEventListener('click', () => {
-        const i = +btn.dataset.bup;
-        [uploads[key][i - 1], uploads[key][i]] = [uploads[key][i], uploads[key][i - 1]];
-        paint();
+      $$('[data-btext]', canvas).forEach(node => {
+        const isCE = node.hasAttribute('contenteditable');
+        node.addEventListener('input', () => { arr()[+node.dataset.btext].text = isCE ? node.innerHTML : node.value; });
+        trackBlock(node, +node.dataset.btext);
+      });
+      $$('[data-bupload]', canvas).forEach(b => b.addEventListener('click', () => { uploadTarget = +b.dataset.bupload; uploadTargetLang = activeLang; file.click(); }));
+      $$('[data-bpick]', canvas).forEach(img => img.addEventListener('click', () => {
+        const i = +img.dataset.bpick;
+        openMediaPicker('image', (url) => { arr()[i].image = url; paintCanvas(); });
       }));
-      $$('[data-bdown]', wrap).forEach(btn => btn.addEventListener('click', () => {
-        const i = +btn.dataset.bdown;
-        [uploads[key][i], uploads[key][i + 1]] = [uploads[key][i + 1], uploads[key][i]];
-        paint();
+      $$('[data-brm]', canvas).forEach(b => b.addEventListener('click', () => { arr().splice(+b.dataset.brm, 1); paintCanvas(); updateSummary(); }));
+      $$('[data-bup]', canvas).forEach(b => b.addEventListener('click', () => {
+        const i = +b.dataset.bup;
+        [arr()[i - 1], arr()[i]] = [arr()[i], arr()[i - 1]];
+        paintCanvas();
+      }));
+      $$('[data-bdown]', canvas).forEach(b => b.addEventListener('click', () => {
+        const i = +b.dataset.bdown;
+        [arr()[i], arr()[i + 1]] = [arr()[i + 1], arr()[i]];
+        paintCanvas();
       }));
 
-      // drag-to-reorder — kept alongside the up/down buttons above as a
-      // keyboard-accessible fallback (drag-and-drop alone locks out anyone
-      // who can't use a mouse)
-      $$('[data-drag]', wrap).forEach(handle => {
+      $$('[data-drag]', canvas).forEach(handle => {
         handle.addEventListener('dragstart', (e) => { dragIndex = +handle.dataset.drag; e.dataTransfer.effectAllowed = 'move'; });
       });
-      $$('.block-row', wrap).forEach(row => {
+      $$('.block-row', canvas).forEach(row => {
         row.addEventListener('dragover', (e) => { e.preventDefault(); row.classList.add('drag-over'); });
         row.addEventListener('dragleave', () => row.classList.remove('drag-over'));
         row.addEventListener('drop', (e) => {
@@ -1226,50 +1124,154 @@
           row.classList.remove('drag-over');
           const dropIndex = +row.dataset.i;
           if (dragIndex === null || dragIndex === dropIndex) return;
-          const [moved] = uploads[key].splice(dragIndex, 1);
-          uploads[key].splice(dropIndex, 0, moved);
+          const [moved] = arr().splice(dragIndex, 1);
+          arr().splice(dropIndex, 0, moved);
           dragIndex = null;
-          paint();
+          paintCanvas();
         });
       });
+
+      // table
+      $$('[data-tapply]', canvas).forEach(btn => btn.addEventListener('click', () => {
+        const i = +btn.dataset.tapply;
+        const rowsInput = canvas.querySelector(`.table-rows[data-tdim="${i}"]`);
+        const colsInput = canvas.querySelector(`.table-cols[data-tdim="${i}"]`);
+        resizeTableBlock(arr()[i], +rowsInput.value, +colsInput.value);
+        paintCanvas();
+      }));
+      $$('[data-ttext]', canvas).forEach(el => el.addEventListener('input', () => {
+        const [i, ri, ci] = el.dataset.ttext.split(':').map(Number);
+        arr()[i].cells[ri][ci].text = el.innerHTML;
+      }));
+      $$('[data-tcolor]', canvas).forEach(inp => inp.addEventListener('input', () => {
+        const [i, ri, ci] = inp.dataset.tcolor.split(':').map(Number);
+        arr()[i].cells[ri][ci].bg = inp.value;
+      }));
+
+      // icon row
+      $$('[data-iadd]', canvas).forEach(btn => btn.addEventListener('click', () => {
+        const i = +btn.dataset.iadd;
+        arr()[i].items.push({ icon: 'star', label: '' });
+        paintCanvas();
+      }));
+      $$('[data-irm]', canvas).forEach(btn => btn.addEventListener('click', () => {
+        const [i, ii] = btn.dataset.irm.split(':').map(Number);
+        arr()[i].items.splice(ii, 1);
+        paintCanvas();
+      }));
+      $$('[data-ilabel]', canvas).forEach(inp => inp.addEventListener('input', () => {
+        const [i, ii] = inp.dataset.ilabel.split(':').map(Number);
+        arr()[i].items[ii].label = inp.value;
+      }));
+      $$('[data-iconpick]', canvas).forEach(btn => btn.addEventListener('click', () => {
+        const [i, ii] = btn.dataset.iconpick.split(':').map(Number);
+        openIconPopoverIn(iconPopover, btn, (k) => { arr()[i].items[ii].icon = k; paintCanvas(); });
+      }));
+
+      // columns
+      $$('[data-ctype]', canvas).forEach(btn => btn.addEventListener('click', () => {
+        const [i, side, newType] = btn.dataset.ctype.split(':');
+        arr()[+i][side].type = newType;
+        paintCanvas();
+      }));
+      $$('[data-ctext]', canvas).forEach(el => el.addEventListener('input', () => {
+        const [i, side] = el.dataset.ctext.split(':');
+        arr()[+i][side].text = el.innerHTML;
+      }));
+      $$('[data-cupload]', canvas).forEach(btn => btn.addEventListener('click', () => { uploadTarget = btn.dataset.cupload; uploadTargetLang = activeLang; file.click(); }));
+      $$('[data-cpick]', canvas).forEach(img => img.addEventListener('click', () => {
+        const [i, side] = img.dataset.cpick.split(':');
+        openMediaPicker('image', (url) => { arr()[+i][side].image = url; paintCanvas(); });
+      }));
+
+      // callout / button
+      $$('[data-ccolor]', canvas).forEach(inp => inp.addEventListener('input', () => { arr()[+inp.dataset.ccolor].color = inp.value; }));
+      $$('[data-blabel]', canvas).forEach(inp => inp.addEventListener('input', () => { arr()[+inp.dataset.blabel].label = inp.value; }));
+      $$('[data-burl]', canvas).forEach(inp => inp.addEventListener('input', () => { arr()[+inp.dataset.burl].url = inp.value; }));
     };
 
-    // ---------- "+ Add block" trigger + type-picker popover ----------
-    const addBtn = $('#' + id + '_addBtn');
-    const typePopover = $('#' + id + '_typePopover');
-    if (addBtn && typePopover) {
-      typePopover.innerHTML = TYPE_ORDER.map(ty => `<button type="button" class="block-type-opt" data-addtype="${ty}">+ ${esc(typeLabel(ty))}</button>`).join('');
-      $$('[data-addtype]', typePopover).forEach(btn => btn.addEventListener('click', () => {
-        const ty = btn.dataset.addtype;
-        const factory = TYPE_DEFAULTS[ty] || TYPE_DEFAULTS.paragraph;
-        uploads[key].push(factory());
-        typePopover.hidden = true;
-        paint();
-        openBlockModal(uploads[key].length - 1);
-      }));
-      addBtn.addEventListener('click', () => { typePopover.hidden = !typePopover.hidden; });
-      document.addEventListener('click', (e) => {
-        if (!typePopover.hidden && !typePopover.contains(e.target) && e.target !== addBtn) typePopover.hidden = true;
-      });
-    }
-
     file.addEventListener('change', async () => {
-      if (!file.files[0] || uploadTarget == null || activeModalIndex == null) return;
+      if (!file.files[0] || uploadTarget == null) return;
       pendingUploads++;
       const url = await uploadFile(file.files[0], 'image');
       pendingUploads--;
       file.value = '';
       if (!url) return;
-      const b = uploads[key][activeModalIndex];
-      if (b) {
-        if (uploadTarget === 'main') b.image = url;
-        else if (typeof uploadTarget === 'string' && uploadTarget.startsWith('col:')) b[uploadTarget.slice(4)].image = url;
+      const targetArr = uploads[uploadTargetLang === 'ar' ? arKey : enKey];
+      if (typeof uploadTarget === 'string' && uploadTarget.includes(':')) {
+        const [i, side] = uploadTarget.split(':');
+        targetArr[+i][side].image = url;
+      } else {
+        targetArr[uploadTarget].image = url;
       }
       uploadTarget = null;
-      openBlockModal(activeModalIndex);
+      if (uploadTargetLang === activeLang) paintCanvas();
       toast(t('Image uploaded — remember to Save'));
     });
-    paint();
+
+    // ---------- sidebar: the block-type toolbox ----------
+    sidebar.innerHTML = `<div class="bs-sidebar-title">${esc(t('Add a block'))}</div>` +
+      TYPE_ORDER.map(ty => `<button type="button" class="bs-type-btn" data-addtype="${ty}">${esc(typeLabel(ty))}</button>`).join('');
+    $$('[data-addtype]', sidebar).forEach(btn => btn.addEventListener('click', () => {
+      const ty = btn.dataset.addtype;
+      const factory = TYPE_DEFAULTS[ty] || TYPE_DEFAULTS.paragraph;
+      arr().push(factory());
+      paintCanvas();
+      updateSummary();
+      const rows = $$('.block-row', canvas);
+      const last = rows[rows.length - 1];
+      if (last) {
+        last.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        const focusable = last.querySelector('input,textarea,[contenteditable]');
+        if (focusable) focusable.focus();
+      }
+    }));
+
+    // ---------- language + mode tabs ----------
+    function setLang(lang) {
+      activeLang = lang;
+      $$('.bs-tab', overlay.querySelector('#' + id + '_bsLangTabs')).forEach(b => b.classList.toggle('active', b.dataset.lang === lang));
+      paintCanvas();
+      if (activeMode === 'preview') paintPreview();
+    }
+    $$('[data-lang]', overlay.querySelector('#' + id + '_bsLangTabs')).forEach(btn => btn.addEventListener('click', () => setLang(btn.dataset.lang)));
+
+    function paintPreview() {
+      const html = window.renderBlocks(arr());
+      const dir = activeLang === 'ar' ? 'rtl' : 'ltr';
+      const fontLinks = `<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Bricolage+Grotesque:opsz,wght@12..96,300..800&family=Hanken+Grotesk:wght@300..700&family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">`;
+      previewFrame.srcdoc = `<!doctype html><html lang="${dir === 'rtl' ? 'ar' : 'en'}" dir="${dir}"><head><meta charset="utf-8">${fontLinks}
+        <link rel="stylesheet" href="../styles.css"><link rel="stylesheet" href="../pages.css">
+        <style>body{background:#fff;padding:48px 24px}.bs-preview-wrap{max-width:720px;margin:0 auto}</style>
+        </head><body><div class="bs-preview-wrap ${esc(previewClass)}">${html || ''}</div></body></html>`;
+    }
+    function setMode(mode) {
+      activeMode = mode;
+      $$('.bs-tab', overlay.querySelector('#' + id + '_bsModeTabs')).forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+      const isPreview = mode === 'preview';
+      sidebar.classList.toggle('bs-hidden', isPreview);
+      canvas.classList.toggle('bs-hidden', isPreview);
+      toolbar.classList.toggle('bs-hidden', isPreview);
+      previewFrame.classList.toggle('bs-hidden', !isPreview);
+      if (isPreview) paintPreview();
+    }
+    $$('[data-mode]', overlay.querySelector('#' + id + '_bsModeTabs')).forEach(btn => btn.addEventListener('click', () => setMode(btn.dataset.mode)));
+
+    // ---------- open / close ----------
+    const close = () => { overlay.classList.remove('open'); updateSummary(); };
+    overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
+    overlay.querySelector('#' + id + '_bsClose').addEventListener('click', close);
+    overlay.querySelector('#' + id + '_bsDone').addEventListener('click', close);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && overlay.classList.contains('open')) close(); });
+
+    openBtn.addEventListener('click', () => {
+      activeLang = 'en';
+      activeMode = 'edit';
+      setLang('en');
+      setMode('edit');
+      overlay.classList.add('open');
+    });
   }
 
   // guards any promise against hanging forever — a stalled/dropped upload
@@ -1382,7 +1384,11 @@
       if (f.type === 'bool') { out[f.key] = node.checked; continue; }
       if (f.type === 'gallery') { out[f.key] = uploads[f.key] || []; continue; }
       if (f.type === 'consultants') { out[f.key] = (uploads[f.key] || []).filter(c => c.name || c.logo); continue; }
-      if (f.type === 'blocks') { out[f.key] = (uploads[f.key] || []).filter(hasBlockContent); continue; }
+      if (f.type === 'blocks-i18n') {
+        out[f.key] = (uploads[f.key] || []).filter(hasBlockContent);
+        out[f.arKey] = (uploads[f.arKey] || []).filter(hasBlockContent);
+        continue;
+      }
       let v = node ? node.value : '';
       if (f.type === 'date') { out[f.key] = v || null; continue; }
       if (f.type === 'number') { out[f.key] = v === '' ? null : Number(v); continue; }
