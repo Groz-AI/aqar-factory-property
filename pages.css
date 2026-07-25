@@ -232,31 +232,78 @@
    consistent and get new block-type styles for free */
 .blog-post-layout{display:flex;justify-content:center;padding:56px 0 10px}
 .blog-article, .rich-content{max-width:720px;width:100%;font-size:1.08rem;line-height:1.85;color:var(--ink)}
-.blog-article h2, .rich-content h2{font-family:"Bricolage Grotesque",sans-serif;font-size:1.5rem;font-weight:700;letter-spacing:-.01em;margin:2.3rem 0 1.1rem}
-.blog-article h2:first-child, .rich-content h2:first-child{margin-top:0}
-.blog-article p, .rich-content p{color:var(--ink-soft);margin-bottom:1.3rem}
+
+/* blog posts: the post title is its own h1 above, so a block heading is
+   the primary tier here and keeps a bold, prominent treatment */
+.blog-article h2{font-family:"Bricolage Grotesque",sans-serif;font-size:1.5rem;font-weight:700;letter-spacing:-.01em;margin:2.3rem 0 1.1rem;color:var(--ink)}
+.blog-article h2:first-child{margin-top:0}
+
+/* project "about" section: block headings sit *under* the page's own
+   "About this development" h2 (.detail-main h2, 1.6rem/700), so they read
+   as a quiet subsection marker — smaller, accent-colored, dot-prefixed —
+   instead of a second near-identical headline stacked right beneath it */
+.rich-content h2{display:flex;align-items:center;gap:.65em;font-family:"Bricolage Grotesque",sans-serif;font-size:1.12rem;font-weight:700;color:var(--sky-deep);margin:2.8rem 0 1rem}
+.rich-content h2:first-child{margin-top:0}
+.rich-content h2::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--sky);flex:none}
+
+.blog-article p, .rich-content p{color:rgba(19,26,33,.74);margin-bottom:1.3rem}
+.blog-article a, .rich-content a{color:var(--sky-deep);text-decoration:underline;text-underline-offset:2px}
+
+/* rich-text blocks (paragraph/quote/callout) are trusted HTML, so a
+   pasted list can land inside them without the .blog-block-list class —
+   give any such list the same treatment instead of raw browser bullets,
+   and drop empty <li>s a paste can leave behind */
+.blog-article :where(ul,ol):not(.blog-block-list), .rich-content :where(ul,ol):not(.blog-block-list){margin:0 0 1.3rem;padding-inline-start:1.2rem;color:rgba(19,26,33,.74)}
+.blog-article :where(ul,ol):not(.blog-block-list) li::marker, .rich-content :where(ul,ol):not(.blog-block-list) li::marker{color:var(--sky)}
+.blog-article li:empty, .rich-content li:empty{display:none}
+
 .blog-block-image{margin:2.2rem 0}
 .blog-block-image img{width:100%;border-radius:18px;display:block;box-shadow:var(--shadow-sm)}
-.blog-article a, .rich-content a{color:var(--sky-deep);text-decoration:underline;text-underline-offset:2px}
-.blog-block-quote{margin:2.2rem 0;padding:.2rem 1.6rem;border-left:3px solid var(--sky);font-family:"Fraunces",serif;font-style:italic;font-size:1.28rem;line-height:1.6;color:var(--ink)}
-[dir="rtl"] .blog-block-quote{border-left:none;border-right:3px solid var(--sky)}
-.blog-article ul.blog-block-list, .rich-content ul.blog-block-list{margin:0 0 1.3rem;padding-left:1.3rem;color:var(--ink-soft)}
-[dir="rtl"] .blog-article ul.blog-block-list, [dir="rtl"] .rich-content ul.blog-block-list{padding-left:0;padding-right:1.3rem}
-.blog-article ul.blog-block-list li, .rich-content ul.blog-block-list li{margin-bottom:.5rem}
+
+.blog-block-quote{position:relative;margin:2.6rem 0;padding:.3rem 1.7rem .3rem 2.3rem;border-inline-start:3px solid var(--sky);font-family:"Fraunces",serif;font-style:italic;font-size:1.28rem;line-height:1.6;color:var(--ink)}
+.blog-block-quote::before{content:'\201C';position:absolute;inset-inline-start:.15rem;top:-.6rem;font-family:"Fraunces",serif;font-style:normal;font-size:3rem;line-height:1;color:var(--sky-soft)}
+[dir="rtl"] .blog-block-quote::before{content:'\201D'}
+
+.blog-article ul.blog-block-list, .rich-content ul.blog-block-list{margin:0 0 1.3rem;padding-inline-start:1.3rem;color:rgba(19,26,33,.74)}
+.blog-article ul.blog-block-list li, .rich-content ul.blog-block-list li{margin-bottom:.5rem;padding-inline-start:.3rem}
+.blog-article ul.blog-block-list li::marker, .rich-content ul.blog-block-list li::marker{color:var(--sky)}
+
 .blog-block-video{position:relative;width:100%;aspect-ratio:16/9;margin:2.2rem 0;border-radius:18px;overflow:hidden;box-shadow:var(--shadow-sm);background:var(--paper)}
 .blog-block-video iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
 
 /* ---- new block types (Table / Icon row / Divider / Callout / Columns / Button) ---- */
-.block-table{width:100%;margin:2.2rem 0;border-collapse:collapse;border-radius:12px;overflow:hidden;box-shadow:var(--shadow-sm)}
-.block-table td{border:1px solid var(--line);padding:.7em 1em;vertical-align:top}
-.block-icon-row{display:flex;flex-wrap:wrap;gap:1.6rem;margin:2rem 0}
-.block-icon-item{display:flex;align-items:center;gap:.55rem;font-weight:600;color:var(--ink)}
-.block-icon-item svg{width:22px;height:22px;color:var(--sky);flex:none}
-.block-divider{border:none;border-top:1px solid var(--line);margin:2.4rem 0}
-.block-callout{margin:2.2rem 0;padding:1.2em 1.4em;border-radius:14px;border-inline-start:4px solid var(--sky);background:var(--sky-soft);color:var(--ink)}
-.block-columns{display:grid;grid-template-columns:1fr 1fr;gap:1.6rem;margin:2.2rem 0}
-.block-columns img{width:100%;border-radius:14px;display:block}
-.block-button{display:inline-flex;align-items:center;gap:.5rem;margin:1rem 0 2rem;padding:.8em 1.6em;border-radius:999px;background:var(--sky);color:#fff;font-weight:700;text-decoration:none!important}
+.block-table{width:100%;margin:2.4rem 0;border-collapse:separate;border-spacing:0;border-radius:12px;overflow:hidden;box-shadow:var(--shadow-sm);border:1px solid var(--line)}
+.block-table td{border-bottom:1px solid var(--line);border-inline-start:1px solid var(--line);padding:.8em 1.1em;vertical-align:top;text-align:start}
+.block-table td:first-child{border-inline-start:none}
+.block-table tr:last-child td{border-bottom:none}
+.block-table tr:first-child td{background:var(--sky-soft);color:var(--sky-deep);font-weight:700}
+
+.block-icon-row{display:flex;flex-wrap:wrap;gap:.7rem;margin:2.2rem 0}
+.block-icon-item{display:flex;align-items:center;gap:.55rem;font-weight:600;font-size:.92rem;color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:999px;padding:.55em 1.1em .55em .8em;box-shadow:var(--shadow-sm)}
+.block-icon-item svg{width:18px;height:18px;color:var(--sky);flex:none}
+
+.block-divider{border:none;height:1px;width:64px;margin:2.8rem auto;background:linear-gradient(90deg,transparent,var(--sky),transparent)}
+
+.block-callout{display:flex;gap:.9rem;align-items:flex-start;margin:2.6rem 0;padding:1.2em 1.4em;border-radius:16px;background:var(--sky-soft)}
+.block-callout-icon{flex:none;width:34px;height:34px;border-radius:10px;background:#fff;display:grid;place-items:center;color:var(--sky-deep);box-shadow:var(--shadow-sm)}
+.block-callout-icon svg{width:17px;height:17px}
+.block-callout-body{flex:1;min-width:0;color:var(--ink)}
+.block-callout-body p{margin:0 0 .5em;color:var(--ink)}
+.block-callout-body p:last-child{margin-bottom:0}
+.block-callout-body ul{margin:.4em 0 0;padding-inline-start:1.2rem}
+.block-callout-body li::marker{color:var(--sky-deep)}
+
+.block-columns{display:grid;grid-template-columns:1fr 1fr;gap:1.8rem;margin:2.6rem 0}
+.block-columns img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:14px;display:block;box-shadow:var(--shadow-sm)}
+.block-columns p{margin:0}
+
+.block-button{display:inline-flex;align-items:center;gap:.6rem;margin:1rem 0 2rem;padding:.85em 1.7em;border-radius:999px;background:var(--sky);color:#fff;font-weight:700;text-decoration:none!important;box-shadow:0 10px 24px -10px rgba(219,19,81,.55);transition:transform .25s var(--ease),box-shadow .25s var(--ease)}
+.block-button:hover{transform:translateY(-2px);box-shadow:0 14px 28px -10px rgba(219,19,81,.6)}
+.block-button::after{content:'→';transition:transform .25s var(--ease)}
+[dir="rtl"] .block-button::after{content:'←'}
+.block-button:hover::after{transform:translateX(4px)}
+[dir="rtl"] .block-button:hover::after{transform:translateX(-4px)}
+
 @media(max-width:640px){.block-columns{grid-template-columns:1fr}}
 
 /* ============================================================

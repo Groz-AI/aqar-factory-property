@@ -93,7 +93,7 @@
     if (b.type === 'callout') {
       if (!b.text) return '';
       const bg = b.color || 'var(--sky-soft)';
-      return `<div class="block-callout" style="background:${esc(bg)}">${b.text}</div>`;
+      return `<div class="block-callout" style="background:${esc(bg)}"><span class="block-callout-icon">${window.ICON_LIBRARY.star}</span><div class="block-callout-body">${b.text}</div></div>`;
     }
     if (b.type === 'button') {
       if (!b.url || !b.label) return '';
