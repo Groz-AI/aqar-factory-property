@@ -40,11 +40,12 @@ module.exports = async function handler(req, res) {
   const host = req.headers['x-forwarded-host'] || req.headers.host;
   const SITE_URL = `https://${host}`;
 
-  const [projects, posts] = await Promise.all([fetchSlugs('projects'), fetchSlugs('blog_posts')]);
+  const [projects, units, posts] = await Promise.all([fetchSlugs('projects'), fetchSlugs('units'), fetchSlugs('blog_posts')]);
 
   const staticPages = [
     { path: '/', priority: '1.0' },
     { path: '/projects.html', priority: '0.9' },
+    { path: '/units.html', priority: '0.9' },
     { path: '/blog.html', priority: '0.8' },
     { path: '/about.html', priority: '0.6' },
     { path: '/contact.html', priority: '0.6' }
@@ -53,6 +54,7 @@ module.exports = async function handler(req, res) {
   const urls = [
     ...staticPages.map(p => urlEntry(SITE_URL + p.path, null, p.priority)),
     ...projects.map(p => urlEntry(`${SITE_URL}/project.html?id=${encodeURIComponent(p.slug)}`, (p.updated_at || '').slice(0, 10) || null, '0.8')),
+    ...units.map(u => urlEntry(`${SITE_URL}/unit.html?id=${encodeURIComponent(u.slug)}`, (u.updated_at || '').slice(0, 10) || null, '0.75')),
     ...posts.map(p => urlEntry(`${SITE_URL}/blog-post.html?slug=${encodeURIComponent(p.slug)}`, (p.updated_at || '').slice(0, 10) || null, '0.7'))
   ];
 

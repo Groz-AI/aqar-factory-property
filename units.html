@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Blog — Aqar Factory</title>
-<meta name="description" content="Market insight, buying guides and stories from the Aqar Factory team — real estate, done right." />
+<title>Units — Aqar Factory</title>
+<meta name="description" content="Browse Aqar Factory units by type and city — villas, apartments, duplexes, townhouses, studios, offices and retail spaces for sale." />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Bricolage+Grotesque:opsz,wght@12..96,300..800&family=Hanken+Grotesk:wght@300..700&display=swap" rel="stylesheet" />
@@ -26,8 +26,8 @@
     <nav class="nav" id="nav">
       <a href="index.html" data-i18n>Home</a>
       <a href="projects.html" data-i18n>Projects</a>
-      <a href="units.html" data-i18n>Units</a>
-      <a href="blog.html" class="active" data-i18n>Blog</a>
+      <a href="units.html" class="active" data-i18n>Units</a>
+      <a href="blog.html" data-i18n>Blog</a>
       <a href="about.html" data-i18n>About Us</a>
       <a href="contact.html" data-i18n>Contact</a>
     </nav>
@@ -40,11 +40,6 @@
 </header>
 
 <script>
-// Paint the last-known brand (name/logo) from cache immediately — this runs
-// before the Supabase CDN script and the rest of the store stack even start
-// loading (they're all near the end of <body>), which is what previously let
-// the default placeholder logo/name flash on reload before branding.js could
-// correct it. See branding.js for the full apply()/refresh() cycle.
 (function () {
   try {
     var c = JSON.parse(localStorage.getItem('realteek_brand_cache'));
@@ -73,22 +68,59 @@
 </script>
 
 <!-- PAGE HERO -->
-<section class="subpage-hero" style="--bg:url('https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1700&q=80')">
+<section class="subpage-hero" style="--bg:url('https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=1700&q=80')">
   <div class="container subpage-hero-in">
-    <div class="breadcrumb light"><a href="index.html" data-i18n>Home</a><span>/</span><b data-i18n>Blog</b></div>
-    <p class="sub-eyebrow" data-i18n>Insight, guides and stories</p>
-    <h1 data-i18n-html="blog.hero.title">From our <em>desk</em></h1>
-    <p class="sub-lead" data-i18n>Market analysis, buying guides and the occasional opinion — written by the advisors who work these markets every day.</p>
+    <div class="breadcrumb light"><a href="index.html" data-i18n>Home</a><span>/</span><b data-i18n>Units</b></div>
+    <p class="sub-eyebrow" data-i18n>Individual homes and offices for sale</p>
+    <h1 data-i18n-html="units.hero.title">Our <em>Units</em></h1>
+    <p class="sub-lead" data-i18n>Whether part of one of our developments or a standalone find — browse every unit currently for sale. Filter by type or city to find yours.</p>
   </div>
 </section>
 
+<!-- FILTER TOOLBAR -->
+<div class="filter-toolbar">
+  <div class="container">
+    <div class="toolbar-inner">
+      <div class="search-box">
+        <svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.6"/><path d="m20 20-3-3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        <input type="text" id="searchInput" placeholder="Search by name, type or location…" aria-label="Search units" data-i18n-placeholder data-i18n-aria />
+        <button class="search-clear" id="searchClear" aria-label="Clear search" hidden data-i18n-aria>
+          <svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div class="city-select">
+        <select id="sortSelect" aria-label="Sort units" data-i18n-aria>
+          <option value="featured" data-i18n>Featured</option>
+          <option value="price-desc" data-i18n>Price: High to Low</option>
+          <option value="price-asc" data-i18n>Price: Low to High</option>
+          <option value="area-desc" data-i18n>Area: Largest</option>
+          <option value="area-asc" data-i18n>Area: Smallest</option>
+          <option value="name-asc" data-i18n>Name: A–Z</option>
+        </select>
+      </div>
+    </div>
+    <div class="toolbar-sub">
+      <div class="filter-group">
+        <span class="filter-label" data-i18n>Type</span>
+        <div class="cat-chips" id="typeChips"><!-- chips injected --></div>
+      </div>
+      <div class="city-select compact">
+        <select id="citySelect"><option value="all" data-i18n>All cities</option></select>
+      </div>
+      <span class="result-count"><b id="resCount">0</b> <span data-i18n>units</span></span>
+      <button class="reset-btn" id="resetBtn" hidden data-i18n>Reset</button>
+    </div>
+  </div>
+</div>
+
 <!-- GRID -->
 <main class="container">
-  <div class="blog-grid" id="blogGrid"></div>
+  <div class="projects-grid" id="unitsGrid"></div>
   <div class="empty-state" id="emptyState" hidden>
-    <svg viewBox="0 0 24 24" fill="none"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" stroke="currentColor" stroke-width="1.6"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z" stroke="currentColor" stroke-width="1.6"/></svg>
-    <h3 data-i18n>No articles published yet</h3>
-    <p data-i18n>Check back soon — we're working on it.</p>
+    <svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.6"/><path d="m20 20-3-3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+    <h3 data-i18n>No units match those filters</h3>
+    <p data-i18n>Try a different search, type or city.</p>
+    <button class="btn btn-dark" id="emptyReset" style="margin-top:1.2rem" data-i18n>Clear filters</button>
   </div>
 </main>
 
@@ -121,7 +153,7 @@
 <script src="store.js"></script>
 <script src="branding.js"></script>
 <script src="newsletter.js"></script>
-<script src="blog.js"></script>
+<script src="units.js"></script>
 <script src="ai-widget.js"></script>
 <script src="whatsapp-widget.js"></script>
 </body>

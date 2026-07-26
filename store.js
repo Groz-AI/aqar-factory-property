@@ -39,6 +39,25 @@
     };
   }
 
+  // map a DB unit row to the shape pages expect
+  function mapUnit(r) {
+    return {
+      id: r.slug || r.id,
+      dbId: r.id,
+      projectId: r.project_id || null,
+      cityId: r.city_id || null,
+      name: r.name, nameAr: r.name_ar || '',
+      type: r.type, badge: r.badge,
+      price: r.price, priceValue: Number(r.price_value) || 0,
+      beds: r.beds || 0, baths: r.baths || 0,
+      area: r.area, areaValue: Number(r.area_value) || 0,
+      location: r.location,
+      description: r.description || '', descriptionAr: r.description_ar || '',
+      cover: r.cover, gallery: r.gallery || [],
+      coords: [r.lat || 0, r.lng || 0]
+    };
+  }
+
   // map a DB blog_posts row to the shape pages expect
   function mapBlogPost(r) {
     return {
@@ -132,7 +151,7 @@
   // supabase_realtime publication — see schema.sql).
   if (cloud && sb && typeof sb.channel === 'function') {
     try {
-      const TABLES = ['content_blocks', 'projects', 'cities', 'testimonials', 'developers', 'blog_posts'];
+      const TABLES = ['content_blocks', 'projects', 'cities', 'testimonials', 'developers', 'blog_posts', 'units'];
       let reloadT;
       const ch = sb.channel('realteek-public');
       TABLES.forEach(table => {
@@ -152,6 +171,7 @@
     getTestimonials: () => fetchTable('testimonials', F.testimonials || []),
     getDevelopers:   () => fetchTable('developers', F.developers || []),
     getBlogPosts:    () => fetchTable('blog_posts', F.blogPosts || [], mapBlogPost),
+    getUnits:        () => fetchTable('units', F.units || [], mapUnit),
     getContent,
     getCompany,
     submitInquiry,

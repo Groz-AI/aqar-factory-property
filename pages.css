@@ -143,6 +143,16 @@
 .detail-hero .d-loc{display:flex;align-items:center;gap:.5rem;margin-top:.8rem;font-size:1.05rem;opacity:.95}
 .detail-hero .d-loc svg{width:18px;height:18px}
 
+/* "Part of <Project>" banner — shown on a unit's page when it's linked to a project */
+.project-link-banner{
+  display:flex;align-items:center;gap:.6em;margin-top:20px;padding:.9em 1.3em;border-radius:16px;
+  background:var(--sky-soft);border:1px solid rgba(46,155,221,.25);color:var(--sky-deep);
+  font-weight:600;font-size:.95rem;transition:background .2s,transform .2s;width:fit-content;
+}
+.project-link-banner:hover{background:rgba(46,155,221,.16);transform:translateX(4px)}
+.project-link-banner .plb-label{font-weight:500;color:var(--ink-soft)}
+.project-link-banner svg{width:16px;height:16px;flex:none}
+
 .detail-layout{display:grid;grid-template-columns:1fr 360px;gap:54px;padding:64px 0}
 .detail-main h2{font-family:"Bricolage Grotesque",sans-serif;font-size:1.6rem;font-weight:700;letter-spacing:-.01em;margin-bottom:1rem}
 .detail-tagline{font-family:"Fraunces",serif;font-style:italic;font-size:clamp(1.3rem,2.4vw,1.7rem);line-height:1.4;color:var(--ink);margin-bottom:2.4rem}

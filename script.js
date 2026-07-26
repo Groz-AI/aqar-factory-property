@@ -23,6 +23,7 @@ const emLast = (s) => {
 };
 
 let allProjects = [];
+let allUnits = [];
 
 /* ---------- custom dropdown (replaces native <select> so the open list can
    actually be styled — browsers render native option popups unstyleable) ---------- */
@@ -144,6 +145,58 @@ function wireSearchForm() {
     const qs = params.toString();
     window.location.href = 'projects.html' + (qs ? '?' + qs : '');
   });
+}
+
+/* ============================================================
+   UNITS (homepage teaser — individual for-sale homes/offices,
+   optionally attached to a project) — each card cross-fades its gallery
+   ============================================================ */
+function unitTypesList() {
+  return [...new Set(allUnits.map(u => u.type).filter(Boolean))];
+}
+
+function unitCardHTML(u) {
+  const imgs = (u.gallery && u.gallery.length ? u.gallery : [u.cover]).filter(Boolean).slice(0, 5);
+  const slides = imgs.map((g, i) =>
+    `<div class="pg-slide${i === 0 ? ' active' : ''}" style="background-image:url('${IMG(g, 900)}')"></div>`).join('');
+  const dots = imgs.length > 1
+    ? `<div class="pg-dots">${imgs.map((_, i) => `<i class="${i === 0 ? 'on' : ''}"></i>`).join('')}</div>` : '';
+  const specs = [];
+  if (u.beds) specs.push(`${u.beds} ${t('Beds')}`);
+  if (u.baths) specs.push(`${u.baths} ${t('Baths')}`);
+  if (u.area) specs.push(u.area);
+  return `
+  <a class="project reveal" href="unit.html?id=${encodeURIComponent(u.id)}">
+    <div class="project-img" data-gallery>${slides}<div class="pg-shade"></div>${dots}</div>
+    <div class="project-body">
+      <span class="project-tag">${u.type ? t(u.type) : ''}</span>
+      <h3>${u.name}</h3>
+      <p>${specs.join(' · ')}</p>
+      <div class="project-foot"><span>${u.location || ''}</span><span>${u.price || ''}</span></div>
+    </div>
+  </a>`;
+}
+
+function renderUnits(filterType = 'all') {
+  const wrap = document.getElementById('unitList');
+  if (!wrap) return;
+  const list = (filterType === 'all' ? allUnits : allUnits.filter(u => u.type === filterType)).slice(0, 8);
+  wrap.innerHTML = list.length ? list.map(unitCardHTML).join('')
+    : `<p style="grid-column:1/-1;color:var(--ink-soft)">${t('No units published yet — check back soon!')}</p>`;
+  cycleGalleries('#unitList', '.project', 3200);
+}
+
+function renderUnitChips() {
+  const wrap = document.getElementById('unitTypeChips');
+  if (!wrap || !allUnits.length) return;
+  const types = unitTypesList();
+  wrap.innerHTML = `<button class="chip active" data-type="all">${t('All')}</button>`
+    + types.map(ty => `<button class="chip" data-type="${escHTML(ty)}">${t(ty)}</button>`).join('');
+  wrap.querySelectorAll('.chip').forEach(b => b.addEventListener('click', () => {
+    wrap.querySelector('.active')?.classList.remove('active');
+    b.classList.add('active');
+    renderUnits(b.dataset.type);
+  }));
 }
 
 /* ============================================================
@@ -570,13 +623,16 @@ function wireReveals() {
 (async function init() {
   const S = window.store;
   try {
-    const [cities, projects, devs, testis, content] = await Promise.all([
-      S.getCities(), S.getProjects(), S.getDevelopers(), S.getTestimonials(), S.getContent()
+    const [cities, projects, units, devs, testis, content] = await Promise.all([
+      S.getCities(), S.getProjects(), S.getUnits ? S.getUnits() : [], S.getDevelopers(), S.getTestimonials(), S.getContent()
     ]);
     allProjects = projects || [];
+    allUnits = units || [];
     applyContent(content);
     renderSearchFacets(cities || [], allProjects);
     initHeroTyping();
+    renderUnitChips();
+    renderUnits();
     renderCities(cities || [], allProjects);
     initHeroGallery(cities || [], content);
     renderProjects(projects || []);

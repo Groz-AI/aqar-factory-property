@@ -59,6 +59,28 @@
       };
     });
 
+    // units: link to a project by the fallback data's `projectSlug` hint when
+    // present (resolved against the just-generated project uuids above), else
+    // fall back to matching their free-text location against a seeded city —
+    // same pattern as the projects' own city-matching just above
+    const projectBySlug = {};
+    projects.forEach(p => { projectBySlug[p.slug] = p; });
+    const units = (F.units || []).map((u, i) => {
+      const linkedProject = u.projectSlug ? projectBySlug[u.projectSlug] : null;
+      const city = linkedProject ? null : findCity(u.location);
+      return {
+        id: uuid(), slug: u.id, name: u.name, name_ar: u.nameAr || '', type: u.type, badge: u.badge,
+        price: u.price, price_value: u.price_value || 0,
+        beds: u.beds || 0, baths: u.baths || 0, area: u.area, area_value: u.area_value || 0,
+        location: u.location, description: u.description || '', description_ar: u.descriptionAr || '',
+        cover: u.cover, gallery: u.gallery || [],
+        project_id: linkedProject ? linkedProject.id : null,
+        city_id: city ? city.id : null,
+        lat: null, lng: null,
+        sort_order: i, published: true
+      };
+    });
+
     const content = F.content || {};
     const content_blocks = Object.keys(content).map(key => ({ key, value: content[key] }));
     // hero background images default to the bundled city skylines
@@ -80,6 +102,7 @@
       projects,
       cities,
       categories,
+      units,
       testimonials: withMeta(F.testimonials),
       developers:   withMeta(F.developers),
       content_blocks,

@@ -41,8 +41,8 @@ $$;
 
 -- Does the current request's admin (Owner, or Staff with this page granted)
 -- have access to a specific admin page? `page` matches the dashboard's page
--- keys: projects | cities | testimonials | developers | posts | inquiries |
--- newsletter | content.
+-- keys: projects | cities | testimonials | developers | posts | units |
+-- inquiries | newsletter | content.
 create or replace function public.has_page(page text)
 returns boolean
 language sql stable security definer set search_path = public as $$
@@ -61,7 +61,7 @@ language sql stable security definer set search_path = public as $$
   select exists (
     select 1 from public.admins
     where user_id = auth.uid() and active = true
-      and (role = 'owner' or permissions ?| array['projects','cities','testimonials','developers','posts','content'])
+      and (role = 'owner' or permissions ?| array['projects','cities','testimonials','developers','posts','units','content'])
   );
 $$;
 
@@ -185,6 +185,38 @@ create index if not exists idx_projects_city_id    on public.projects(city_id);
 -- reused above for the admin-managed project-category taxonomy.)
 drop table if exists public.properties cascade;
 
+-- Units — individual for-sale homes/offices. May optionally belong to a
+-- Project (inheriting its city) or, if standalone, link to a City directly.
+create table if not exists public.units (
+  id          uuid primary key default gen_random_uuid(),
+  slug        text unique not null,
+  name        text not null,
+  name_ar     text,                                -- Arabic name; falls back to `name` when empty
+  type        text not null default 'Apartment',    -- Villa | Apartment | Duplex | Townhouse | Studio | Office | Retail
+  badge       text,                                -- For Sale | New Listing | Exclusive
+  price       text,                                -- display string, e.g. "EGP 3.2M"
+  price_value numeric default 0,
+  beds        int default 0,
+  baths       int default 0,
+  area        text,                                -- display string, e.g. "185 m²"
+  area_value  numeric default 0,
+  location    text,
+  description text,
+  description_ar text,                              -- Arabic description; falls back to `description` when empty
+  cover       text,                                -- Unsplash id or full URL
+  gallery     text[] default '{}',
+  project_id  uuid references public.projects(id) on delete set null,
+  city_id     uuid references public.cities(id) on delete set null,
+  lat         double precision,
+  lng         double precision,
+  sort_order  int default 0,
+  published   boolean default true,
+  created_at  timestamptz default now(),
+  updated_at  timestamptz default now()
+);
+create index if not exists idx_units_project_id on public.units(project_id);
+create index if not exists idx_units_city_id    on public.units(city_id);
+
 -- Testimonials
 create table if not exists public.testimonials (
   id          uuid primary key default gen_random_uuid(),
@@ -265,7 +297,7 @@ create table if not exists public.content_blocks (
 do $$
 declare t text;
 begin
-  foreach t in array array['projects','cities','categories','testimonials','developers','blog_posts','content_blocks']
+  foreach t in array array['projects','cities','categories','testimonials','developers','blog_posts','units','content_blocks']
   loop
     execute format(
       'drop trigger if exists trg_touch_%1$s on public.%1$s;
@@ -286,7 +318,7 @@ end $$;
 do $$
 declare t text;
 begin
-  foreach t in array array['projects','cities','categories','testimonials','developers','blog_posts']
+  foreach t in array array['projects','cities','categories','testimonials','developers','blog_posts','units']
   loop
     execute format('alter table public.%I enable row level security;', t);
 
@@ -322,6 +354,10 @@ create policy "admin write" on public.categories
 drop policy if exists "admin write" on public.blog_posts;
 create policy "admin write" on public.blog_posts
   for all using (public.has_page('posts')) with check (public.has_page('posts'));
+
+drop policy if exists "admin write" on public.units;
+create policy "admin write" on public.units
+  for all using (public.has_page('units')) with check (public.has_page('units'));
 
 -- content_blocks: world-readable, admin-writable (page key "content")
 alter table public.content_blocks enable row level security;
@@ -435,7 +471,7 @@ create policy "admin delete subscribers" on public.newsletter_subscribers
 do $$
 declare t text;
 begin
-  foreach t in array array['content_blocks','projects','cities','categories','testimonials','developers','blog_posts','inquiries','newsletter_subscribers']
+  foreach t in array array['content_blocks','projects','cities','categories','testimonials','developers','blog_posts','units','inquiries','newsletter_subscribers']
   loop
     begin
       execute format('alter publication supabase_realtime add table public.%I;', t);

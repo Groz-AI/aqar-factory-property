@@ -76,7 +76,7 @@
 
   let started = false;
   let answers = { category: null, unitType: null, city: '', budget: null };
-  let dataset = { projects: [], cities: [], companyName: '' };
+  let dataset = { projects: [], units: [], cities: [], companyName: '' };
   let chatHistory = []; // { role: 'user'|'model', text } — free-text AI conversation memory
 
   // ---------- keep the fab clear of the hero search bar at any viewport size ----------
@@ -182,12 +182,14 @@
     const S = window.store;
     if (!S) return;
     try {
-      const [projects, cities, content] = await Promise.all([
+      const [projects, units, cities, content] = await Promise.all([
         S.getProjects ? S.getProjects() : [],
+        S.getUnits ? S.getUnits() : [],
         S.getCities ? S.getCities() : [],
         S.getContent ? S.getContent() : {}
       ]);
       dataset.projects = projects || [];
+      dataset.units = units || [];
       dataset.cities = cities || [];
       dataset.companyName = (content && content.company && content.company.name) || '';
     } catch (_) { /* keep empty dataset, matching just falls back gracefully */ }
@@ -197,7 +199,9 @@
     return [...new Set(dataset.projects.map(p => p.category).filter(Boolean))];
   }
   function projectUnitTypes() {
-    return [...new Set(dataset.projects.flatMap(p => p.unitTypes || []).filter(Boolean))];
+    const fromProjects = dataset.projects.flatMap(p => p.unitTypes || []);
+    const fromUnits = dataset.units.map(u => u.type);
+    return [...new Set(fromProjects.concat(fromUnits).filter(Boolean))];
   }
 
   // ---------- free-text chat with the real AI (via /api/ai-chat) ----------
@@ -208,11 +212,18 @@
       about: (p.about && p.about[0]) || ''
     }));
   }
+  function slimUnits() {
+    return dataset.units.slice(0, 30).map(u => ({
+      name: u.name, type: u.type, price: u.price, location: u.location,
+      beds: u.beds, baths: u.baths, area: u.area,
+      description: (u.description || '').slice(0, 200)
+    }));
+  }
 
   async function sendFreeText(message) {
     addMessage(message, 'user');
     chatHistory.push({ role: 'user', text: message });
-    if (!dataset.projects.length) await loadData();
+    if (!dataset.projects.length && !dataset.units.length) await loadData();
 
     const typing = showTyping();
     let reply = t("Sorry, I'm having trouble connecting right now. Please try again shortly.");
@@ -228,7 +239,8 @@
             cities: dataset.cities.map(c => c.name),
             categories: projectCategories(),
             unitTypes: projectUnitTypes(),
-            projects: slimProjects()
+            projects: slimProjects(),
+            units: slimUnits()
           }
         })
       });
@@ -241,8 +253,10 @@
     chatHistory.push({ role: 'model', text: reply });
     body.scrollTop = body.scrollHeight;
 
-    // if the AI named an exact project, surface it as a clickable match card too
-    const named = dataset.projects.filter(p => p.name && reply.includes(p.name));
+    // if the AI named an exact project or unit, surface it as a clickable match card too
+    const namedProjects = dataset.projects.filter(p => p.name && reply.includes(p.name)).map(p => Object.assign({ _kind: 'project' }, p));
+    const namedUnits = dataset.units.filter(u => u.name && reply.includes(u.name)).map(u => Object.assign({ _kind: 'unit' }, u));
+    const named = namedProjects.concat(namedUnits);
     if (named.length) renderMatchCards(named.slice(0, 3));
   }
 
@@ -327,16 +341,17 @@
     const wrap = document.createElement('div');
     wrap.style.cssText = 'display:flex;flex-direction:column;gap:8px;align-self:stretch';
     list.forEach(p => {
-      const stats = p.stats || {};
+      const isUnit = p._kind === 'unit';
+      const price = isUnit ? p.price : ((p.stats && p.stats.price) || '');
       const card = document.createElement('a');
-      card.href = `project.html?id=${encodeURIComponent(p.id)}`;
+      card.href = `${isUnit ? 'unit.html' : 'project.html'}?id=${encodeURIComponent(p.id)}`;
       card.className = 'ai-match';
       card.innerHTML = `
         <img src="${IMG(p.cover, 160)}" alt="" loading="lazy">
         <div class="ai-match-body">
           <h4>${p.name || ''}</h4>
           <p>${p.location || p.city || ''}</p>
-          <b>${stats.price || ''}</b>
+          <b>${price || ''}</b>
         </div>`;
       card.addEventListener('click', closePanel);
       wrap.appendChild(card);

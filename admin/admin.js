@@ -188,6 +188,47 @@
         { key: 'published', label: t('Published'), type: 'bool', half: true }
       ]
     },
+    units: {
+      label: t('Units'), singular: t('Unit'), table: 'units', icon: 'home',
+      columns: [
+        { key: 'cover', label: '', type: 'thumb' },
+        { key: 'name', label: t('Name'), type: 'name', sub: 'location' },
+        { key: 'type', label: t('Type') },
+        { key: 'price', label: t('Price') },
+        { key: 'badge', label: t('Badge') },
+        { key: 'published', label: t('Status'), type: 'pill' }
+      ],
+      fields: [
+        { key: 'name', label: t('Name'), type: 'text', required: true, half: true },
+        { key: 'name_ar', label: t('Name (Arabic)'), type: 'text', half: true, hint: t('Shown when the site is set to Arabic — leave empty to fall back to the English name above.') },
+        { key: 'slug', label: t('Slug (URL id)'), type: 'text', required: true, half: true, hint: t('lowercase, dashes — e.g. marina-sky-villa') },
+        { key: 'type', label: t('Unit type'), type: 'select', options: ['Villa', 'Apartment', 'Duplex', 'Townhouse', 'Studio', 'Office', 'Retail'], half: true },
+        { key: 'badge', label: t('Badge'), type: 'select', options: ['For Sale', 'New Listing', 'Exclusive'], half: true },
+        {
+          key: 'project_id', label: t('Linked project (optional)'), type: 'select', half: true,
+          options: [{ value: '', label: t('— No linked project —') }],
+          hint: t('This unit\'s page links back to the project, and it counts toward the project\'s city.')
+        },
+        {
+          key: 'city_id', label: t('City (optional)'), type: 'select', half: true,
+          options: [{ value: '', label: t('— No linked city —') }],
+          hint: t('Only used when there\'s no linked project above. Powers the homepage "By Cities" unit counts.')
+        },
+        { key: 'location', label: t('Location / address'), type: 'text' },
+        { key: 'price', label: t('Price (display)'), type: 'text', half: true, hint: t('e.g. EGP 3.2M') },
+        { key: 'price_value', label: t('Price value (number)'), type: 'number', half: true },
+        { key: 'beds', label: t('Bedrooms'), type: 'number', half: true },
+        { key: 'baths', label: t('Bathrooms'), type: 'number', half: true },
+        { key: 'area', label: t('Area (display)'), type: 'text', half: true, hint: t('e.g. 185 m²') },
+        { key: 'area_value', label: t('Area value (number)'), type: 'number', half: true },
+        { key: 'cover', label: t('Cover image'), type: 'image' },
+        { key: 'gallery', label: t('Gallery'), type: 'gallery' },
+        { key: 'description', label: t('Description'), type: 'textarea' },
+        { key: 'description_ar', label: t('Description (Arabic)'), type: 'textarea', hint: t('Shown when the site is set to Arabic — leave empty to fall back to the English description above.') },
+        { key: 'sort_order', label: t('Sort order'), type: 'number', half: true },
+        { key: 'published', label: t('Published'), type: 'bool', half: true }
+      ]
+    },
     posts: {
       label: t('Blog'), singular: t('Post'), table: 'blog_posts', icon: 'post',
       columns: [
@@ -217,9 +258,9 @@
   // page keys assignable to a Staff admin — matches the RESOURCES keys /
   // go(view) names for every sidebar item except overview/settings/users,
   // which are never assignable (personal-account-only, or Owner-only).
-  const PAGE_KEYS = ['projects', 'cities', 'categories', 'testimonials', 'developers', 'posts', 'inquiries', 'newsletter', 'content'];
+  const PAGE_KEYS = ['projects', 'units', 'cities', 'categories', 'testimonials', 'developers', 'posts', 'inquiries', 'newsletter', 'content'];
   const PAGE_LABELS = () => ({
-    projects: t('Projects'), cities: t('Cities'), categories: t('Categories'), testimonials: t('Testimonials'),
+    projects: t('Projects'), units: t('Units'), cities: t('Cities'), categories: t('Categories'), testimonials: t('Testimonials'),
     developers: t('Developers'), posts: t('Blog'), inquiries: t('Inquiries'),
     newsletter: t('Newsletter'), content: t('Site content')
   });
@@ -439,6 +480,7 @@
       <div class="panel"><div class="panel-head"><b class="bricolage" style="font-size:1.05rem">${t('Quick actions')}</b></div>
         <div style="padding:20px;display:flex;gap:.7rem;flex-wrap:wrap">
           <button class="btn btn-sky btn-sm" data-jump="projects">${t('Manage projects')}</button>
+          <button class="btn btn-ghost btn-sm" data-jump="units">${t('Manage units')}</button>
           <button class="btn btn-ghost btn-sm" data-jump="content">${t('Edit site content')}</button>
           <button class="btn btn-ghost btn-sm" data-jump="cities">${t('Manage cities')}</button>
         </div></div>`;
@@ -532,9 +574,9 @@
     const body = $('#drawerBody');
     body.innerHTML = '';
 
-    // Projects link to a City, and pick a Category — populate both dropdowns
-    // from their live tables right before rendering the form.
-    if (view === 'projects') {
+    // Projects and Units both link to a City — populate that dropdown from
+    // the live table right before rendering the form.
+    if (view === 'projects' || view === 'units') {
       const { data } = await sb.from('cities').select('id,name').order('name', { ascending: true }).then(res => res, () => ({ data: [] }));
       dynamicCitiesList = data || [];
       const cityField = r.fields.find(f => f.key === 'city_id');
@@ -542,7 +584,9 @@
         cityField.options = [{ value: '', label: '— No linked city —' }]
           .concat(dynamicCitiesList.map(c => ({ value: c.id, label: c.name })));
       }
+    }
 
+    if (view === 'projects') {
       const { data: cats } = await sb.from('categories').select('name').eq('published', true)
         .order('sort_order', { ascending: true }).then(res => res, () => ({ data: [] }));
       const categoryField = r.fields.find(f => f.key === 'category');
@@ -550,6 +594,16 @@
       // saved value selected as an extra option, so a project whose category
       // was since renamed/unpublished/deleted doesn't silently reset on save
       if (categoryField) categoryField.options = (cats || []).map(c => c.name);
+    }
+
+    // Units can also link to a Project (which then supplies their city)
+    if (view === 'units') {
+      const { data: projs } = await sb.from('projects').select('id,name').order('name', { ascending: true }).then(res => res, () => ({ data: [] }));
+      const projectField = r.fields.find(f => f.key === 'project_id');
+      if (projectField) {
+        projectField.options = [{ value: '', label: '— No linked project —' }]
+          .concat((projs || []).map(p => ({ value: p.id, label: p.name })));
+      }
     }
 
     let buf = [];
@@ -577,10 +631,10 @@
     });
 
     // auto-fill the Slug from the Name as you type — only until the admin
-    // edits Slug themselves, and never for a project that already has one
-    // (an existing project's live URL shouldn't change just because the
+    // edits Slug themselves, and never for a row that already has one
+    // (an existing project/unit's live URL shouldn't change just because the
     // display name was tweaked).
-    if (view === 'projects') {
+    if (view === 'projects' || view === 'units') {
       const nameInput = $('#f_name'), slugInput = $('#f_slug');
       if (nameInput && slugInput) {
         let slugDirty = !!(row && row.slug);
@@ -1463,8 +1517,18 @@
   // ON DELETE SET NULL) — warn first so that unlinking isn't a silent surprise
   async function linkedChildrenWarning(view, id) {
     if (view === 'cities') {
-      const { count } = await sb.from('projects').select('id', { count: 'exact', head: true }).eq('city_id', id);
-      return count > 0 ? `\n\n${count} ${t('project(s) are linked to this city — they\'ll be kept, just unlinked from it.')}` : '';
+      const [{ count: projCount }, { count: unitCount }] = await Promise.all([
+        sb.from('projects').select('id', { count: 'exact', head: true }).eq('city_id', id),
+        sb.from('units').select('id', { count: 'exact', head: true }).eq('city_id', id)
+      ]);
+      const parts = [];
+      if (projCount > 0) parts.push(`${projCount} ${t('project(s)')}`);
+      if (unitCount > 0) parts.push(`${unitCount} ${t('unit(s)')}`);
+      return parts.length ? `\n\n${parts.join(', ')} ${t('are linked to this city — they\'ll be kept, just unlinked from it.')}` : '';
+    }
+    if (view === 'projects') {
+      const { count } = await sb.from('units').select('id', { count: 'exact', head: true }).eq('project_id', id);
+      return count > 0 ? `\n\n${count} ${t('unit(s) are linked to this project — they\'ll be kept, just unlinked from it.')}` : '';
     }
     return '';
   }
