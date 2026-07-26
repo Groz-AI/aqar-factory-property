@@ -366,17 +366,17 @@ em{font-style:normal}
    dataset (and destination page) the search targets */
 .search-kind{
   display:flex;gap:.3rem;width:max-content;margin:64px auto 0;padding:5px;
-  background:rgba(255,255,255,.5);backdrop-filter:blur(16px) saturate(1.6);
+  background:rgba(255,255,255,.86);backdrop-filter:blur(16px) saturate(1.6);
   -webkit-backdrop-filter:blur(16px) saturate(1.6);
   border:1px solid rgba(255,255,255,.6);border-radius:999px;
   box-shadow:0 12px 30px -18px rgba(15,55,90,.4);
 }
 .sk-btn{
   border:none;background:none;cursor:pointer;font-family:inherit;font-size:.86rem;font-weight:700;
-  padding:.6em 1.5em;border-radius:999px;color:var(--ink-soft);transition:.25s var(--ease);
+  padding:.6em 1.5em;border-radius:999px;color:var(--ink);opacity:.55;transition:.25s var(--ease);
 }
-.sk-btn:hover{color:var(--ink)}
-.sk-btn.active{background:var(--black);color:#fff}
+.sk-btn:hover{opacity:.85}
+.sk-btn.active{opacity:1;background:var(--black);color:#fff}
 
 /* per-card WhatsApp / Call quick-contact — overlaid on card images by
    default; `.inline` variant (detail-page sidebars) lays out as two
