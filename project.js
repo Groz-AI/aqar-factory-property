@@ -80,7 +80,7 @@ function populate() {
 
   const st = project.stats || {};
   const priceEl = document.getElementById('price');
-  if (st.price) { priceEl.innerHTML = `<small>${t('Starting from')}</small>${st.price}`; priceEl.hidden = false; }
+  if (st.price) { priceEl.innerHTML = `<small>${t('Starting from')}</small>${window.formatPrice ? window.formatPrice(st.price) : st.price}`; priceEl.hidden = false; }
   else { priceEl.hidden = true; }
 
   const sidebarContact = document.getElementById('sidebarContact');
@@ -194,7 +194,7 @@ function renderRelated() {
         <h3>${p.name}</h3>
         <p class="pcard-loc">${pinSVG}${p.location || ''}</p>
         <p class="pcard-tag">${p.tagline || ''}</p>
-        <div class="pcard-foot"><span class="pcard-price">${(p.stats || {}).price || ''}</span><span class="arrow">${arrowSVG}</span></div>
+        <div class="pcard-foot"><span class="pcard-price">${window.formatPrice ? window.formatPrice((p.stats || {}).price) : ((p.stats || {}).price || '')}</span><span class="arrow">${arrowSVG}</span></div>
       </div>
     </a>`;
   }).join('');

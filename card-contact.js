@@ -68,4 +68,16 @@
 
   window.cardContact = { markup, wire: paint };
   init();
+
+  // Admin-entered price strings sometimes come in as bare digits (e.g. a
+  // number pasted straight from another listing site) with no currency or
+  // thousands separators. Leave anything that already has letters/symbols
+  // (e.g. "$3.2M", "EGP 4.8K/mo") untouched — only reformat pure digit runs.
+  window.formatPrice = function (str) {
+    if (str == null) return '';
+    const s = String(str).trim();
+    if (!s) return '';
+    if (/^\d+$/.test(s)) return 'EGP ' + Number(s).toLocaleString('en-US');
+    return s;
+  };
 })();

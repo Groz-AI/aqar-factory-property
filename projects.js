@@ -81,7 +81,7 @@ function cardHTML(p){
       <p class="pcard-loc">${pinSVG}${p.location || ''}</p>
       <p class="pcard-tag">${p.tagline || ''}</p>
       <div class="pcard-foot">
-        <span class="pcard-price">${stats.price || ''}</span>
+        <span class="pcard-price">${window.formatPrice ? window.formatPrice(stats.price) : (stats.price || '')}</span>
         <span class="arrow">${arrowSVG}</span>
       </div>
     </div>

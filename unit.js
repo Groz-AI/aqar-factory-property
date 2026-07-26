@@ -69,7 +69,7 @@ function populate() {
     .split(/\n+/).filter(Boolean).map(p => `<p>${esc(p)}</p>`).join('') || `<p>${t('No description yet.')}</p>`;
 
   const priceEl = document.getElementById('price');
-  if (unit.price) { priceEl.innerHTML = `<small>${t('Price')}</small>${unit.price}`; priceEl.hidden = false; }
+  if (unit.price) { priceEl.innerHTML = `<small>${t('Price')}</small>${window.formatPrice ? window.formatPrice(unit.price) : unit.price}`; priceEl.hidden = false; }
   else { priceEl.hidden = true; }
 
   const sidebarContact = document.getElementById('sidebarContact');
@@ -164,7 +164,7 @@ function renderRelated() {
       <div class="pcard-body">
         <h3>${u.name}</h3>
         <p class="pcard-loc">${pinSVG}${u.location || ''}</p>
-        <div class="pcard-foot"><span class="pcard-price">${u.price || ''}</span><span class="arrow">${arrowSVG}</span></div>
+        <div class="pcard-foot"><span class="pcard-price">${window.formatPrice ? window.formatPrice(u.price) : (u.price || '')}</span><span class="arrow">${arrowSVG}</span></div>
       </div>
     </a>`;
   }).join('');

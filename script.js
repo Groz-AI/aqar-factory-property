@@ -201,7 +201,7 @@ function unitCardHTML(u) {
       <span class="project-tag">${u.type ? t(u.type) : ''}</span>
       <h3>${u.name}</h3>
       <p>${specs.join(' · ')}</p>
-      <div class="project-foot"><span>${u.location || ''}</span><span>${u.price || ''}</span></div>
+      <div class="project-foot"><span>${u.location || ''}</span><span>${window.formatPrice ? window.formatPrice(u.price) : (u.price || '')}</span></div>
     </div>
   </a>`;
 }

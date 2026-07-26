@@ -75,7 +75,7 @@ function cardHTML(u) {
       <p class="pcard-loc">${pinSVG}${u.location || ''}</p>
       <p class="pcard-tag">${[u.beds ? `${u.beds} ${t('Beds')}` : '', u.baths ? `${u.baths} ${t('Baths')}` : '', u.area || ''].filter(Boolean).join(' · ')}</p>
       <div class="pcard-foot">
-        <span class="pcard-price">${u.price || ''}</span>
+        <span class="pcard-price">${window.formatPrice ? window.formatPrice(u.price) : (u.price || '')}</span>
         <span class="arrow">${arrowSVG}</span>
       </div>
     </div>
