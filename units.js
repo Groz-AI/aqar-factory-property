@@ -68,7 +68,7 @@ function cardHTML(u) {
       ${slides}<div class="pg-shade"></div>
       ${u.badge ? `<span class="pcard-status for-sale"><i></i>${t(u.badge)}</span>` : ''}
       <span class="pcard-cat">${u.type ? t(u.type) : ''}</span>
-      ${dots}
+      ${dots}${window.cardContact ? window.cardContact.markup(u.name) : ''}
     </div>
     <div class="pcard-body">
       <h3>${u.name || ''}</h3>
@@ -111,6 +111,7 @@ function render() {
   resetBtn.hidden = !(state.type !== 'all' || state.city !== 'all' || state.q || state.sort !== 'featured');
   searchClear.hidden = !state.q;
   cycleGalleries('#unitsGrid', '.pcard', 4000);
+  if (window.cardContact) window.cardContact.wire(grid);
 }
 
 /* ---------- events ---------- */

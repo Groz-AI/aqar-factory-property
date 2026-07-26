@@ -74,7 +74,7 @@ function cardHTML(p){
       <span class="pcard-status ${statusClass(p.status)}"><i></i>${p.status || ''}</span>
       <span class="pcard-cat">${p.category ? t(p.category) : ''}</span>
       ${devLogo}
-      ${dots}
+      ${dots}${window.cardContact ? window.cardContact.markup(p.name) : ''}
     </div>
     <div class="pcard-body">
       <h3>${p.name || ''}</h3>
@@ -119,6 +119,7 @@ function render(){
   resetBtn.hidden = !(state.cat !== 'all' || state.city !== 'all' || state.q || state.sort !== 'featured');
   searchClear.hidden = !state.q;
   cycleGalleries('#projectsGrid', '.pcard', 4000);
+  if (window.cardContact) window.cardContact.wire(grid);
 }
 
 /* ---------- events ---------- */

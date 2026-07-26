@@ -83,6 +83,12 @@ function populate() {
   if (st.price) { priceEl.innerHTML = `<small>${t('Starting from')}</small>${st.price}`; priceEl.hidden = false; }
   else { priceEl.hidden = true; }
 
+  const sidebarContact = document.getElementById('sidebarContact');
+  if (sidebarContact && window.cardContact) {
+    sidebarContact.innerHTML = window.cardContact.markup(project.name, { inline: true });
+    window.cardContact.wire(sidebarContact);
+  }
+
   const facts = [
     ['Status', project.status],
     ['Handover', st.handover],
@@ -182,7 +188,7 @@ function renderRelated() {
         <span class="pcard-status ${statusClass(p.status)}"><i></i>${p.status || ''}</span>
         <span class="pcard-cat">${p.category ? t(p.category) : ''}</span>
         ${devLogo}
-        ${dots}
+        ${dots}${window.cardContact ? window.cardContact.markup(p.name) : ''}
       </div>
       <div class="pcard-body">
         <h3>${p.name}</h3>
@@ -193,6 +199,7 @@ function renderRelated() {
     </a>`;
   }).join('');
   cycleGalleries('#related', '.pcard', 4000);
+  if (window.cardContact) window.cardContact.wire(grid);
 }
 
 /* ---- nav ---- */

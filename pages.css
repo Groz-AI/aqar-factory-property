@@ -110,6 +110,11 @@
 .pcard-cat{position:absolute;bottom:14px;inset-inline-start:14px;background:var(--black);color:#fff;font-size:.72rem;font-weight:600;letter-spacing:.04em;padding:.45em .9em;border-radius:999px}
 .pcard-dev-logo{position:absolute;top:14px;inset-inline-end:14px;z-index:2;width:38px;height:38px;border-radius:10px;background:#fff;padding:5px;display:grid;place-items:center;box-shadow:0 4px 14px -4px rgba(12,22,32,.35)}
 .pcard-dev-logo img{width:100%;height:100%;object-fit:contain}
+/* .pcard-status already occupies the top-start corner, so the WhatsApp/Call
+   pair sits top-end here instead — offset further down when a dev logo (also
+   top-end) is present on the same card */
+.pcard-img .card-contact{top:14px;inset-inline-start:auto;inset-inline-end:14px}
+.pcard-img:has(.pcard-dev-logo) .card-contact{top:60px}
 .pcard-body{padding:22px 24px 24px;display:flex;flex-direction:column;flex:1}
 .pcard-body h3{font-family:"Bricolage Grotesque",sans-serif;font-size:1.3rem;font-weight:700;letter-spacing:-.01em}
 .pcard-loc{display:flex;align-items:center;gap:.4rem;color:var(--sky-deep);font-size:.86rem;margin:.45rem 0 .7rem}

@@ -72,6 +72,12 @@ function populate() {
   if (unit.price) { priceEl.innerHTML = `<small>${t('Price')}</small>${unit.price}`; priceEl.hidden = false; }
   else { priceEl.hidden = true; }
 
+  const sidebarContact = document.getElementById('sidebarContact');
+  if (sidebarContact && window.cardContact) {
+    sidebarContact.innerHTML = window.cardContact.markup(unit.name, { inline: true });
+    window.cardContact.wire(sidebarContact);
+  }
+
   const facts = [
     ['Type', unit.type ? t(unit.type) : ''],
     ['Bedrooms', unit.beds],
@@ -153,7 +159,7 @@ function renderRelated() {
       <div class="pcard-img" data-gallery>
         ${slides}<div class="pg-shade"></div>
         <span class="pcard-cat">${u.type ? t(u.type) : ''}</span>
-        ${dots}
+        ${dots}${window.cardContact ? window.cardContact.markup(u.name) : ''}
       </div>
       <div class="pcard-body">
         <h3>${u.name}</h3>
@@ -163,6 +169,7 @@ function renderRelated() {
     </a>`;
   }).join('');
   cycleGalleries('#related', '.pcard', 4000);
+  if (window.cardContact) window.cardContact.wire(grid);
 }
 
 /* ---- nav ---- */

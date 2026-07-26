@@ -319,10 +319,19 @@
     }));
   }
 
+  // tolerant match for unit-type labels: projects store these as free-text
+  // (often plural, e.g. "Apartments") while units use a fixed singular enum
+  // ("Apartment") — normalize case/whitespace/trailing "s" before comparing
+  function typesMatch(x, y) {
+    if (!x || !y) return false;
+    const norm = s => String(s).toLowerCase().trim().replace(/s$/, '');
+    return norm(x) === norm(y);
+  }
+
   function scoreProject(p, a) {
     let score = 0;
     if (a.category && a.category !== 'all') score += p.category === a.category ? 4 : 0;
-    if (a.unitType && a.unitType !== 'all') score += (p.unitTypes || []).includes(a.unitType) ? 4 : 0;
+    if (a.unitType && a.unitType !== 'all') score += (p.unitTypes || []).some(ut => typesMatch(ut, a.unitType)) ? 4 : 0;
     if (a.city) score += (p.city || p.location || '').toLowerCase().includes(a.city.toLowerCase()) ? 4 : 0;
     if (a.budget) {
       const price = parsePrice(p.stats && p.stats.price);
@@ -331,6 +340,22 @@
         const span = (a.budget.max === Infinity ? a.budget.min : a.budget.max - a.budget.min) || 1;
         const dist = price < a.budget.min ? a.budget.min - price : price - a.budget.max;
         if (dist / span < 0.25) score += 1; // close-enough consolation points
+      }
+    }
+    return score;
+  }
+
+  function scoreUnit(u, a) {
+    let score = 0;
+    if (a.unitType && a.unitType !== 'all') score += typesMatch(u.type, a.unitType) ? 4 : 0;
+    if (a.city) score += (u.location || '').toLowerCase().includes(a.city.toLowerCase()) ? 4 : 0;
+    if (a.budget) {
+      const price = parsePrice(u.price);
+      if (price >= a.budget.min && price < a.budget.max) score += 3;
+      else if (price > 0) {
+        const span = (a.budget.max === Infinity ? a.budget.min : a.budget.max - a.budget.min) || 1;
+        const dist = price < a.budget.min ? a.budget.min - price : price - a.budget.max;
+        if (dist / span < 0.25) score += 1;
       }
     }
     return score;
@@ -363,18 +388,20 @@
   async function showResults() {
     clearFoot();
     await botSay(t('Let me find your best matches…'), 700);
-    const scored = dataset.projects
-      .map(p => ({ p, s: scoreProject(p, answers) }))
-      .sort((a, b) => b.s - a.s || parsePrice(b.p.stats && b.p.stats.price) - parsePrice(a.p.stats && a.p.stats.price));
+    const priceOf = x => x._kind === 'unit' ? x.price : (x.stats && x.stats.price);
+    const scoredProjects = dataset.projects.map(p => ({ x: Object.assign({ _kind: 'project' }, p), s: scoreProject(p, answers) }));
+    const scoredUnits = dataset.units.map(u => ({ x: Object.assign({ _kind: 'unit' }, u), s: scoreUnit(u, answers) }));
+    const scored = scoredProjects.concat(scoredUnits)
+      .sort((a, b) => b.s - a.s || parsePrice(priceOf(b.x)) - parsePrice(priceOf(a.x)));
     const top = scored.slice(0, 3);
     const anyReal = top.some(x => x.s > 0);
 
     await botSay(anyReal
       ? t("Here's what I found for you ✨")
-      : t("I don't have an exact match for that combination, but here are some projects you might love:"), 550);
+      : t("I don't have an exact match for that combination, but here are some properties you might love:"), 550);
 
-    if (!top.length) addMessage(t('No projects are published yet — check back soon!'), 'bot');
-    else renderMatchCards(top.map(x => x.p));
+    if (!top.length) addMessage(t('No matches are published yet — check back soon!'), 'bot');
+    else renderMatchCards(top.map(x => x.x));
 
     setChips(
       [{ label: t('Start over'), value: 'restart' }, { label: t('Talk to an advisor'), value: 'advisor' }],

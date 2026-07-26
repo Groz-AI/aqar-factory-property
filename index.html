@@ -92,6 +92,10 @@
 
   <!-- Floating search bar -->
   <div class="container">
+    <div class="search-kind reveal" id="searchKind" role="tablist">
+      <button type="button" class="sk-btn active" data-kind="projects" role="tab" aria-selected="true" data-i18n>Projects</button>
+      <button type="button" class="sk-btn" data-kind="units" role="tab" aria-selected="false" data-i18n>Units</button>
+    </div>
     <form class="search-bar reveal" id="searchBar">
       <div class="search-field search-loc">
         <span class="sf-icon">
@@ -187,23 +191,23 @@
 <!-- ============ JOURNEY / STATS ============ -->
 <section class="section journey" id="journey">
   <div class="container">
-    <h2 class="display-head center reveal">Your Journey To The Perfect<br/>Home <em>Starts With Us</em></h2>
-    <p class="journey-lead center reveal">With a proven track record and in-depth market knowledge, we're here to make your real estate journey smooth and stress-free. Whether buying, selling, or investing, you can count on our team to deliver results with integrity.</p>
+    <h2 class="display-head center reveal" data-i18n-html="journey.heading">Your Journey To The Perfect<br/>Home <em>Starts With Us</em></h2>
+    <p class="journey-lead center reveal" data-i18n>With a proven track record and in-depth market knowledge, we're here to make your real estate journey smooth and stress-free. Whether buying, selling, or investing, you can count on our team to deliver results with integrity.</p>
 
     <div class="journey-card reveal">
       <div class="journey-photo" style="background-image:url('https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&w=1400&q=80')"></div>
       <div class="stats">
         <div class="stat">
           <span class="stat-num" data-count="1500" data-suffix="">0</span>
-          <p>Total properties sold, helping families find their dream homes for over a decade.</p>
+          <p data-i18n>Total properties sold, helping families find their dream homes for over a decade.</p>
         </div>
         <div class="stat">
           <span class="stat-num" data-count="30" data-suffix="+">0</span>
-          <p>Strong partnerships with local businesses to enhance and extend our services.</p>
+          <p data-i18n>Strong partnerships with local businesses to enhance and extend our services.</p>
         </div>
         <div class="stat">
           <span class="stat-num" data-count="98" data-suffix="%">0</span>
-          <p>Client satisfaction rate, reflecting our commitment to exceptional service.</p>
+          <p data-i18n>Client satisfaction rate, reflecting our commitment to exceptional service.</p>
         </div>
       </div>
     </div>
@@ -375,6 +379,7 @@
 <script src="fallback.js"></script>
 <script src="local-backend.js"></script>
 <script src="store.js"></script>
+<script src="card-contact.js"></script>
 <script src="branding.js"></script>
 <script src="newsletter.js"></script>
 <script src="script.js"></script>

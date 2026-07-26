@@ -362,9 +362,45 @@ em{font-style:normal}
   66%{background:var(--gold);box-shadow:0 0 8px 2px rgba(207,156,71,.6)}
 }
 
+/* Projects/Units toggle — sits above the search bar and switches which
+   dataset (and destination page) the search targets */
+.search-kind{
+  display:flex;gap:.3rem;width:max-content;margin:64px auto 0;padding:5px;
+  background:rgba(255,255,255,.5);backdrop-filter:blur(16px) saturate(1.6);
+  -webkit-backdrop-filter:blur(16px) saturate(1.6);
+  border:1px solid rgba(255,255,255,.6);border-radius:999px;
+  box-shadow:0 12px 30px -18px rgba(15,55,90,.4);
+}
+.sk-btn{
+  border:none;background:none;cursor:pointer;font-family:inherit;font-size:.86rem;font-weight:700;
+  padding:.6em 1.5em;border-radius:999px;color:var(--ink-soft);transition:.25s var(--ease);
+}
+.sk-btn:hover{color:var(--ink)}
+.sk-btn.active{background:var(--black);color:#fff}
+
+/* per-card WhatsApp / Call quick-contact — overlaid on card images by
+   default; `.inline` variant (detail-page sidebars) lays out as two
+   full, labeled buttons instead. See card-contact.js. */
+.card-contact{position:absolute;top:14px;inset-inline-start:14px;z-index:3;display:flex;gap:.4rem}
+.cc-btn{
+  width:36px;height:36px;border-radius:50%;border:none;cursor:pointer;color:#fff;
+  display:grid;place-items:center;box-shadow:0 4px 14px -4px rgba(12,22,32,.45);
+  transition:transform .25s var(--ease),box-shadow .25s;flex:none;
+}
+.cc-btn svg{width:18px;height:18px}
+.cc-wa{background:#25D366}
+.cc-call{background:var(--ink)}
+.cc-btn:hover{transform:translateY(-2px) scale(1.06);box-shadow:0 8px 20px -6px rgba(12,22,32,.5)}
+.card-contact.inline{position:static;gap:.7rem;margin:1rem 0}
+.card-contact.inline .cc-btn{
+  width:auto;height:auto;flex:1;border-radius:999px;padding:.75em 1.1em;gap:.5em;
+  display:flex;align-items:center;justify-content:center;font-family:inherit;font-size:.88rem;font-weight:700;
+}
+.card-contact.inline .cc-btn svg{width:16px;height:16px;flex:none}
+
 /* search bar — frosted glass panel */
 .search-bar{
-  position:relative;margin-top:64px;border-radius:999px;
+  position:relative;margin-top:16px;border-radius:999px;
   background:linear-gradient(180deg,rgba(255,255,255,.62),rgba(255,255,255,.42));
   backdrop-filter:blur(22px) saturate(1.6);
   -webkit-backdrop-filter:blur(22px) saturate(1.6);
@@ -440,6 +476,19 @@ em{font-style:normal}
 .view-all{display:inline-flex;align-items:center;gap:.5rem;margin-top:1.1rem;font-weight:600;color:var(--ink);font-size:.95rem;transition:gap .3s var(--ease),color .25s}
 .view-all svg{width:18px;height:18px}
 .view-all:hover{color:var(--sky);gap:.85rem}
+
+/* filter chips — shared with pages.css's .filter-toolbar (subpages); the
+   homepage doesn't load pages.css, so the Units section chips need this
+   here too or they render unstyled (buttons glued together) */
+.cat-chips{display:flex;gap:.6rem;overflow-x:auto;scrollbar-width:none;padding:3px}
+.cat-chips::-webkit-scrollbar{display:none}
+.cat-chips .chip{
+  flex:none;border:1px solid rgba(12,22,32,.16);background:#fff;color:var(--ink);
+  padding:.55em 1.2em;border-radius:999px;font-family:inherit;font-size:.86rem;font-weight:600;
+  cursor:pointer;transition:.25s var(--ease);white-space:nowrap;box-shadow:var(--shadow-sm);
+}
+.cat-chips .chip:hover{border-color:var(--ink);color:var(--ink);transform:translateY(-1px)}
+.cat-chips .chip.active{background:var(--black);color:#fff;border-color:var(--black)}
 
 /* ============================================================
    BY CITIES

@@ -215,7 +215,7 @@
           hint: t('Only used when there\'s no linked project above. Powers the homepage "By Cities" unit counts.')
         },
         { key: 'location', label: t('Location / address'), type: 'text' },
-        { key: 'price', label: t('Price (display)'), type: 'text', half: true, hint: t('e.g. EGP 3.2M') },
+        { key: 'price', label: t('Price (display)'), type: 'text', half: true, hint: t('e.g. EGP 3,200,000') },
         { key: 'price_value', label: t('Price value (number)'), type: 'number', half: true },
         { key: 'beds', label: t('Bedrooms'), type: 'number', half: true },
         { key: 'baths', label: t('Bathrooms'), type: 'number', half: true },

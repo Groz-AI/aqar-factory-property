@@ -118,18 +118,43 @@ function initCustomSelect(root) {
   };
 }
 
-/* ---------- hero search bar (location + project category → projects.html) ---------- */
-let searchCitySelect, searchTypeSelect;
-function renderSearchFacets(cities, projects) {
+/* ---------- hero search bar (location + type → projects.html or units.html,
+   picked via the Projects/Units toggle) ---------- */
+let searchCitySelect, searchTypeSelect, searchKind = 'projects';
+let searchProjectCats = [], searchUnitTypes = [];
+
+function applySearchTypeOptions() {
+  if (!searchTypeSelect) return;
+  const opts = searchKind === 'units' ? searchUnitTypes : searchProjectCats;
+  const allLabel = searchKind === 'units' ? t('All unit types') : t('All project types');
+  searchTypeSelect.setOptions([{ value: 'all', label: allLabel }].concat(opts.map(c => ({ value: c, label: t(c) }))));
+}
+
+function renderSearchFacets(cities, projects, units) {
   searchCitySelect = searchCitySelect || initCustomSelect(document.getElementById('searchCity'));
   searchTypeSelect = searchTypeSelect || initCustomSelect(document.getElementById('searchType'));
   if (searchCitySelect && cities && cities.length) {
     searchCitySelect.setOptions([{ value: '', label: t('All locations') }].concat(cities.map(c => ({ value: c.name, label: c.name }))));
   }
-  if (searchTypeSelect && projects && projects.length) {
-    const cats = [...new Set(projects.map(p => p.category).filter(Boolean))];
-    searchTypeSelect.setOptions([{ value: 'all', label: t('All project types') }].concat(cats.map(c => ({ value: c, label: t(c) }))));
-  }
+  searchProjectCats = [...new Set((projects || []).map(p => p.category).filter(Boolean))];
+  searchUnitTypes = [...new Set((units || []).map(u => u.type).filter(Boolean))];
+  applySearchTypeOptions();
+}
+
+function wireSearchKind() {
+  const wrap = document.getElementById('searchKind');
+  const goBtn = document.querySelector('.search-go');
+  if (!wrap) return;
+  wrap.addEventListener('click', e => {
+    const btn = e.target.closest('.sk-btn');
+    if (!btn || btn.classList.contains('active')) return;
+    wrap.querySelector('.active')?.classList.remove('active');
+    btn.classList.add('active');
+    wrap.querySelectorAll('.sk-btn').forEach(b => b.setAttribute('aria-selected', b === btn ? 'true' : 'false'));
+    searchKind = btn.dataset.kind;
+    applySearchTypeOptions();
+    if (goBtn) goBtn.textContent = t(searchKind === 'units' ? 'Find Units' : 'Find Projects');
+  });
 }
 
 function wireSearchForm() {
@@ -138,12 +163,16 @@ function wireSearchForm() {
   form.addEventListener('submit', e => {
     e.preventDefault();
     const city = searchCitySelect ? searchCitySelect.value : '';
-    const cat = searchTypeSelect ? searchTypeSelect.value : 'all';
+    const val = searchTypeSelect ? searchTypeSelect.value : 'all';
     const params = new URLSearchParams();
     if (city) params.set('city', city);
-    if (cat && cat !== 'all') params.set('cat', cat);
-    const qs = params.toString();
-    window.location.href = 'projects.html' + (qs ? '?' + qs : '');
+    if (searchKind === 'units') {
+      if (val && val !== 'all') params.set('type', val);
+      window.location.href = 'units.html' + (params.toString() ? '?' + params.toString() : '');
+    } else {
+      if (val && val !== 'all') params.set('cat', val);
+      window.location.href = 'projects.html' + (params.toString() ? '?' + params.toString() : '');
+    }
   });
 }
 
@@ -167,7 +196,7 @@ function unitCardHTML(u) {
   if (u.area) specs.push(u.area);
   return `
   <a class="project reveal" href="unit.html?id=${encodeURIComponent(u.id)}">
-    <div class="project-img" data-gallery>${slides}<div class="pg-shade"></div>${dots}</div>
+    <div class="project-img" data-gallery>${slides}<div class="pg-shade"></div>${dots}${window.cardContact ? window.cardContact.markup(u.name) : ''}</div>
     <div class="project-body">
       <span class="project-tag">${u.type ? t(u.type) : ''}</span>
       <h3>${u.name}</h3>
@@ -184,6 +213,7 @@ function renderUnits(filterType = 'all') {
   wrap.innerHTML = list.length ? list.map(unitCardHTML).join('')
     : `<p style="grid-column:1/-1;color:var(--ink-soft)">${t('No units published yet — check back soon!')}</p>`;
   cycleGalleries('#unitList', '.project', 3200);
+  if (window.cardContact) window.cardContact.wire(wrap);
 }
 
 function renderUnitChips() {
@@ -260,7 +290,7 @@ function renderProjects(projects) {
 
     return `
     <a class="project reveal" href="project.html?id=${encodeURIComponent(p.id)}">
-      <div class="project-img" data-gallery>${slides}<div class="pg-shade"></div>${dots}</div>
+      <div class="project-img" data-gallery>${slides}<div class="pg-shade"></div>${dots}${window.cardContact ? window.cardContact.markup(p.name) : ''}</div>
       <div class="project-body">
         <span class="project-tag">${p.category ? t(p.category) : ''}</span>
         <h3>${p.name}</h3>
@@ -272,6 +302,7 @@ function renderProjects(projects) {
     </a>`;
   }).join('');
   cycleGalleries('#projectList', '.project', 3200);
+  if (window.cardContact) window.cardContact.wire(wrap);
 }
 
 /* ============================================================
@@ -629,7 +660,7 @@ function wireReveals() {
     allProjects = projects || [];
     allUnits = units || [];
     applyContent(content);
-    renderSearchFacets(cities || [], allProjects);
+    renderSearchFacets(cities || [], allProjects, allUnits);
     initHeroTyping();
     renderUnitChips();
     renderUnits();
@@ -643,5 +674,6 @@ function wireReveals() {
   }
   initStarfields();
   wireSearchForm();
+  wireSearchKind();
   wireReveals();
 })();
