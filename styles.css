@@ -54,7 +54,10 @@ body{
 [dir="rtl"] .testi-card .tc-quote, [dir="rtl"] .city-meta h3,
 [dir="rtl"] .project-tag, [dir="rtl"] .card-desc,
 [dir="rtl"] .footer-brand > p, [dir="rtl"] .footer-bottom p:first-child,
-[dir="rtl"] .brand-name, [dir="rtl"] .project-dev b, [dir="rtl"] .pc-names{unicode-bidi:plaintext}
+[dir="rtl"] .brand-name, [dir="rtl"] .project-dev b, [dir="rtl"] .pc-names,
+[dir="rtl"] .pcard-price, [dir="rtl"] .pcard-loc, [dir="rtl"] #unitName,
+[dir="rtl"] #unitLoc, [dir="rtl"] #crumbName, [dir="rtl"] .plb-name,
+[dir="rtl"] .fact-card .price{unicode-bidi:plaintext}
 
 /* directional icons — mirror arrows/chevrons that point along the reading axis */
 [dir="rtl"] .view-all svg,

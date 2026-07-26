@@ -57,6 +57,13 @@
     "A look at the developments we've recently brought to life — each one designed, built and finished to an uncompromising standard.": 'نظرة على المشاريع التي أنجزناها مؤخرًا — كل منها مصمم ومبني ومجهز وفق أعلى المعايير دون تنازل.',
     'View all projects': 'عرض جميع المشاريع',
 
+    // ---------- home: units ----------
+    'Ready to move into': 'جاهزة للسكن الفوري',
+    'units.heading': 'استكشف <em>وحداتنا</em>',
+    'Individual homes and offices for sale — whether part of one of our developments or a standalone find.': 'منازل ومكاتب فردية للبيع — سواء كانت ضمن أحد مشاريعنا أو وحدة قائمة بذاتها.',
+    'View all units': 'عرض جميع الوحدات',
+    'No units published yet — check back soon!': 'لا توجد وحدات منشورة بعد — تحقق مرة أخرى قريبًا!',
+
     // ---------- home: developers ----------
     'Trusted partners': 'شركاء موثوقون',
     "We list and sell on behalf of the region's most respected developers. These are a few of the names that put their flagship projects in our hands.": 'نعرض ونبيع نيابة عن أبرز المطورين الموثوقين في المنطقة. هذه بعض الأسماء التي وثقت بنا في تسويق مشاريعها الرائدة.',
@@ -118,6 +125,41 @@
     'No projects match those filters': 'لا توجد مشاريع مطابقة لهذه الفلاتر',
     'Try a different search, category or city.': 'جرّب بحثًا أو فئة أو مدينة مختلفة.',
     'Clear filters': 'مسح الفلاتر',
+
+    // ---------- units listing page ----------
+    'Individual homes and offices for sale': 'منازل ومكاتب فردية للبيع',
+    'units.hero.title': '<em>وحداتنا</em>',
+    'Whether part of one of our developments or a standalone find — browse every unit currently for sale. Filter by type or city to find yours.': 'سواء كانت ضمن أحد مشاريعنا أو وحدة قائمة بذاتها — تصفح كل وحدة معروضة للبيع حاليًا. صفِّ حسب النوع أو المدينة لتجد وحدتك.',
+    'Search by name, type or location…': 'ابحث بالاسم أو النوع أو الموقع…',
+    'Search units': 'ابحث في الوحدات',
+    'Sort units': 'ترتيب الوحدات',
+    'Type': 'النوع',
+    'units': 'وحدات',
+    'No units match those filters': 'لا توجد وحدات مطابقة لهذه الفلاتر',
+    'Try a different search, type or city.': 'جرّب بحثًا أو نوعًا أو مدينة مختلفة.',
+
+    // ---------- unit detail page ----------
+    'About this unit': 'عن هذه الوحدة',
+    'unit.more': 'المزيد من <em>الوحدات</em>',
+    'Part of': 'جزء من',
+    'No description yet.': 'لا يوجد وصف بعد.',
+    'Unit not found': 'الوحدة غير موجودة',
+    'Price': 'السعر',
+    'Bedrooms': 'غرف النوم',
+    'Bathrooms': 'دورات المياه',
+    'Area': 'المساحة',
+    'Beds': 'غرف نوم',
+    'Baths': 'حمامات',
+
+    // ---------- unit type / badge values ----------
+    'Villa': 'فيلا',
+    'Apartment': 'شقة',
+    'Townhouse': 'تاون هاوس',
+    'Studio': 'استوديو',
+    'Duplex': 'دوبلكس',
+    'For Sale': 'للبيع',
+    'New Listing': 'عرض جديد',
+    'Exclusive': 'حصري',
 
     // ---------- blog pages ----------
     'Insight, guides and stories': 'رؤى وأدلة وقصص',
@@ -601,6 +643,23 @@
     'Image': 'الصورة',
     'Tile size': 'حجم البطاقة',
     'controls the tile size in the homepage “By Cities” grid': 'يتحكم في حجم البطاقة ضمن شبكة «حسب المدن» في الصفحة الرئيسية',
+    'Manage units': 'إدارة الوحدات',
+    'Unit': 'وحدة',
+    'Badge': 'الشارة',
+    'Unit type': 'نوع الوحدة',
+    'Name (Arabic)': 'الاسم (عربي)',
+    'Shown when the site is set to Arabic — leave empty to fall back to the English name above.': 'يظهر عندما يكون الموقع بالعربية — اتركه فارغًا لعرض الاسم الإنجليزي أعلاه بدلاً منه.',
+    'lowercase, dashes — e.g. marina-sky-villa': 'أحرف صغيرة وشرطات — مثال: marina-sky-villa',
+    '— No linked project —': '— لا يوجد مشروع مرتبط —',
+    "This unit's page links back to the project, and it counts toward the project's city.": 'تربط صفحة هذه الوحدة رجوعًا إلى المشروع، وتُحتسب ضمن مدينة المشروع.',
+    'Linked project (optional)': 'المشروع المرتبط (اختياري)',
+    'City (optional)': 'المدينة (اختياري)',
+    'Only used when there\'s no linked project above. Powers the homepage "By Cities" unit counts.': 'يُستخدم فقط عند عدم وجود مشروع مرتبط أعلاه. يُستخدم في حساب عدد الوحدات ضمن قسم "حسب المدن" في الصفحة الرئيسية.',
+    'e.g. 185 m²': 'مثال: 185 م²',
+    'Description': 'الوصف',
+    'Description (Arabic)': 'الوصف (عربي)',
+    'Shown when the site is set to Arabic — leave empty to fall back to the English description above.': 'يظهر عندما يكون الموقع بالعربية — اتركه فارغًا لعرض الوصف الإنجليزي أعلاه بدلاً منه.',
+
     'Testimonial': 'رأي عميل',
     'Quote': 'الاقتباس',
     'Rating': 'التقييم',
