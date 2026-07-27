@@ -171,6 +171,30 @@ update public.projects
  where (about_blocks is null or about_blocks = '[]'::jsonb)
    and about is not null and array_length(about, 1) > 0;
 
+alter table public.units add column if not exists description_blocks    jsonb default '[]'::jsonb; -- rich-content blocks (same editor as projects.about_blocks)
+alter table public.units add column if not exists description_blocks_ar jsonb default '[]'::jsonb; -- Arabic version; falls back to description_blocks when empty
+
+-- one-time backfill: turn each existing plain-text description into a single
+-- paragraph block, so units keep their content after switching the admin
+-- form over to the block editor (guarded the same way as about_blocks above)
+update public.units u
+   set description_blocks = (
+     select coalesce(jsonb_agg(jsonb_build_object('type', 'paragraph', 'text', trim(p))), '[]'::jsonb)
+     from regexp_split_to_table(u.description, '\n+') as p
+     where trim(p) <> ''
+   )
+ where (description_blocks is null or description_blocks = '[]'::jsonb)
+   and description is not null and length(trim(description)) > 0;
+
+update public.units u
+   set description_blocks_ar = (
+     select coalesce(jsonb_agg(jsonb_build_object('type', 'paragraph', 'text', trim(p))), '[]'::jsonb)
+     from regexp_split_to_table(u.description_ar, '\n+') as p
+     where trim(p) <> ''
+   )
+ where (description_blocks_ar is null or description_blocks_ar = '[]'::jsonb)
+   and description_ar is not null and length(trim(description_ar)) > 0;
+
 -- best-effort backfill: link existing rows to a city by matching their free text
 update public.projects pr
    set city_id = c.id
@@ -201,8 +225,10 @@ create table if not exists public.units (
   area        text,                                -- display string, e.g. "185 m²"
   area_value  numeric default 0,
   location    text,
-  description text,
-  description_ar text,                              -- Arabic description; falls back to `description` when empty
+  description text,                                 -- legacy plain text; superseded by description_blocks below
+  description_ar text,
+  description_blocks    jsonb default '[]'::jsonb,   -- rich-content blocks (same editor as projects.about_blocks)
+  description_blocks_ar jsonb default '[]'::jsonb,   -- Arabic version; falls back to description_blocks when empty
   cover       text,                                -- Unsplash id or full URL
   gallery     text[] default '{}',
   project_id  uuid references public.projects(id) on delete set null,

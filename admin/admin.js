@@ -223,8 +223,7 @@
         { key: 'area_value', label: t('Area value (number)'), type: 'number', half: true },
         { key: 'cover', label: t('Cover image'), type: 'image' },
         { key: 'gallery', label: t('Gallery'), type: 'gallery' },
-        { key: 'description', label: t('Description'), type: 'textarea' },
-        { key: 'description_ar', label: t('Description (Arabic)'), type: 'textarea', hint: t('Shown when the site is set to Arabic — leave empty to fall back to the English description above.') },
+        { key: 'description_blocks', arKey: 'description_blocks_ar', label: t('Description'), type: 'blocks-i18n', previewClass: 'rich-content', hint: t('Opens a full-screen editor — build the description from any mix of blocks, edit English and Arabic side by side, and preview exactly how it will look on the site.') },
         { key: 'sort_order', label: t('Sort order'), type: 'number', half: true },
         { key: 'published', label: t('Published'), type: 'bool', half: true }
       ]

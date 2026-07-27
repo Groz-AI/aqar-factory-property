@@ -6,12 +6,17 @@ const id = params.get('id');
 
 const pinSVG = `<svg viewBox="0 0 24 24" fill="none"><path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11Z" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="10" r="2.5" stroke="currentColor" stroke-width="1.6"/></svg>`;
 const arrowSVG = `<svg viewBox="0 0 24 24" fill="none"><path d="M7 17 17 7M9 7h8v8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 const isAr = () => !!(window.i18n && window.i18n.lang === 'ar');
 function pick(u, key, arKey) {
-  if (isAr() && u[arKey]) return u[arKey];
+  if (isAr()) {
+    const v = u[arKey];
+    if (Array.isArray(v) ? v.length : v) return v;
+  }
   return u[key];
+}
+function blocksToText(blocks) {
+  return (blocks || []).map(b => b && b.text).filter(Boolean).join(' ');
 }
 
 function unitImages(u) {
@@ -48,7 +53,8 @@ let unit = null;
 function populate() {
   document.title = `${unit.name} — Aqar Factory`;
   const metaDesc = document.querySelector('meta[name="description"]');
-  const desc = pick(unit, 'description', 'descriptionAr') || '';
+  const descBlocks = pick(unit, 'descriptionBlocks', 'descriptionBlocksAr');
+  const desc = blocksToText(descBlocks) || pick(unit, 'description', 'descriptionAr') || '';
   if (metaDesc && desc) metaDesc.setAttribute('content', desc.length > 160 ? desc.slice(0, 157) + '…' : desc);
 
   const heroImg = document.getElementById('heroImg');
@@ -64,9 +70,9 @@ function populate() {
     <span class="dbadge dark">${unit.type ? t(unit.type) : ''}</span>
     ${unit.badge ? `<span class="dbadge">${t(unit.badge)}</span>` : ''}`;
 
-  const descText = pick(unit, 'description', 'descriptionAr') || '';
-  document.getElementById('description').innerHTML = descText
-    .split(/\n+/).filter(Boolean).map(p => `<p>${esc(p)}</p>`).join('') || `<p>${t('No description yet.')}</p>`;
+  document.getElementById('description').innerHTML = (descBlocks && descBlocks.length)
+    ? window.renderBlocks(descBlocks)
+    : `<p>${t('No description yet.')}</p>`;
 
   const priceEl = document.getElementById('price');
   if (unit.price) { priceEl.innerHTML = `<small>${t('Price')}</small>${window.formatPrice ? window.formatPrice(unit.price) : unit.price}`; priceEl.hidden = false; }

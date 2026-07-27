@@ -53,6 +53,13 @@
       area: r.area, areaValue: Number(r.area_value) || 0,
       location: r.location,
       description: r.description || '', descriptionAr: r.description_ar || '',
+      // rich-content blocks for the description (same editor as projects.aboutBlocks);
+      // synthesize one paragraph block from the legacy plain text if a unit
+      // hasn't been opened in the block editor yet
+      descriptionBlocks: (Array.isArray(r.description_blocks) && r.description_blocks.length)
+        ? r.description_blocks
+        : (r.description || '').split(/\n+/).map(s => s.trim()).filter(Boolean).map(p => ({ type: 'paragraph', text: p })),
+      descriptionBlocksAr: Array.isArray(r.description_blocks_ar) ? r.description_blocks_ar : [],
       cover: r.cover, gallery: r.gallery || [],
       coords: [r.lat || 0, r.lng || 0]
     };
