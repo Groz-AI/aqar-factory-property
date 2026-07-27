@@ -656,7 +656,10 @@
     if (f.type === 'blocks-i18n') {
       return `<div class="field"><label>${esc(f.label)}</label>
         <div class="blocks-i18n-summary" id="${id}_summary">${esc(t('No content yet'))}</div>
-        <button type="button" class="btn btn-ghost btn-sm" id="${id}_openBtn">${esc(t('Open editor'))}</button>
+        <div class="blocks-i18n-actions">
+          <button type="button" class="btn btn-ghost btn-sm" id="${id}_openBtn">${esc(t('Open editor'))}</button>
+          <button type="button" class="btn btn-ghost btn-sm btn-danger-ghost" id="${id}_clearBtn">${esc(t('Delete content'))}</button>
+        </div>
         ${hint}</div>`;
     }
     if (f.type === 'bool') {
@@ -865,8 +868,30 @@
     previewClass = previewClass || 'rich-content';
 
     const openBtn = $('#' + id + '_openBtn');
+    const clearBtn = $('#' + id + '_clearBtn');
     const summaryEl = $('#' + id + '_summary');
     if (!openBtn) return;
+
+    // wipes this field's content (both languages) so the admin can start
+    // fresh — persists to the DB immediately (not just on the next Save)
+    // so the public site reflects it right away, exactly like a delete.
+    if (clearBtn) {
+      clearBtn.addEventListener('click', async () => {
+        const en = uploads[enKey].filter(hasBlockContent).length;
+        const ar = uploads[arKey].filter(hasBlockContent).length;
+        if (!en && !ar) { toast(t('There is no content to delete')); return; }
+        if (!confirm(t('Delete all content in this field? This can’t be undone.'))) return;
+        uploads[enKey] = [];
+        uploads[arKey] = [];
+        updateSummary();
+        if (editing && editing.id) {
+          const table = RESOURCES[editing.view].table;
+          const { error } = await sb.from(table).update({ [enKey]: [], [arKey]: [] }).eq('id', editing.id);
+          if (error) { toast(t('Could not delete content') + ': ' + error.message, 'err'); return; }
+        }
+        toast(t('Content deleted'));
+      });
+    }
 
     const TYPE_LABELS = {
       heading: t('Heading'), image: t('Image'), quote: t('Quote'), list: t('List'), video: t('Video'), paragraph: t('Paragraph'),

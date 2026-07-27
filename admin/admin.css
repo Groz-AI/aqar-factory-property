@@ -225,6 +225,9 @@ label.switch{position:relative;display:inline-flex;align-items:center;gap:.6rem;
    old drawer-embedded editor: a language tab (English/Arabic), a sidebar
    toolbox of block types, a live-editable canvas, and a real-CSS preview */
 .blocks-i18n-summary{font-size:.85rem;color:var(--ink-soft);margin:6px 0 10px}
+.blocks-i18n-actions{display:flex;gap:.6rem}
+.btn-danger-ghost{background:#fff;border:1px solid rgba(217,60,60,.35);color:var(--danger)}
+.btn-danger-ghost:hover{background:var(--danger);border-color:var(--danger);color:#fff}
 
 .bs-overlay{position:fixed;inset:0;background:rgba(8,12,18,.6);backdrop-filter:blur(2px);opacity:0;visibility:hidden;transition:.25s;z-index:90;display:grid;place-items:center;padding:18px}
 .bs-overlay.open{opacity:1;visibility:visible}

@@ -41,6 +41,20 @@
     'Find Projects': 'ابحث عن مشاريع',
     'Find Units': 'ابحث عن وحدات',
 
+    // ---------- home: unified smart search + advanced filters ----------
+    'Search projects, units, cities…': 'ابحث عن مشاريع أو وحدات أو مدن…',
+    'Advanced': 'بحث متقدم',
+    'Search properties': 'ابحث',
+    'Looking for': 'أبحث عن',
+    'Price range': 'النطاق السعري',
+    'Area (m²)': 'المساحة (م²)',
+    'Sort by': 'ترتيب حسب',
+    'Reset filters': 'إعادة تعيين الفلاتر',
+    'Any': 'أي عدد',
+    'result': 'نتيجة',
+    'results': 'نتائج',
+    'No projects or units match those filters': 'لا توجد مشاريع أو وحدات مطابقة لهذه الفلاتر',
+
     // ---------- home: cities ----------
     "Where you'll live": 'أين ستعيش',
     '1 Project': 'مشروع واحد',
@@ -255,6 +269,8 @@
     'Usually replies in minutes': 'عادة ما يتم الرد خلال دقائق',
 
     // ---------- header contact popup (WhatsApp / Call) ----------
+    'Get a Price Quote': 'احصل على عرض سعر',
+    "Choose how you'd like to reach us": 'اختر الطريقة التي تفضلها للتواصل معنا',
     'Contact us': 'تواصل معنا',
     'WhatsApp': 'واتساب',
     'Chat with us': 'تحدث معنا',
@@ -424,6 +440,11 @@
     'No image chosen': 'لم يتم اختيار صورة',
     'Alignment': 'المحاذاة',
     'Open editor': 'فتح المحرر',
+    'Delete content': 'حذف المحتوى',
+    'There is no content to delete': 'لا يوجد محتوى لحذفه',
+    'Delete all content in this field? This can’t be undone.': 'حذف كل محتوى هذا الحقل؟ لا يمكن التراجع عن هذا.',
+    'Could not delete content': 'تعذّر حذف المحتوى',
+    'Content deleted': 'تم حذف المحتوى',
     'No content yet': 'لا يوجد محتوى بعد',
     'blocks (English)': 'عنصر (إنجليزي)',
     'blocks (Arabic)': 'عنصر (عربي)',

@@ -118,63 +118,10 @@ function initCustomSelect(root) {
   };
 }
 
-/* ---------- hero search bar (location + type → projects.html or units.html,
-   picked via the Projects/Units toggle) ---------- */
-let searchCitySelect, searchTypeSelect, searchKind = 'projects';
-let searchProjectCats = [], searchUnitTypes = [];
-
-function applySearchTypeOptions() {
-  if (!searchTypeSelect) return;
-  const opts = searchKind === 'units' ? searchUnitTypes : searchProjectCats;
-  const allLabel = searchKind === 'units' ? t('All unit types') : t('All project types');
-  searchTypeSelect.setOptions([{ value: 'all', label: allLabel }].concat(opts.map(c => ({ value: c, label: t(c) }))));
-}
-
-function renderSearchFacets(cities, projects, units) {
-  searchCitySelect = searchCitySelect || initCustomSelect(document.getElementById('searchCity'));
-  searchTypeSelect = searchTypeSelect || initCustomSelect(document.getElementById('searchType'));
-  if (searchCitySelect && cities && cities.length) {
-    searchCitySelect.setOptions([{ value: '', label: t('All locations') }].concat(cities.map(c => ({ value: c.name, label: c.name }))));
-  }
-  searchProjectCats = [...new Set((projects || []).map(p => p.category).filter(Boolean))];
-  searchUnitTypes = [...new Set((units || []).map(u => u.type).filter(Boolean))];
-  applySearchTypeOptions();
-}
-
-function wireSearchKind() {
-  const wrap = document.getElementById('searchKind');
-  const goBtn = document.querySelector('.search-go');
-  if (!wrap) return;
-  wrap.addEventListener('click', e => {
-    const btn = e.target.closest('.sk-btn');
-    if (!btn || btn.classList.contains('active')) return;
-    wrap.querySelector('.active')?.classList.remove('active');
-    btn.classList.add('active');
-    wrap.querySelectorAll('.sk-btn').forEach(b => b.setAttribute('aria-selected', b === btn ? 'true' : 'false'));
-    searchKind = btn.dataset.kind;
-    applySearchTypeOptions();
-    if (goBtn) goBtn.textContent = t(searchKind === 'units' ? 'Find Units' : 'Find Projects');
-  });
-}
-
-function wireSearchForm() {
-  const form = document.getElementById('searchBar');
-  if (!form) return;
-  form.addEventListener('submit', e => {
-    e.preventDefault();
-    const city = searchCitySelect ? searchCitySelect.value : '';
-    const val = searchTypeSelect ? searchTypeSelect.value : 'all';
-    const params = new URLSearchParams();
-    if (city) params.set('city', city);
-    if (searchKind === 'units') {
-      if (val && val !== 'all') params.set('type', val);
-      window.location.href = 'units.html' + (params.toString() ? '?' + params.toString() : '');
-    } else {
-      if (val && val !== 'all') params.set('cat', val);
-      window.location.href = 'projects.html' + (params.toString() ? '?' + params.toString() : '');
-    }
-  });
-}
+/* ---------- hero search bar ----------
+   The bar itself (text search, city select, advanced filters, live mixed
+   results) is owned by smart-search.js — it searches Projects and Units
+   together instead of needing a Projects/Units tab first. */
 
 /* ============================================================
    UNITS (homepage teaser — individual for-sale homes/offices,
@@ -660,7 +607,7 @@ function wireReveals() {
     allProjects = projects || [];
     allUnits = units || [];
     applyContent(content);
-    renderSearchFacets(cities || [], allProjects, allUnits);
+    if (window.smartSearch) window.smartSearch.setData(cities || [], allProjects, allUnits);
     initHeroTyping();
     renderUnitChips();
     renderUnits();
@@ -673,7 +620,5 @@ function wireReveals() {
     console.error('Realteek: data load failed', e);
   }
   initStarfields();
-  wireSearchForm();
-  wireSearchKind();
   wireReveals();
 })();

@@ -99,60 +99,71 @@
     form.reset();
   });
 
-  // ---------- 2-option contact popup (WhatsApp / Call) ----------
-  const popup = document.createElement('div');
-  popup.className = 'contact-popup';
-  popup.setAttribute('role', 'menu');
-  document.body.appendChild(popup);
+  // ---------- large centered contact modal (WhatsApp / Call) ----------
+  const arrowSVG = `<svg viewBox="0 0 24 24" fill="none"><path d="M7 17 17 7M9 7h8v8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 
-  function paintPopup() {
+  const cmodal = document.createElement('div');
+  cmodal.className = 'contact-modal';
+  cmodal.id = 'contactModal';
+  cmodal.setAttribute('role', 'dialog');
+  cmodal.setAttribute('aria-modal', 'true');
+  cmodal.innerHTML = `
+    <div class="contact-modal-backdrop" id="contactModalBackdrop"></div>
+    <div class="contact-modal-card">
+      <button type="button" class="contact-modal-close" id="contactModalClose" aria-label="${t('Close')}">${closeSVG}</button>
+      <div class="contact-modal-head">
+        <b>${t('Get a Price Quote')}</b>
+        <small>${t('Choose how you\'d like to reach us')}</small>
+      </div>
+      <div class="contact-modal-opts" id="contactModalOpts"></div>
+    </div>`;
+  document.body.appendChild(cmodal);
+
+  const cBackdrop = cmodal.querySelector('#contactModalBackdrop');
+  const cCloseBtn = cmodal.querySelector('#contactModalClose');
+  const cOpts = cmodal.querySelector('#contactModalOpts');
+
+  function paintModal() {
     let html = '';
     if (waNumber) {
-      html += `<button type="button" class="contact-popup-opt" id="contactWaOpt" role="menuitem">
-        <span class="contact-popup-ic wa" aria-hidden="true">${waIconSVG}</span>
+      html += `<button type="button" class="contact-modal-opt" id="contactWaOpt">
+        <span class="contact-modal-ic wa" aria-hidden="true">${waIconSVG}</span>
         <span><b>${t('WhatsApp')}</b><small>${t('Chat with us')}</small></span>
+        <span class="arrow" aria-hidden="true">${arrowSVG}</span>
       </button>`;
     }
     if (callNumber) {
-      html += `<button type="button" class="contact-popup-opt" id="contactCallOpt" role="menuitem">
-        <span class="contact-popup-ic call" aria-hidden="true">${phoneIconSVG}</span>
+      html += `<button type="button" class="contact-modal-opt" id="contactCallOpt">
+        <span class="contact-modal-ic call" aria-hidden="true">${phoneIconSVG}</span>
         <span><b>${t('Call us')}</b><small>${t('Speak to our team')}</small></span>
+        <span class="arrow" aria-hidden="true">${arrowSVG}</span>
       </button>`;
     }
-    popup.innerHTML = html;
-    const waOpt = popup.querySelector('#contactWaOpt');
-    if (waOpt) waOpt.addEventListener('click', () => { closePopup(); openWaModal(); });
-    const callOpt = popup.querySelector('#contactCallOpt');
-    if (callOpt) callOpt.addEventListener('click', () => { closePopup(); window.location.href = 'tel:' + callNumber; });
+    cOpts.innerHTML = html;
+    const waOpt = cOpts.querySelector('#contactWaOpt');
+    if (waOpt) waOpt.addEventListener('click', () => { closeModal(); openWaModal(); });
+    const callOpt = cOpts.querySelector('#contactCallOpt');
+    if (callOpt) callOpt.addEventListener('click', () => { closeModal(); window.location.href = 'tel:' + callNumber; });
   }
 
-  function positionPopup() {
-    const rect = btn.getBoundingClientRect();
-    const isRTL = document.documentElement.dir === 'rtl';
-    popup.style.top = (rect.bottom + 10) + 'px';
-    if (isRTL) { popup.style.left = rect.left + 'px'; popup.style.right = 'auto'; }
-    else { popup.style.right = (window.innerWidth - rect.right) + 'px'; popup.style.left = 'auto'; }
+  function openModal() {
+    cmodal.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeModal() {
+    cmodal.classList.remove('open');
+    document.body.style.overflow = '';
   }
 
-  function openPopup() {
-    positionPopup();
-    popup.classList.add('open');
-  }
-  function closePopup() { popup.classList.remove('open'); }
-
-  document.addEventListener('click', (e) => {
-    if (popup.classList.contains('open') && !popup.contains(e.target) && e.target !== btn && !btn.contains(e.target)) closePopup();
-  });
-  window.addEventListener('scroll', closePopup, { passive: true });
-  window.addEventListener('resize', closePopup);
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closePopup(); });
+  cBackdrop.addEventListener('click', closeModal);
+  cCloseBtn.addEventListener('click', closeModal);
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && cmodal.classList.contains('open')) closeModal(); });
 
   btn.addEventListener('click', () => {
-    // only one contact method configured — skip the popup, act directly
+    // only one contact method configured — skip the modal, act directly
     if (waNumber && !callNumber) { openWaModal(); return; }
     if (callNumber && !waNumber) { window.location.href = 'tel:' + callNumber; return; }
-    if (popup.classList.contains('open')) closePopup();
-    else openPopup();
+    openModal();
   });
 
   // resolve WhatsApp + call numbers from the editable company profile; the
@@ -163,7 +174,7 @@
       if (!c) return;
       waNumber = String(c.phoneSecondary || c.phone || '').replace(/\D/g, '');
       callNumber = String(c.phone || c.phoneSecondary || '').replace(/[^\d+]/g, '');
-      if (waNumber || callNumber) { btn.style.display = ''; paintPopup(); }
+      if (waNumber || callNumber) { btn.style.display = ''; paintModal(); }
     } catch (_) { /* keep hidden on failure */ }
   })();
 })();
