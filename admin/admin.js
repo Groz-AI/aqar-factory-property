@@ -267,7 +267,7 @@
   // ============================================================
   // STATE
   // ============================================================
-  const state = { view: 'overview', user: null, cache: {}, query: '', currentAdmin: { role: 'staff', permissions: [], active: true } };
+  const state = { view: 'overview', user: null, cache: {}, query: '', currentAdmin: { role: 'staff', permissions: [], active: true, can_edit: false } };
 
   // ============================================================
   // AUTH GUARD
@@ -292,12 +292,12 @@
     // existing page keeps working, and hide the Users page (see go()/
     // applyPermissionVisibility() — nothing meaningful to manage there).
     if (localMode) {
-      state.currentAdmin = { role: 'owner', permissions: PAGE_KEYS.slice(), active: true };
+      state.currentAdmin = { role: 'owner', permissions: PAGE_KEYS.slice(), active: true, can_edit: true };
     } else {
       try {
-        const { data: me } = await sb.from('admins').select('role,permissions,active')
+        const { data: me } = await sb.from('admins').select('role,permissions,active,can_edit')
           .eq('user_id', session.user.id).single();
-        if (me) state.currentAdmin = { role: me.role, permissions: me.permissions || [], active: me.active };
+        if (me) state.currentAdmin = { role: me.role, permissions: me.permissions || [], active: me.active, can_edit: !!me.can_edit };
       } catch (_) { /* schema not migrated to RBAC yet, or a transient error — keep the safe staff-with-no-pages default */ }
     }
 
@@ -344,6 +344,14 @@
     if (view === 'overview' || view === 'settings') return true;
     if (view === 'users') return state.currentAdmin.role === 'owner' && !localMode;
     return state.currentAdmin.role === 'owner' || state.currentAdmin.permissions.includes(view);
+  }
+
+  // staff always get CREATE on pages they're granted; UPDATE/DELETE of
+  // existing rows additionally needs the can_edit flag an Owner grants on
+  // the Users page (see can_edit_content() in schema.sql — this mirrors it
+  // client-side purely for UX, hiding buttons the RLS would reject anyway).
+  function canEditContent() {
+    return state.currentAdmin.role === 'owner' || !!state.currentAdmin.can_edit;
   }
 
   // hides sidebar buttons the current admin can't reach — a UX nicety, not
@@ -519,13 +527,15 @@
       $('#tblWrap').innerHTML = `<div class="empty-row">${t('No')} ${r.label.toLowerCase()} ${t('yet. Click')} “${t('Add')} ${r.singular.toLowerCase()}” ${t('to create one.')}</div>`;
       return;
     }
+    const canEdit = canEditContent();
     const head = r.columns.map(c => `<th>${esc(c.label)}</th>`).join('') + '<th></th>';
     const body = rows.map(row => {
       const cells = r.columns.map(c => `<td>${cell(c, row)}</td>`).join('');
-      return `<tr>${cells}<td><div class="row-actions">
-        <button class="icon-btn" data-edit="${row.id}" title="${esc(t('Edit'))}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>
-        <button class="icon-btn del" data-del="${row.id}" title="${esc(t('Delete'))}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>
-      </div></td></tr>`;
+      const actions = canEdit
+        ? `<button class="icon-btn" data-edit="${row.id}" title="${esc(t('Edit'))}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>
+        <button class="icon-btn del" data-del="${row.id}" title="${esc(t('Delete'))}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>`
+        : `<span class="field-hint" style="margin:0">${esc(t('View only — ask an Owner for edit access'))}</span>`;
+      return `<tr>${cells}<td><div class="row-actions">${actions}</div></td></tr>`;
     }).join('');
     $('#tblWrap').innerHTML = `<table class="tbl"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;
 
@@ -1999,6 +2009,10 @@
 
       const editBtn = r.role === 'staff'
         ? `<button class="icon-btn" data-edit-perms="${r.user_id}" title="${esc(t('Edit permissions'))}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>` : '';
+      const editAccessBtn = r.role === 'staff'
+        ? `<button class="icon-btn" data-toggle-edit="${r.user_id}" title="${esc(r.can_edit ? t('Revoke edit access') : t('Grant edit access'))}">${r.can_edit
+          ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>'
+          : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>'}</button>` : '';
       const resetBtn = `<button class="icon-btn" data-reset="${r.user_id}" title="${esc(t('Reset password'))}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg></button>`;
       const toggleBtn = `<button class="icon-btn" data-toggle-active="${r.user_id}" title="${esc(r.active ? t('Deactivate') : t('Reactivate'))}">${r.active
         ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/></svg>'
@@ -2010,21 +2024,27 @@
       const deleteBtn = (!isMe && !isLastOwner)
         ? `<button class="icon-btn del" data-delete="${r.user_id}" title="${esc(t('Delete'))}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>` : '';
 
+      const editAccessCell = r.role === 'owner'
+        ? `<span style="color:var(--ink-soft)">${esc(t('All'))}</span>`
+        : `<span class="pill ${r.can_edit ? 'on' : ''}"><i></i>${r.can_edit ? esc(t('Can edit')) : esc(t('Create only'))}</span>`;
+
       return `<tr>
         <td><div class="name">${esc(r.email || '—')}</div>${isMe ? `<div style="color:var(--ink-soft);font-size:.8rem">${esc(t('You'))}</div>` : ''}</td>
         <td><span class="pill ${r.role === 'owner' ? 'on' : ''}"><i></i>${esc(roleLabel[r.role] || r.role)}</span></td>
         <td>${r.role === 'owner' ? `<span style="color:var(--ink-soft)">${esc(t('All pages'))}</span>` : perms}</td>
+        <td>${editAccessCell}</td>
         <td><span class="pill ${r.active ? 'on' : 'off'}"><i></i>${r.active ? esc(t('Active')) : esc(t('Deactivated'))}</span></td>
-        <td><div class="row-actions">${editBtn}${resetBtn}${toggleBtn}${promoteBtn}${demoteBtn}${deleteBtn}</div></td>
+        <td><div class="row-actions">${editBtn}${editAccessBtn}${resetBtn}${toggleBtn}${promoteBtn}${demoteBtn}${deleteBtn}</div></td>
       </tr>`;
     }).join('');
 
-    $('#usersWrap').innerHTML = `<table class="tbl"><thead><tr><th>${t('Email')}</th><th>${t('Role')}</th><th>${t('Pages')}</th><th>${t('Status')}</th><th></th></tr></thead><tbody>${body}</tbody></table>`;
+    $('#usersWrap').innerHTML = `<table class="tbl"><thead><tr><th>${t('Email')}</th><th>${t('Role')}</th><th>${t('Pages')}</th><th>${t('Edit access')}</th><th>${t('Status')}</th><th></th></tr></thead><tbody>${body}</tbody></table>`;
 
     const wrap = $('#usersWrap');
     $$('[data-edit-perms]', wrap).forEach(b => b.addEventListener('click', () => openUserForm(rows.find(x => x.user_id === b.dataset.editPerms))));
     $$('[data-reset]', wrap).forEach(b => b.addEventListener('click', () => resetUserPassword(b.dataset.reset)));
     $$('[data-toggle-active]', wrap).forEach(b => b.addEventListener('click', () => toggleUserActive(b.dataset.toggleActive, rows.find(x => x.user_id === b.dataset.toggleActive))));
+    $$('[data-toggle-edit]', wrap).forEach(b => b.addEventListener('click', () => toggleUserEdit(b.dataset.toggleEdit, rows.find(x => x.user_id === b.dataset.toggleEdit))));
     $$('[data-promote]', wrap).forEach(b => b.addEventListener('click', () => promoteUser(b.dataset.promote)));
     $$('[data-demote]', wrap).forEach(b => b.addEventListener('click', () => demoteUser(b.dataset.demote)));
     $$('[data-delete]', wrap).forEach(b => b.addEventListener('click', () => deleteUser(b.dataset.delete)));
@@ -2125,6 +2145,18 @@
     const { error } = await sb.from('admins').update({ active: next }).eq('user_id', userId);
     if (error) { toast(error.message, 'err'); return; }
     toast(next ? t('User reactivated') : t('User deactivated'));
+    renderUsers();
+  }
+
+  // grants/revokes UPDATE + DELETE on this user's granted pages (they keep
+  // CREATE either way — that's the staff default and isn't gated by this flag)
+  async function toggleUserEdit(userId, row) {
+    const next = !row.can_edit;
+    if (next && !confirm(t('Grant this user edit access? They will be able to update and delete existing content on any page they can access, not just create new items.'))) return;
+    if (!next && !confirm(t('Revoke edit access? They will only be able to create new items from now on, not change or delete existing ones.'))) return;
+    const { error } = await sb.from('admins').update({ can_edit: next }).eq('user_id', userId);
+    if (error) { toast(error.message, 'err'); return; }
+    toast(next ? t('Edit access granted') : t('Edit access revoked'));
     renderUsers();
   }
 

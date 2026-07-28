@@ -24,6 +24,11 @@ create table if not exists public.admins (
 alter table public.admins add column if not exists role        text not null default 'owner' check (role in ('owner','staff'));
 alter table public.admins add column if not exists permissions jsonb not null default '[]'::jsonb;
 alter table public.admins add column if not exists active      boolean not null default true;
+-- Staff get CREATE (adding new rows) on their granted pages by default; an
+-- Owner must separately grant `can_edit` before a staffer can also UPDATE or
+-- DELETE existing rows there. Owners are always unrestricted regardless of
+-- this flag.
+alter table public.admins add column if not exists can_edit    boolean not null default false;
 
 -- Is the current request made by an active admin (any role)?
 create or replace function public.is_admin()
@@ -49,6 +54,18 @@ language sql stable security definer set search_path = public as $$
   select exists (
     select 1 from public.admins
     where user_id = auth.uid() and active = true and (role = 'owner' or permissions ? page)
+  );
+$$;
+
+-- Can the current request's admin UPDATE or DELETE existing rows (as
+-- opposed to just creating new ones)? Owners always can; Staff need the
+-- `can_edit` flag granted explicitly (see Users page in the dashboard).
+create or replace function public.can_edit_content()
+returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (
+    select 1 from public.admins
+    where user_id = auth.uid() and active = true and (role = 'owner' or can_edit = true)
   );
 $$;
 
@@ -355,35 +372,31 @@ begin
   end loop;
 end $$;
 
--- per-page write policies — one explicit block per table (not a loop) since
--- the dashboard's page key for blog_posts is "posts", not the table name.
-drop policy if exists "admin write" on public.projects;
-create policy "admin write" on public.projects
-  for all using (public.has_page('projects')) with check (public.has_page('projects'));
-
-drop policy if exists "admin write" on public.cities;
-create policy "admin write" on public.cities
-  for all using (public.has_page('cities')) with check (public.has_page('cities'));
-
-drop policy if exists "admin write" on public.testimonials;
-create policy "admin write" on public.testimonials
-  for all using (public.has_page('testimonials')) with check (public.has_page('testimonials'));
-
-drop policy if exists "admin write" on public.developers;
-create policy "admin write" on public.developers
-  for all using (public.has_page('developers')) with check (public.has_page('developers'));
-
-drop policy if exists "admin write" on public.categories;
-create policy "admin write" on public.categories
-  for all using (public.has_page('categories')) with check (public.has_page('categories'));
-
-drop policy if exists "admin write" on public.blog_posts;
-create policy "admin write" on public.blog_posts
-  for all using (public.has_page('posts')) with check (public.has_page('posts'));
-
-drop policy if exists "admin write" on public.units;
-create policy "admin write" on public.units
-  for all using (public.has_page('units')) with check (public.has_page('units'));
+-- per-page write policies — a table/page-key pair per content table (the
+-- dashboard's page key for blog_posts is "posts", not the table name, hence
+-- the parallel arrays instead of deriving one from the other). Split into
+-- CREATE (insert — granted to any staffer with the page, by default) vs
+-- EDIT (update/delete — additionally requires can_edit_content(), which an
+-- Owner grants per staff account on the Users page).
+do $$
+declare
+  tables text[] := array['projects','cities','testimonials','developers','categories','blog_posts','units'];
+  pages  text[] := array['projects','cities','testimonials','developers','categories','posts','units'];
+  i int;
+begin
+  for i in 1..array_length(tables, 1) loop
+    execute format('drop policy if exists "admin write" on public.%I;', tables[i]);
+    execute format('drop policy if exists "admin create" on public.%I;', tables[i]);
+    execute format('drop policy if exists "admin edit" on public.%I;', tables[i]);
+    execute format('drop policy if exists "admin delete" on public.%I;', tables[i]);
+    execute format(
+      'create policy "admin create" on public.%I for insert with check (public.has_page(%L));', tables[i], pages[i]);
+    execute format(
+      'create policy "admin edit" on public.%I for update using (public.has_page(%L) and public.can_edit_content()) with check (public.has_page(%L) and public.can_edit_content());', tables[i], pages[i], pages[i]);
+    execute format(
+      'create policy "admin delete" on public.%I for delete using (public.has_page(%L) and public.can_edit_content());', tables[i], pages[i]);
+  end loop;
+end $$;
 
 -- content_blocks: world-readable, admin-writable (page key "content")
 alter table public.content_blocks enable row level security;
