@@ -54,6 +54,7 @@
     'result': 'نتيجة',
     'results': 'نتائج',
     'No projects or units match those filters': 'لا توجد مشاريع أو وحدات مطابقة لهذه الفلاتر',
+    'No exact matches — recommended for you': 'لا توجد نتائج مطابقة تمامًا — مقترحة لك',
 
     // ---------- home: cities ----------
     "Where you'll live": 'أين ستعيش',

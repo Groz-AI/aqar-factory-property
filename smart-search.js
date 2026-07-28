@@ -37,6 +37,7 @@
   let priceSlider = null;
   let areaSlider = null;
   let advOpen = false;
+  let hasSearched = false; // true once the visitor has actually searched — makes "Search" deterministic
 
   const state = { q: '', city: '', kind: 'all', type: 'all', beds: 'any', sort: 'featured', priceMin: 0, priceMax: 0, areaMin: 0, areaMax: 0 };
   let priceBounds = [0, 0];
@@ -221,15 +222,59 @@
     return n;
   }
 
+  // when the exact filters match nothing, rank every item by how close it
+  // comes instead of just saying "no results" — same idea as the AI
+  // matchmaker's scoring, so "no exact match" still surfaces useful picks
+  function scoreSimilar(it) {
+    let score = 0;
+    if (state.kind !== 'all') score += it._kind === state.kind ? 3 : 0;
+    if (state.type !== 'all') score += it.type === state.type ? 3 : 0;
+    if (state.city) score += it.city.toLowerCase().includes(state.city.toLowerCase()) ? 3 : 0;
+    if (state.beds !== 'any' && it._kind === 'unit') {
+      const need = state.beds === '4+' ? 4 : Number(state.beds);
+      const hit = state.beds === '4+' ? it.beds >= 4 : it.beds === need;
+      score += hit ? 2 : (it.beds > 0 ? 0.5 : 0);
+    }
+    const priceNarrowed = state.priceMin > priceBounds[0] || state.priceMax < priceBounds[1];
+    if (priceNarrowed && it.priceValue > 0) {
+      const mid = (state.priceMin + state.priceMax) / 2;
+      const span = (priceBounds[1] - priceBounds[0]) || 1;
+      score += Math.max(0, 2 - (Math.abs(it.priceValue - mid) / span) * 4);
+    }
+    const areaNarrowed = state.areaMin > areaBounds[0] || state.areaMax < areaBounds[1];
+    if (areaNarrowed && it.areaValue > 0) {
+      const mid = (state.areaMin + state.areaMax) / 2;
+      const span = (areaBounds[1] - areaBounds[0]) || 1;
+      score += Math.max(0, 2 - (Math.abs(it.areaValue - mid) / span) * 4);
+    }
+    const q = state.q.trim().toLowerCase();
+    if (q) {
+      const hay = `${it.name} ${it.city} ${it.type}`.toLowerCase();
+      if (hay.includes(q)) score += 4;
+      else if (q.split(/\s+/).some(w => w.length > 2 && hay.includes(w))) score += 1.5;
+    }
+    return score;
+  }
+
   function render() {
-    const active = activeFilterCount() > 0;
+    const active = hasSearched || activeFilterCount() > 0;
     resultsWrap.hidden = !active;
     if (!active) return;
     let list = sortList(getFiltered());
-    resultsCount.textContent = `${list.length} ${t(list.length === 1 ? 'result' : 'results')}`;
-    resultsGrid.innerHTML = list.length
-      ? list.slice(0, 24).map(cardHTML).join('')
-      : `<p class="smart-results-empty">${t('No projects or units match those filters')}</p>`;
+
+    if (list.length) {
+      resultsCount.textContent = `${list.length} ${t(list.length === 1 ? 'result' : 'results')}`;
+      resultsGrid.innerHTML = list.slice(0, 24).map(cardHTML).join('');
+    } else {
+      const recs = COMBINED.map(it => ({ it, s: scoreSimilar(it) }))
+        .sort((a, b) => b.s - a.s)
+        .slice(0, 6)
+        .map(x => x.it);
+      resultsCount.textContent = t('No exact matches — recommended for you');
+      resultsGrid.innerHTML = recs.length
+        ? recs.map(cardHTML).join('')
+        : `<p class="smart-results-empty">${t('No projects or units match those filters')}</p>`;
+    }
     if (window.cardContact) window.cardContact.wire(resultsGrid);
     if (typeof cycleGalleries === 'function') cycleGalleries('#smartResultsGrid', '.project', 3200);
   }
@@ -286,13 +331,14 @@
 
     resultsClear.addEventListener('click', () => {
       state.q = ''; searchInput.value = '';
+      hasSearched = false;
       advReset.click();
     });
 
     form.addEventListener('submit', e => {
       e.preventDefault();
       state.q = searchInput.value;
-      if (!advOpen && activeFilterCount() === 0) setAdvOpen(true);
+      hasSearched = true;
       render();
       resultsWrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
