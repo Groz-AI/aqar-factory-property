@@ -21,7 +21,7 @@
       id: r.slug || r.id,
       dbId: r.id,          // the real uuid primary key
       cityId: r.city_id || null,
-      name: r.name, category: r.category, unitTypes: r.unit_types || [], city: r.city, location: r.location,
+      name: r.name, nameAr: r.name_ar || '', category: r.category, unitTypes: r.unit_types || [], city: r.city, location: r.location,
       country: r.country, year: r.year, status: r.status, tagline: r.tagline, cover: r.cover,
       about: r.about || [],
       // rich-content blocks for the About section; if a project hasn't been

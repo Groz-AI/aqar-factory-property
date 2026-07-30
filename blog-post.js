@@ -58,8 +58,8 @@ function populate() {
   document.title = `${title} — Aqar Factory`;
   const metaDesc = document.querySelector('meta[name="description"]');
   if (metaDesc && excerpt) metaDesc.setAttribute('content', excerpt);
-  const canonical = document.getElementById('canonicalLink');
-  if (canonical) canonical.href = `https://www.aqar-factory.com/blog-post.html?slug=${encodeURIComponent(post.id)}`;
+  // canonical/hreflang are handled generically (and language-aware) by
+  // i18n.js's injectSeoLinks() — see the note in project.js's populate().
 
   document.getElementById('heroImg').style.backgroundImage = `url('${U(post.cover, 1600)}')`;
   document.getElementById('postTitle').textContent = title;

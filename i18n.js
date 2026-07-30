@@ -32,6 +32,26 @@
     'Aqar Factory home': 'الصفحة الرئيسية لـ Aqar Factory',
     'Aqar Factory': 'Aqar Factory',
 
+    // ---------- <title> / <meta description> per page (drives /ar/ SEO) ----------
+    'Aqar Factory — Real Estate Done Right': 'Aqar Factory — العقارات كما ينبغي',
+    "Aqar Factory — handpicked residential homes, offices and luxury units for sale, curated for people who refuse to settle.": 'Aqar Factory — منازل سكنية ومكاتب ووحدات فاخرة مختارة بعناية للبيع، لمن يرفضون التنازل.',
+    'About Us — Aqar Factory': 'من نحن — Aqar Factory',
+    "Aqar Factory is a boutique real-estate house curating homes, offices and luxury spaces across the world's great cities. Meet the team and the philosophy behind the work.": 'Aqar Factory بيت عقاري متخصص يختار المنازل والمكاتب والمساحات الفاخرة في أعظم مدن العالم. تعرّف على الفريق والفلسفة وراء العمل.',
+    'Contact — Aqar Factory': 'تواصل معنا — Aqar Factory',
+    'Get in touch with Aqar Factory. Book a viewing, ask about a listing, or talk to an advisor — our team replies within one business day.': 'تواصل مع Aqar Factory. احجز معاينة، اسأل عن عقار، أو تحدث مع مستشار — يرد فريقنا خلال يوم عمل واحد.',
+    'Blog — Aqar Factory': 'المدونة — Aqar Factory',
+    'Market insight, buying guides and stories from the Aqar Factory team — real estate, done right.': 'رؤى السوق وأدلة الشراء وقصص من فريق Aqar Factory — العقارات كما ينبغي.',
+    'Projects — Aqar Factory': 'المشاريع — Aqar Factory',
+    'Browse Aqar Factory developments by category and city — residential, offices, luxury villas, retail and mixed-use projects.': 'تصفح مشاريع Aqar Factory حسب الفئة والمدينة — سكني، مكاتب، فلل فاخرة، تجزئة، ومشاريع متعددة الاستخدامات.',
+    'Units — Aqar Factory': 'الوحدات — Aqar Factory',
+    'Browse Aqar Factory units by type and city — villas, apartments, duplexes, townhouses, studios, offices and retail spaces for sale.': 'تصفح وحدات Aqar Factory حسب النوع والمدينة — فلل، شقق، دوبلكس، تاون هاوس، استوديوهات، مكاتب ومساحات تجزئة للبيع.',
+    'Project — Aqar Factory': 'مشروع — Aqar Factory',
+    'Aqar Factory project detail — gallery, key facts, amenities and location.': 'تفاصيل مشروع Aqar Factory — معرض صور، معلومات أساسية، مرافق والموقع.',
+    'Unit — Aqar Factory': 'وحدة — Aqar Factory',
+    'Aqar Factory unit detail — gallery, price, specs and location.': 'تفاصيل وحدة Aqar Factory — معرض صور، السعر، المواصفات والموقع.',
+    'Article — Aqar Factory': 'مقال — Aqar Factory',
+    'Aqar Factory blog — market insight, buying guides and stories from our team.': 'مدونة Aqar Factory — رؤى السوق وأدلة الشراء وقصص من فريقنا.',
+
     // ---------- home hero ----------
     'Curated Homes For Sale.': 'منازل مختارة بعناية للبيع.',
     "This site is powered by AI — tell us what you need, we'll find your perfect match.": 'هذا الموقع مدعوم بالذكاء الاصطناعي — أخبرنا بما تحتاجه وسنجد لك الخيار الأنسب.',
@@ -785,13 +805,34 @@
 
   function normalize(s) { return String(s == null ? '' : s).replace(/\s+/g, ' ').trim(); }
 
+  // The admin dashboard has no public /ar/ counterpart (it's not indexed —
+  // see robots.txt) and keeps the old localStorage-only toggle. Every public
+  // page instead derives its language from the URL itself (/ar/... vs the
+  // bare path), so Google can crawl and index the Arabic version as real,
+  // separately-addressable content instead of a client-only preference.
+  function isAdminPath() { return /^\/admin(\/|$)/.test(location.pathname); }
+  function isArPath(path) { return path === '/ar' || path.startsWith('/ar/'); }
+
   function getLang() {
-    try { return localStorage.getItem(STORAGE_KEY) === 'ar' ? 'ar' : 'en'; }
-    catch (_) { return 'en'; }
+    if (isAdminPath()) {
+      try { return localStorage.getItem(STORAGE_KEY) === 'ar' ? 'ar' : 'en'; }
+      catch (_) { return 'en'; }
+    }
+    return isArPath(location.pathname) ? 'ar' : 'en';
   }
   function setLang(lang) {
-    try { localStorage.setItem(STORAGE_KEY, lang === 'ar' ? 'ar' : 'en'); } catch (_) { /* ignore */ }
-    location.reload();
+    if (isAdminPath()) {
+      try { localStorage.setItem(STORAGE_KEY, lang === 'ar' ? 'ar' : 'en'); } catch (_) { /* ignore */ }
+      location.reload();
+      return;
+    }
+    const path = location.pathname;
+    const ar = isArPath(path);
+    let target;
+    if (lang === 'ar' && !ar) target = path === '/' ? '/ar' : '/ar' + path;
+    else if (lang === 'en' && ar) target = path.replace(/^\/ar/, '') || '/';
+    else target = path;
+    location.href = target + location.search + location.hash;
   }
 
   const lang = getLang();
@@ -834,6 +875,46 @@
       el.dataset.i18nTitleSrc = src;
       el.setAttribute('title', t(src));
     });
+    // <meta name="description" content="..."> — same idea as placeholder/aria/
+    // title above, but the translatable text lives in `content`, not text
+    document.querySelectorAll('[data-i18n-content]').forEach(el => {
+      const src = el.dataset.i18nContentSrc != null ? el.dataset.i18nContentSrc : (el.getAttribute('content') || '');
+      el.dataset.i18nContentSrc = src;
+      el.setAttribute('content', t(src));
+    });
+  }
+
+  // self-referencing canonical + hreflang alternates, derived purely from the
+  // current URL — correct automatically for both /page.html and /ar/page.html,
+  // and for the query-string-addressed project/unit/blog-post pages, with no
+  // per-page code needed. Skipped on /admin/ (not public, not indexed).
+  function injectSeoLinks() {
+    if (isAdminPath()) return;
+    const origin = 'https://www.aqar-factory.com';
+    const path = location.pathname;
+    const search = location.search;
+    const ar = isArPath(path);
+    const enPath = ar ? (path.replace(/^\/ar/, '') || '/') : path;
+    // avoid an unnecessary redirect hop for the homepage: "/ar" + "/" would
+    // be "/ar/", which the site's trailingSlash:false config 308s to "/ar"
+    const arPath = ar ? path : (enPath === '/' ? '/ar' : '/ar' + enPath);
+    const currentPath = ar ? arPath : enPath;
+
+    function upsertLink(selector, attrs) {
+      let el = document.querySelector(selector);
+      if (!el) {
+        el = document.createElement('link');
+        Object.keys(attrs).forEach(k => { if (k !== 'href') el.setAttribute(k, attrs[k]); });
+        document.head.appendChild(el);
+      }
+      el.setAttribute('href', attrs.href);
+      return el;
+    }
+
+    upsertLink('link[rel="canonical"]', { rel: 'canonical', href: origin + currentPath + search });
+    upsertLink('link[rel="alternate"][hreflang="en"]', { rel: 'alternate', hreflang: 'en', href: origin + enPath + search });
+    upsertLink('link[rel="alternate"][hreflang="ar"]', { rel: 'alternate', hreflang: 'ar', href: origin + arPath + search });
+    upsertLink('link[rel="alternate"][hreflang="x-default"]', { rel: 'alternate', hreflang: 'x-default', href: origin + enPath + search });
   }
 
   function initSwitchers() {
@@ -846,7 +927,7 @@
     });
   }
 
-  document.addEventListener('DOMContentLoaded', () => { applyStatic(); initSwitchers(); });
+  document.addEventListener('DOMContentLoaded', () => { applyStatic(); initSwitchers(); injectSeoLinks(); });
 
   window.i18n = { lang, t, setLang, getLang, applyStatic };
   window.t = t;

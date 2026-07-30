@@ -2,10 +2,18 @@
    AQAR FACTORY — sitemap.xml (Vercel serverless function)
    ------------------------------------------------------------
    Served at /sitemap.xml via the rewrite in vercel.json. Lists
-   the static pages plus every published project and blog post,
-   fetched live from Supabase (same public anon key already used
-   in config.js) so it stays correct as content is added/removed
-   in the admin panel, with no manual regeneration step.
+   the static pages plus every published project, unit and blog
+   post, fetched live from Supabase (same public anon key already
+   used in config.js) so it stays correct as content is added/
+   removed in the admin panel, with no manual regeneration step.
+
+   Every page is listed twice — once at its normal path and once
+   under /ar/... (see the rewrite in vercel.json that serves the
+   same file there) — with xhtml:link hreflang annotations tying
+   the two together, so Google indexes the Arabic version as real,
+   separate content instead of missing it entirely (it has no URL
+   of its own otherwise, since the language switch used to be a
+   client-only localStorage toggle).
 
    The site's own URL is derived from the incoming request's Host
    header rather than hardcoded, so this keeps working unchanged
@@ -32,8 +40,19 @@ async function fetchSlugs(table) {
 
 const esc = (s) => String(s).replace(/&/g, '&amp;');
 
-function urlEntry(loc, lastmod, priority) {
-  return `  <url>\n    <loc>${esc(loc)}</loc>\n${lastmod ? `    <lastmod>${lastmod}</lastmod>\n` : ''}    <priority>${priority}</priority>\n  </url>`;
+// emits the en/ar pair for one logical page, each cross-referencing the
+// other via xhtml:link (the standard sitemap hreflang pattern)
+function urlPair(SITE_URL, path, lastmod, priority) {
+  const enUrl = SITE_URL + path;
+  // avoid an unnecessary redirect hop for the homepage: "/ar" + "/" would be
+  // "/ar/", which the site's trailingSlash:false config 308s to "/ar"
+  const arUrl = SITE_URL + (path === '/' ? '/ar' : '/ar' + path);
+  const lastmodTag = lastmod ? `\n    <lastmod>${lastmod}</lastmod>` : '';
+  const alt = (self) => `\n    <xhtml:link rel="alternate" hreflang="en" href="${esc(enUrl)}"/>\n    <xhtml:link rel="alternate" hreflang="ar" href="${esc(arUrl)}"/>\n    <xhtml:link rel="alternate" hreflang="x-default" href="${esc(enUrl)}"/>`;
+  return [
+    `  <url>\n    <loc>${esc(enUrl)}</loc>${alt()}${lastmodTag}\n    <priority>${priority}</priority>\n  </url>`,
+    `  <url>\n    <loc>${esc(arUrl)}</loc>${alt()}${lastmodTag}\n    <priority>${priority}</priority>\n  </url>`
+  ];
 }
 
 module.exports = async function handler(req, res) {
@@ -52,13 +71,13 @@ module.exports = async function handler(req, res) {
   ];
 
   const urls = [
-    ...staticPages.map(p => urlEntry(SITE_URL + p.path, null, p.priority)),
-    ...projects.map(p => urlEntry(`${SITE_URL}/project.html?id=${encodeURIComponent(p.slug)}`, (p.updated_at || '').slice(0, 10) || null, '0.8')),
-    ...units.map(u => urlEntry(`${SITE_URL}/unit.html?id=${encodeURIComponent(u.slug)}`, (u.updated_at || '').slice(0, 10) || null, '0.75')),
-    ...posts.map(p => urlEntry(`${SITE_URL}/blog-post.html?slug=${encodeURIComponent(p.slug)}`, (p.updated_at || '').slice(0, 10) || null, '0.7'))
+    ...staticPages.flatMap(p => urlPair(SITE_URL, p.path, null, p.priority)),
+    ...projects.flatMap(p => urlPair(SITE_URL, `/project.html?id=${encodeURIComponent(p.slug)}`, (p.updated_at || '').slice(0, 10) || null, '0.8')),
+    ...units.flatMap(u => urlPair(SITE_URL, `/unit.html?id=${encodeURIComponent(u.slug)}`, (u.updated_at || '').slice(0, 10) || null, '0.75')),
+    ...posts.flatMap(p => urlPair(SITE_URL, `/blog-post.html?slug=${encodeURIComponent(p.slug)}`, (p.updated_at || '').slice(0, 10) || null, '0.7'))
   ];
 
-  const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.join('\n')}\n</urlset>\n`;
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n${urls.join('\n')}\n</urlset>\n`;
 
   res.setHeader('Content-Type', 'application/xml; charset=utf-8');
   res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate');

@@ -56,8 +56,8 @@ function populate() {
   const descBlocks = pick(unit, 'descriptionBlocks', 'descriptionBlocksAr');
   const desc = blocksToText(descBlocks) || pick(unit, 'description', 'descriptionAr') || '';
   if (metaDesc && desc) metaDesc.setAttribute('content', desc.length > 160 ? desc.slice(0, 157) + '…' : desc);
-  const canonical = document.getElementById('canonicalLink');
-  if (canonical) canonical.href = `https://www.aqar-factory.com/unit.html?id=${encodeURIComponent(unit.id)}`;
+  // canonical/hreflang are handled generically (and language-aware) by
+  // i18n.js's injectSeoLinks() — see the note in project.js's populate().
 
   const heroImg = document.getElementById('heroImg');
   if (heroImg._tid) clearInterval(heroImg._tid);

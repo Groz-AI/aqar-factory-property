@@ -174,6 +174,7 @@ alter table public.projects   add column if not exists developer_logo text;     
 alter table public.projects   add column if not exists unit_types  text[] default '{}';      -- unit types available, e.g. Villas, Apartments, Duplex
 alter table public.projects   add column if not exists about_blocks    jsonb default '[]'::jsonb; -- rich-content blocks (same shape as blog_posts.blocks) replacing the plain `about` text[]
 alter table public.projects   add column if not exists about_blocks_ar jsonb default '[]'::jsonb; -- Arabic version; falls back to about_blocks when empty
+alter table public.projects   add column if not exists name_ar        text;                       -- Arabic name; falls back to `name` when empty (same pattern as units.name_ar)
 
 -- one-time backfill: turn each existing about[] paragraph into a paragraph
 -- block, so existing projects keep their content after switching the admin

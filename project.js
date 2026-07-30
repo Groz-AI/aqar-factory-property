@@ -54,12 +54,14 @@ let ALL = [];
 let project = null;
 
 function populate() {
-  document.title = `${project.name} — Aqar Factory`;
+  document.title = `${pick(project, 'name', 'nameAr') || project.name} — Aqar Factory`;
   const metaDesc = document.querySelector('meta[name="description"]');
   const desc = project.tagline || (project.about && project.about[0]) || '';
   if (metaDesc && desc) metaDesc.setAttribute('content', desc.length > 160 ? desc.slice(0, 157) + '…' : desc);
-  const canonical = document.getElementById('canonicalLink');
-  if (canonical) canonical.href = `https://www.aqar-factory.com/project.html?id=${encodeURIComponent(project.id)}`;
+  // canonical/hreflang are handled generically (and language-aware) by
+  // i18n.js's injectSeoLinks() — it self-references the current URL, which
+  // already includes this page's ?id=, so no per-page override is needed
+  // here (a hardcoded English-only URL would be wrong on the /ar/ version).
 
   const heroImg = document.getElementById('heroImg');
   if (heroImg._tid) clearInterval(heroImg._tid);
@@ -67,8 +69,9 @@ function populate() {
   heroImg.innerHTML = heroImgs.map((g, n) =>
     `<div class="pg-slide${n === 0 ? ' active' : ''}" style="background-image:url('${U(g, 1600)}')"></div>`).join('');
 
-  document.getElementById('projName').textContent = project.name;
-  document.getElementById('crumbName').textContent = project.name;
+  const displayName = pick(project, 'name', 'nameAr') || project.name;
+  document.getElementById('projName').textContent = displayName;
+  document.getElementById('crumbName').textContent = displayName;
   document.getElementById('projLoc').innerHTML = `${pinSVG}${project.location || ''}`;
   document.getElementById('tagline').textContent = project.tagline || '';
   document.getElementById('badges').innerHTML = `

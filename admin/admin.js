@@ -90,6 +90,7 @@
       ],
       fields: [
         { key: 'name', label: t('Name'), type: 'text', required: true, half: true },
+        { key: 'name_ar', label: t('Name (Arabic)'), type: 'text', half: true, hint: t('Shown when the site is set to Arabic — leave empty to fall back to the English name above.') },
         { key: 'slug', label: t('Slug (URL id)'), type: 'text', required: true, half: true, hint: t('lowercase, dashes — e.g. azure-residences') },
         { key: 'category', label: t('Category'), type: 'select', options: ['Residential', 'Commercial', 'Mixed-use', 'Hospitality', 'Retail', 'Office'], half: true },
         { key: 'unit_types', label: t('Unit types available'), type: 'tags', hint: t('e.g. Villas, Apartments, Duplex, Townhouses, Studio — powers the hero search and the AI matchmaker') },

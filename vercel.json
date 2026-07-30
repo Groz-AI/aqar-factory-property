@@ -4,6 +4,7 @@
   "trailingSlash": false,
   "rewrites": [
     { "source": "/sitemap.xml", "destination": "/api/sitemap" },
-    { "source": "/robots.txt", "destination": "/api/robots" }
+    { "source": "/robots.txt", "destination": "/api/robots" },
+    { "source": "/ar/:path*", "destination": "/:path*" }
   ]
 }
