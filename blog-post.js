@@ -58,6 +58,8 @@ function populate() {
   document.title = `${title} — Aqar Factory`;
   const metaDesc = document.querySelector('meta[name="description"]');
   if (metaDesc && excerpt) metaDesc.setAttribute('content', excerpt);
+  const canonical = document.getElementById('canonicalLink');
+  if (canonical) canonical.href = `https://www.aqar-factory.com/blog-post.html?slug=${encodeURIComponent(post.id)}`;
 
   document.getElementById('heroImg').style.backgroundImage = `url('${U(post.cover, 1600)}')`;
   document.getElementById('postTitle').textContent = title;
@@ -95,7 +97,10 @@ const revealObserver = 'IntersectionObserver' in window
   try { ALL = await window.store.getBlogPosts(); }
   catch (e) { ALL = (window.FALLBACK && window.FALLBACK.blogPosts) || []; }
   if (!ALL || !ALL.length) ALL = (window.FALLBACK && window.FALLBACK.blogPosts) || [];
-  post = ALL.find(p => p.id === slug) || ALL[0];
+  // an unmatched ?slug= must NOT silently render a different, unrelated
+  // post under the wrong URL — redirect away instead (this `if` used to be
+  // unreachable dead code because of a `|| ALL[0]` fallback above it)
+  post = ALL.find(p => p.id === slug);
   if (!post) { location.href = 'blog.html'; return; }
   populate();
 })();

@@ -56,6 +56,8 @@ function populate() {
   const descBlocks = pick(unit, 'descriptionBlocks', 'descriptionBlocksAr');
   const desc = blocksToText(descBlocks) || pick(unit, 'description', 'descriptionAr') || '';
   if (metaDesc && desc) metaDesc.setAttribute('content', desc.length > 160 ? desc.slice(0, 157) + '…' : desc);
+  const canonical = document.getElementById('canonicalLink');
+  if (canonical) canonical.href = `https://www.aqar-factory.com/unit.html?id=${encodeURIComponent(unit.id)}`;
 
   const heroImg = document.getElementById('heroImg');
   if (heroImg._tid) clearInterval(heroImg._tid);
@@ -202,10 +204,22 @@ window.addEventListener('scroll', onHeaderScroll, { passive: true });
     ALL = units || [];
     ALL_PROJECTS = projects || [];
   } catch (e) { ALL = []; ALL_PROJECTS = []; }
-  unit = ALL.find(u => u.id === id) || ALL[0];
+  // an unmatched ?id= (deleted/renamed/mistyped) must NOT silently render a
+  // different, unrelated unit under the wrong URL — that's exactly the kind
+  // of "wrong content at this URL" signal that confuses Google's indexing,
+  // on top of just being wrong for real visitors
+  unit = ALL.find(u => u.id === id);
   if (unit) populate();
   else {
+    document.title = `${t('Unit not found')} — Aqar Factory`;
+    const meta = document.createElement('meta');
+    meta.name = 'robots';
+    meta.content = 'noindex';
+    document.head.appendChild(meta);
     document.getElementById('unitName').textContent = t('Unit not found');
-    document.querySelector('.detail-layout').style.display = 'none';
+    const layout = document.querySelector('.detail-layout');
+    if (layout) layout.style.display = 'none';
+    const related = document.querySelector('.related');
+    if (related) related.style.display = 'none';
   }
 })();

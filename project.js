@@ -58,6 +58,8 @@ function populate() {
   const metaDesc = document.querySelector('meta[name="description"]');
   const desc = project.tagline || (project.about && project.about[0]) || '';
   if (metaDesc && desc) metaDesc.setAttribute('content', desc.length > 160 ? desc.slice(0, 157) + '…' : desc);
+  const canonical = document.getElementById('canonicalLink');
+  if (canonical) canonical.href = `https://www.aqar-factory.com/project.html?id=${encodeURIComponent(project.id)}`;
 
   const heroImg = document.getElementById('heroImg');
   if (heroImg._tid) clearInterval(heroImg._tid);
@@ -216,11 +218,29 @@ const onHeaderScroll = () => header.classList.toggle('scrolled', window.scrollY 
 onHeaderScroll();
 window.addEventListener('scroll', onHeaderScroll, { passive: true });
 
+function showNotFound() {
+  document.title = `${t('Project not found')} — Aqar Factory`;
+  const meta = document.createElement('meta');
+  meta.name = 'robots';
+  meta.content = 'noindex';
+  document.head.appendChild(meta);
+  document.getElementById('projName').textContent = t('Project not found');
+  const layout = document.querySelector('.detail-layout');
+  if (layout) layout.style.display = 'none';
+  const related = document.querySelector('.related');
+  if (related) related.style.display = 'none';
+}
+
 /* ---- boot ---- */
 (async function () {
   try { ALL = await window.store.getProjects(); }
   catch (e) { ALL = window.PROJECTS || []; }
   if (!ALL || !ALL.length) ALL = window.PROJECTS || [];
-  project = ALL.find(p => p.id === id) || ALL[0];
-  populate();
+  // an unmatched ?id= (deleted/renamed/mistyped) must NOT silently render a
+  // different, unrelated project under the wrong URL — that's exactly the
+  // kind of "wrong content at this URL" signal that confuses Google's
+  // indexing, on top of just being wrong for real visitors
+  project = ALL.find(p => p.id === id);
+  if (project) populate();
+  else showNotFound();
 })();

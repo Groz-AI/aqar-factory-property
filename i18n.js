@@ -161,6 +161,7 @@
     'Part of': 'جزء من',
     'No description yet.': 'لا يوجد وصف بعد.',
     'Unit not found': 'الوحدة غير موجودة',
+    'Project not found': 'المشروع غير موجود',
     'Price': 'السعر',
     'Bedrooms': 'غرف النوم',
     'Bathrooms': 'دورات المياه',
