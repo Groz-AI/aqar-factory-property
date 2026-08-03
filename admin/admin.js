@@ -122,6 +122,10 @@
         { key: 'lng', label: t('Longitude'), type: 'number', half: true },
         { key: 'brochure_pdf', label: t('Brochure (PDF)'), type: 'pdf', hint: t('Shown as a "Download brochure" button on the project page — leave empty to hide it') },
         { key: 'consultants', label: t('Executive Consultants'), type: 'consultants', hint: t('Shown in the project page sidebar — leave empty to hide the section') },
+        { key: 'seo_title', label: t('SEO title'), type: 'text', half: true, hint: t('Overrides the page\'s <title> tag — leave empty to use the project name. Aim for under 60 characters.') },
+        { key: 'seo_title_ar', label: t('SEO title (Arabic)'), type: 'text', half: true, hint: t('Used on the /ar/ version — leave empty to fall back to the English SEO title above.') },
+        { key: 'seo_description', label: t('SEO meta description'), type: 'textarea', hint: t('Overrides the page\'s search-result snippet — leave empty to use the tagline/about text. Aim for under 160 characters.') },
+        { key: 'seo_description_ar', label: t('SEO meta description (Arabic)'), type: 'textarea', hint: t('Used on the /ar/ version — leave empty to fall back to the English meta description above.') },
         { key: 'sort_order', label: t('Sort order'), type: 'number', half: true },
         { key: 'published', label: t('Published'), type: 'bool', half: true }
       ]
@@ -225,6 +229,10 @@
         { key: 'cover', label: t('Cover image'), type: 'image' },
         { key: 'gallery', label: t('Gallery'), type: 'gallery' },
         { key: 'description_blocks', arKey: 'description_blocks_ar', label: t('Description'), type: 'blocks-i18n', previewClass: 'rich-content', hint: t('Opens a full-screen editor — build the description from any mix of blocks, edit English and Arabic side by side, and preview exactly how it will look on the site.') },
+        { key: 'seo_title', label: t('SEO title'), type: 'text', half: true, hint: t('Overrides the page\'s <title> tag — leave empty to use the unit name. Aim for under 60 characters.') },
+        { key: 'seo_title_ar', label: t('SEO title (Arabic)'), type: 'text', half: true, hint: t('Used on the /ar/ version — leave empty to fall back to the English SEO title above.') },
+        { key: 'seo_description', label: t('SEO meta description'), type: 'textarea', hint: t('Overrides the page\'s search-result snippet — leave empty to use the description text. Aim for under 160 characters.') },
+        { key: 'seo_description_ar', label: t('SEO meta description (Arabic)'), type: 'textarea', hint: t('Used on the /ar/ version — leave empty to fall back to the English meta description above.') },
         { key: 'sort_order', label: t('Sort order'), type: 'number', half: true },
         { key: 'published', label: t('Published'), type: 'bool', half: true }
       ]
@@ -248,6 +256,10 @@
         { key: 'tags', label: t('Tag keywords'), type: 'tags' },
         { key: 'tags_ar', label: t('Tag keywords (Arabic)'), type: 'tags', hint: t('Shown when the site is set to Arabic — leave empty to fall back to the English tags above.') },
         { key: 'blocks', arKey: 'blocks_ar', label: t('Article content'), type: 'blocks-i18n', previewClass: 'blog-article', hint: t('Opens a full-screen editor — build the article from any mix of blocks, edit English and Arabic side by side, and preview exactly how it will look on the site.') },
+        { key: 'seo_title', label: t('SEO title'), type: 'text', half: true, hint: t('Overrides the page\'s <title> tag — leave empty to use the article title. Aim for under 60 characters.') },
+        { key: 'seo_title_ar', label: t('SEO title (Arabic)'), type: 'text', half: true, hint: t('Used on the /ar/ version — leave empty to fall back to the English SEO title above.') },
+        { key: 'seo_description', label: t('SEO meta description'), type: 'textarea', hint: t('Overrides the page\'s search-result snippet — leave empty to use the excerpt. Aim for under 160 characters.') },
+        { key: 'seo_description_ar', label: t('SEO meta description (Arabic)'), type: 'textarea', hint: t('Used on the /ar/ version — leave empty to fall back to the English meta description above.') },
         { key: 'published_at', label: t('Published date'), type: 'date', half: true },
         { key: 'sort_order', label: t('Sort order'), type: 'number', half: true },
         { key: 'published', label: t('Published'), type: 'bool', half: true }

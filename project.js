@@ -54,9 +54,10 @@ let ALL = [];
 let project = null;
 
 function populate() {
-  document.title = `${pick(project, 'name', 'nameAr') || project.name} — Aqar Factory`;
+  const customTitle = pick(project, 'seoTitle', 'seoTitleAr');
+  document.title = customTitle || `${pick(project, 'name', 'nameAr') || project.name} — Aqar Factory`;
   const metaDesc = document.querySelector('meta[name="description"]');
-  const desc = project.tagline || (project.about && project.about[0]) || '';
+  const desc = pick(project, 'seoDescription', 'seoDescriptionAr') || project.tagline || (project.about && project.about[0]) || '';
   if (metaDesc && desc) metaDesc.setAttribute('content', desc.length > 160 ? desc.slice(0, 157) + '…' : desc);
   // canonical/hreflang are handled generically (and language-aware) by
   // i18n.js's injectSeoLinks() — it self-references the current URL, which

@@ -176,6 +176,14 @@ alter table public.projects   add column if not exists about_blocks    jsonb def
 alter table public.projects   add column if not exists about_blocks_ar jsonb default '[]'::jsonb; -- Arabic version; falls back to about_blocks when empty
 alter table public.projects   add column if not exists name_ar        text;                       -- Arabic name; falls back to `name` when empty (same pattern as units.name_ar)
 
+-- custom SEO <title>/<meta description> override — falls back to the
+-- auto-generated one (name + tagline/about) on the public page when empty.
+-- Same four columns added to units and blog_posts below.
+alter table public.projects   add column if not exists seo_title          text;
+alter table public.projects   add column if not exists seo_title_ar       text;
+alter table public.projects   add column if not exists seo_description    text;
+alter table public.projects   add column if not exists seo_description_ar text;
+
 -- one-time backfill: turn each existing about[] paragraph into a paragraph
 -- block, so existing projects keep their content after switching the admin
 -- form over to the block editor (guarded so it only runs once — re-running
@@ -191,6 +199,11 @@ update public.projects
 
 alter table public.units add column if not exists description_blocks    jsonb default '[]'::jsonb; -- rich-content blocks (same editor as projects.about_blocks)
 alter table public.units add column if not exists description_blocks_ar jsonb default '[]'::jsonb; -- Arabic version; falls back to description_blocks when empty
+
+alter table public.units add column if not exists seo_title          text;
+alter table public.units add column if not exists seo_title_ar       text;
+alter table public.units add column if not exists seo_description    text;
+alter table public.units add column if not exists seo_description_ar text;
 
 -- one-time backfill: turn each existing plain-text description into a single
 -- paragraph block, so units keep their content after switching the admin
@@ -324,6 +337,10 @@ alter table public.blog_posts add column if not exists tags          text[] defa
 alter table public.blog_posts add column if not exists tags_ar       text[] default '{}';
 alter table public.blog_posts add column if not exists blocks        jsonb default '[]'::jsonb;
 alter table public.blog_posts add column if not exists blocks_ar     jsonb default '[]'::jsonb;
+alter table public.blog_posts add column if not exists seo_title          text;
+alter table public.blog_posts add column if not exists seo_title_ar       text;
+alter table public.blog_posts add column if not exists seo_description    text;
+alter table public.blog_posts add column if not exists seo_description_ar text;
 alter table public.blog_posts add column if not exists published_at  timestamptz default now();
 alter table public.blog_posts add column if not exists sort_order    int default 0;
 alter table public.blog_posts add column if not exists published     boolean default true;

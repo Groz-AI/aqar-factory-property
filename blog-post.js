@@ -55,9 +55,11 @@ function cardHTML(p) {
 function populate() {
   const title = pick(post, 'title', 'titleAr') || '';
   const excerpt = pick(post, 'excerpt', 'excerptAr') || '';
-  document.title = `${title} — Aqar Factory`;
+  const customTitle = pick(post, 'seoTitle', 'seoTitleAr');
+  document.title = customTitle || `${title} — Aqar Factory`;
   const metaDesc = document.querySelector('meta[name="description"]');
-  if (metaDesc && excerpt) metaDesc.setAttribute('content', excerpt);
+  const desc = pick(post, 'seoDescription', 'seoDescriptionAr') || excerpt;
+  if (metaDesc && desc) metaDesc.setAttribute('content', desc);
   // canonical/hreflang are handled generically (and language-aware) by
   // i18n.js's injectSeoLinks() — see the note in project.js's populate().
 

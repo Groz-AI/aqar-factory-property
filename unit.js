@@ -51,10 +51,11 @@ let ALL_PROJECTS = [];
 let unit = null;
 
 function populate() {
-  document.title = `${unit.name} — Aqar Factory`;
+  const customTitle = pick(unit, 'seoTitle', 'seoTitleAr');
+  document.title = customTitle || `${pick(unit, 'name', 'nameAr') || unit.name} — Aqar Factory`;
   const metaDesc = document.querySelector('meta[name="description"]');
   const descBlocks = pick(unit, 'descriptionBlocks', 'descriptionBlocksAr');
-  const desc = blocksToText(descBlocks) || pick(unit, 'description', 'descriptionAr') || '';
+  const desc = pick(unit, 'seoDescription', 'seoDescriptionAr') || blocksToText(descBlocks) || pick(unit, 'description', 'descriptionAr') || '';
   if (metaDesc && desc) metaDesc.setAttribute('content', desc.length > 160 ? desc.slice(0, 157) + '…' : desc);
   // canonical/hreflang are handled generically (and language-aware) by
   // i18n.js's injectSeoLinks() — see the note in project.js's populate().

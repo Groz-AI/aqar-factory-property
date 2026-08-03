@@ -35,7 +35,9 @@
       gallery: r.gallery || [], coords: [r.lat || 0, r.lng || 0],
       priceValue: Number(r.price_value) || 0, areaValue: Number(r.area_value) || 0, isRental: !!r.is_rental,
       brochurePdf: r.brochure_pdf || '', consultants: Array.isArray(r.consultants) ? r.consultants : [],
-      stats: { price: r.price, units: r.units, floors: r.floors, area: r.area, handover: r.handover }
+      stats: { price: r.price, units: r.units, floors: r.floors, area: r.area, handover: r.handover },
+      seoTitle: r.seo_title || '', seoTitleAr: r.seo_title_ar || '',
+      seoDescription: r.seo_description || '', seoDescriptionAr: r.seo_description_ar || ''
     };
   }
 
@@ -61,7 +63,9 @@
         : (r.description || '').split(/\n+/).map(s => s.trim()).filter(Boolean).map(p => ({ type: 'paragraph', text: p })),
       descriptionBlocksAr: Array.isArray(r.description_blocks_ar) ? r.description_blocks_ar : [],
       cover: r.cover, gallery: r.gallery || [],
-      coords: [r.lat || 0, r.lng || 0]
+      coords: [r.lat || 0, r.lng || 0],
+      seoTitle: r.seo_title || '', seoTitleAr: r.seo_title_ar || '',
+      seoDescription: r.seo_description || '', seoDescriptionAr: r.seo_description_ar || ''
     };
   }
 
@@ -78,7 +82,9 @@
       tagsAr: Array.isArray(r.tags_ar) ? r.tags_ar : [],
       blocks: Array.isArray(r.blocks) ? r.blocks : [],
       blocksAr: Array.isArray(r.blocks_ar) ? r.blocks_ar : [],
-      publishedAt: r.published_at || r.created_at || null
+      publishedAt: r.published_at || r.created_at || null,
+      seoTitle: r.seo_title || '', seoTitleAr: r.seo_title_ar || '',
+      seoDescription: r.seo_description || '', seoDescriptionAr: r.seo_description_ar || ''
     };
   }
 

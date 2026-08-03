@@ -721,6 +721,20 @@
     'Description (Arabic)': 'الوصف (عربي)',
     'Shown when the site is set to Arabic — leave empty to fall back to the English description above.': 'يظهر عندما يكون الموقع بالعربية — اتركه فارغًا لعرض الوصف الإنجليزي أعلاه بدلاً منه.',
 
+    // ---------- admin: SEO title/meta description overrides ----------
+    'SEO title': 'عنوان SEO',
+    'SEO title (Arabic)': 'عنوان SEO (عربي)',
+    'SEO meta description': 'وصف ميتا SEO',
+    'SEO meta description (Arabic)': 'وصف ميتا SEO (عربي)',
+    "Overrides the page's <title> tag — leave empty to use the project name. Aim for under 60 characters.": 'يستبدل وسم <title> الخاص بالصفحة — اتركه فارغًا لاستخدام اسم المشروع. يُفضّل ألا يتجاوز 60 حرفًا.',
+    "Overrides the page's <title> tag — leave empty to use the unit name. Aim for under 60 characters.": 'يستبدل وسم <title> الخاص بالصفحة — اتركه فارغًا لاستخدام اسم الوحدة. يُفضّل ألا يتجاوز 60 حرفًا.',
+    "Overrides the page's <title> tag — leave empty to use the article title. Aim for under 60 characters.": 'يستبدل وسم <title> الخاص بالصفحة — اتركه فارغًا لاستخدام عنوان المقال. يُفضّل ألا يتجاوز 60 حرفًا.',
+    "Used on the /ar/ version — leave empty to fall back to the English SEO title above.": 'يُستخدم في نسخة /ar/ — اتركه فارغًا لعرض عنوان SEO الإنجليزي أعلاه بدلاً منه.',
+    "Overrides the page's search-result snippet — leave empty to use the tagline/about text. Aim for under 160 characters.": 'يستبدل مقتطف نتيجة البحث الخاص بالصفحة — اتركه فارغًا لاستخدام الشعار الترويجي / نص النبذة. يُفضّل ألا يتجاوز 160 حرفًا.',
+    "Overrides the page's search-result snippet — leave empty to use the description text. Aim for under 160 characters.": 'يستبدل مقتطف نتيجة البحث الخاص بالصفحة — اتركه فارغًا لاستخدام نص الوصف. يُفضّل ألا يتجاوز 160 حرفًا.',
+    "Overrides the page's search-result snippet — leave empty to use the excerpt. Aim for under 160 characters.": 'يستبدل مقتطف نتيجة البحث الخاص بالصفحة — اتركه فارغًا لاستخدام المقتطف. يُفضّل ألا يتجاوز 160 حرفًا.',
+    "Used on the /ar/ version — leave empty to fall back to the English meta description above.": 'يُستخدم في نسخة /ar/ — اتركه فارغًا لعرض وصف الميتا الإنجليزي أعلاه بدلاً منه.',
+
     'Testimonial': 'رأي عميل',
     'Quote': 'الاقتباس',
     'Rating': 'التقييم',
