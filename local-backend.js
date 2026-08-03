@@ -93,9 +93,12 @@
     }
 
     // starter category list — mirrors the same default seeded in schema.sql
-    // for cloud installs, so local/demo mode has a manageable list too
+    // for cloud installs, so local/demo mode has a manageable list too.
+    // `kind` splits this one shared list between the Projects form's
+    // Category dropdown and the Units form's Unit type dropdown.
     const categories = withMeta(
-      ['Residential', 'Commercial', 'Mixed-use', 'Hospitality', 'Retail', 'Office'].map(name => ({ name }))
+      ['Residential', 'Commercial', 'Mixed-use', 'Hospitality', 'Retail', 'Office'].map(name => ({ name, kind: 'project' }))
+        .concat(['Villa', 'Apartment', 'Duplex', 'Townhouse', 'Studio', 'Office', 'Retail'].map(name => ({ name, kind: 'unit' })))
     );
 
     return {

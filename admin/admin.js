@@ -151,13 +151,19 @@
       label: t('Categories'), singular: t('Category'), table: 'categories', icon: 'grid',
       columns: [
         { key: 'name', label: t('Name'), type: 'name' },
+        { key: 'kind', label: t('Used for') },
         { key: 'sort_order', label: t('Sort order') },
         { key: 'published', label: t('Status'), type: 'pill' }
       ],
       fields: [
         { key: 'name', label: t('Name'), type: 'text', required: true, half: true },
+        {
+          key: 'kind', label: t('Used for'), type: 'select', half: true, default: 'project',
+          options: [{ value: 'project', label: t('Project categories') }, { value: 'unit', label: t('Unit types') }],
+          hint: t('Which form\'s dropdown this entry shows up in — the Projects form\'s Category, or the Units form\'s Unit type.')
+        },
         { key: 'sort_order', label: t('Sort order'), type: 'number', half: true },
-        { key: 'published', label: t('Published'), type: 'bool', half: true, default: true, hint: t('Turn off to remove it from the Projects form’s Category dropdown without deleting projects that already use it') }
+        { key: 'published', label: t('Published'), type: 'bool', half: true, default: true, hint: t('Turn off to remove it from that dropdown without deleting projects/units that already use it') }
       ]
     },
     testimonials: {
@@ -207,7 +213,7 @@
         { key: 'name', label: t('Name'), type: 'text', required: true, half: true },
         { key: 'name_ar', label: t('Name (Arabic)'), type: 'text', half: true, hint: t('Shown when the site is set to Arabic — leave empty to fall back to the English name above.') },
         { key: 'slug', label: t('Slug (URL id)'), type: 'text', required: true, half: true, hint: t('lowercase, dashes — e.g. marina-sky-villa') },
-        { key: 'type', label: t('Unit type'), type: 'select', options: ['Villa', 'Apartment', 'Duplex', 'Townhouse', 'Studio', 'Office', 'Retail'], half: true },
+        { key: 'type', label: t('Unit type'), type: 'select', options: [], half: true, hint: t('Manage this list under Categories → “Used for: Unit types”.') },
         { key: 'badge', label: t('Badge'), type: 'select', options: ['For Sale', 'New Listing', 'Exclusive'], half: true },
         {
           key: 'project_id', label: t('Linked project (optional)'), type: 'select', half: true,
@@ -577,6 +583,7 @@
     }
     if (Array.isArray(v)) return v.slice(0, 3).map(tag => `<span class="tag-mini">${esc(tag)}</span>`).join('') + (v.length > 3 ? ` +${v.length - 3}` : '');
     if (c.key === 'category') return esc(t(v));
+    if (c.key === 'kind') return esc(v === 'unit' ? t('Unit types') : t('Project categories'));
     return esc(v);
   }
 
@@ -609,7 +616,7 @@
     }
 
     if (view === 'projects') {
-      const { data: cats } = await sb.from('categories').select('name').eq('published', true)
+      const { data: cats } = await sb.from('categories').select('name').eq('published', true).eq('kind', 'project')
         .order('sort_order', { ascending: true }).then(res => res, () => ({ data: [] }));
       const categoryField = r.fields.find(f => f.key === 'category');
       // fieldHTML's generic select renderer already keeps a stale/unmatched
@@ -626,6 +633,12 @@
         projectField.options = [{ value: '', label: '— No linked project —' }]
           .concat((projs || []).map(p => ({ value: p.id, label: p.name })));
       }
+
+      const { data: types } = await sb.from('categories').select('name').eq('published', true).eq('kind', 'unit')
+        .order('sort_order', { ascending: true }).then(res => res, () => ({ data: [] }));
+      const typeField = r.fields.find(f => f.key === 'type');
+      // same stale-value safety as the project category field above
+      if (typeField) typeField.options = (types || []).map(c => c.name);
     }
 
     let buf = [];

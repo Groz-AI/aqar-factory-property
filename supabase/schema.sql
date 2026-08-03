@@ -91,27 +91,40 @@ begin new.updated_at = now(); return new; end $$;
 -- CONTENT TABLES
 -- ============================================================
 
--- Project categories — an admin-managed list feeding the Projects form's
--- Category dropdown. projects.category stays a plain text column (matching
--- whichever category name was picked); deleting a category here does not
--- change any project that already used its name.
+-- Shared admin-managed taxonomy for two otherwise-unrelated dropdowns:
+-- `kind = 'project'` feeds the Projects form's Category dropdown, and
+-- `kind = 'unit'` feeds the Units form's Unit Type dropdown (replacing what
+-- used to be a hardcoded list). Both projects.category and units.type stay
+-- plain text columns (matching whichever name was picked); deleting an
+-- entry here does not change any project/unit that already used its name.
 create table if not exists public.categories (
   id          uuid primary key default gen_random_uuid(),
   name        text not null,
+  kind        text not null default 'project' check (kind in ('project','unit')),
   sort_order  int default 0,
   published   boolean default true,
   created_at  timestamptz default now(),
   updated_at  timestamptz default now()
 );
+alter table public.categories add column if not exists kind text not null default 'project' check (kind in ('project','unit'));
+
+-- seed the unit types that used to be hardcoded in the admin form, so an
+-- existing install's units keep matching an entry after this migration
+insert into public.categories (name, kind, sort_order)
+select v.name, 'unit', v.sort_order from (values
+  ('Villa', 0), ('Apartment', 1), ('Duplex', 2), ('Townhouse', 3),
+  ('Studio', 4), ('Office', 5), ('Retail', 6)
+) as v(name, sort_order)
+where not exists (select 1 from public.categories where kind = 'unit');
 
 -- seed the categories that used to be hardcoded in the admin form, so an
 -- existing install's projects keep matching an entry after this migration
-insert into public.categories (name, sort_order)
-select v.name, v.sort_order from (values
+insert into public.categories (name, kind, sort_order)
+select v.name, 'project', v.sort_order from (values
   ('Residential', 0), ('Commercial', 1), ('Mixed-use', 2),
   ('Hospitality', 3), ('Retail', 4), ('Office', 5)
 ) as v(name, sort_order)
-where not exists (select 1 from public.categories);
+where not exists (select 1 from public.categories where kind = 'project');
 
 -- Cities — top of the hierarchy: City -> Projects -> Units
 create table if not exists public.cities (
