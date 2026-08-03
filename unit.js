@@ -200,7 +200,8 @@ window.addEventListener('scroll', onHeaderScroll, { passive: true });
   try {
     const [units, projects] = await Promise.all([
       window.store.getUnits ? window.store.getUnits() : [],
-      window.store.getProjects ? window.store.getProjects() : []
+      window.store.getProjects ? window.store.getProjects() : [],
+      window.store.getCategories ? window.store.getCategories() : null
     ]);
     ALL = units || [];
     ALL_PROJECTS = projects || [];

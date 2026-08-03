@@ -127,6 +127,21 @@
 
   const getCompany = () => getBlock('company', (F.content && F.content.company) || {});
 
+  // project categories + unit types are plain text on each project/unit row
+  // (matched by name, not a foreign key), so a custom admin-added value has
+  // no entry in i18n.js's static dictionary. Fetching this once and handing
+  // the Arabic names to i18n.js's t() as a runtime fallback means every
+  // existing t(project.category)/t(unit.type) call site across the site
+  // picks it up automatically — no per-page changes needed.
+  function mapCategory(r) { return { name: r.name, nameAr: r.name_ar || '', kind: r.kind }; }
+  async function getCategories() {
+    const rows = await fetchTable('categories', F.categories || [], mapCategory);
+    const map = window.CATEGORY_NAMES_AR || {};
+    (rows || []).forEach(c => { if (c.nameAr) map[c.name] = c.nameAr; });
+    window.CATEGORY_NAMES_AR = map;
+    return rows;
+  }
+
   // ---------- inquiries (contact form) ----------
   async function submitInquiry(payload) {
     if (!sb) return { error: { message: 'No backend configured' } };
@@ -185,6 +200,7 @@
     getDevelopers:   () => fetchTable('developers', F.developers || []),
     getBlogPosts:    () => fetchTable('blog_posts', F.blogPosts || [], mapBlogPost),
     getUnits:        () => fetchTable('units', F.units || [], mapUnit),
+    getCategories,
     getContent,
     getCompany,
     submitInquiry,

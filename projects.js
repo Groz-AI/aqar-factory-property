@@ -174,8 +174,10 @@ function applyURLParams() {
 
 /* ---------- boot: load projects from the data layer ---------- */
 (async function () {
-  try { P = await window.store.getProjects(); }
-  catch (e) { P = window.PROJECTS || []; }
+  try {
+    const [projects] = await Promise.all([window.store.getProjects(), window.store.getCategories ? window.store.getCategories() : null]);
+    P = projects;
+  } catch (e) { P = window.PROJECTS || []; }
   if (!P || !P.length) P = window.PROJECTS || [];
   buildFacets();
   applyURLParams();

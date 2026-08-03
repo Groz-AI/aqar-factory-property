@@ -237,8 +237,10 @@ function showNotFound() {
 
 /* ---- boot ---- */
 (async function () {
-  try { ALL = await window.store.getProjects(); }
-  catch (e) { ALL = window.PROJECTS || []; }
+  try {
+    const [projects] = await Promise.all([window.store.getProjects(), window.store.getCategories ? window.store.getCategories() : null]);
+    ALL = projects;
+  } catch (e) { ALL = window.PROJECTS || []; }
   if (!ALL || !ALL.length) ALL = window.PROJECTS || [];
   // an unmatched ?id= (deleted/renamed/mistyped) must NOT silently render a
   // different, unrelated project under the wrong URL — that's exactly the

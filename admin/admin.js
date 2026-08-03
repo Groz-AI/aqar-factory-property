@@ -150,13 +150,14 @@
     categories: {
       label: t('Categories'), singular: t('Category'), table: 'categories', icon: 'grid',
       columns: [
-        { key: 'name', label: t('Name'), type: 'name' },
+        { key: 'name', label: t('Name'), type: 'name', sub: 'name_ar' },
         { key: 'kind', label: t('Used for') },
         { key: 'sort_order', label: t('Sort order') },
         { key: 'published', label: t('Status'), type: 'pill' }
       ],
       fields: [
         { key: 'name', label: t('Name'), type: 'text', required: true, half: true },
+        { key: 'name_ar', label: t('Name (Arabic)'), type: 'text', half: true, hint: t('Shown when the site is set to Arabic — leave empty to fall back to the English name above.') },
         {
           key: 'kind', label: t('Used for'), type: 'select', half: true, default: 'project',
           options: [{ value: 'project', label: t('Project categories') }, { value: 'unit', label: t('Unit types') }],

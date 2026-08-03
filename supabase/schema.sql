@@ -100,6 +100,7 @@ begin new.updated_at = now(); return new; end $$;
 create table if not exists public.categories (
   id          uuid primary key default gen_random_uuid(),
   name        text not null,
+  name_ar     text,                                -- Arabic name; falls back to `name` when empty
   kind        text not null default 'project' check (kind in ('project','unit')),
   sort_order  int default 0,
   published   boolean default true,
@@ -107,6 +108,7 @@ create table if not exists public.categories (
   updated_at  timestamptz default now()
 );
 alter table public.categories add column if not exists kind text not null default 'project' check (kind in ('project','unit'));
+alter table public.categories add column if not exists name_ar text;
 
 -- seed the unit types that used to be hardcoded in the admin form, so an
 -- existing install's units keep matching an entry after this migration
@@ -125,6 +127,26 @@ select v.name, 'project', v.sort_order from (values
   ('Hospitality', 3), ('Retail', 4), ('Office', 5)
 ) as v(name, sort_order)
 where not exists (select 1 from public.categories where kind = 'project');
+
+-- backfill the Arabic name for the built-in defaults above (matching the
+-- translations already in i18n.js) so they display correctly in Arabic
+-- immediately, with no admin action needed; never overwrites a value an
+-- admin already set (or already ran this backfill against)
+update public.categories set name_ar = case name
+  when 'Residential'  then 'سكني'
+  when 'Commercial'   then 'تجاري'
+  when 'Mixed-use'    then 'متعدد الاستخدامات'
+  when 'Hospitality'  then 'ضيافة'
+  when 'Retail'       then 'تجزئة'
+  when 'Office'       then 'مكتبي'
+  when 'Villa'        then 'فيلا'
+  when 'Apartment'    then 'شقة'
+  when 'Duplex'       then 'دوبلكس'
+  when 'Townhouse'    then 'تاون هاوس'
+  when 'Studio'       then 'استوديو'
+  else name_ar
+end
+where name_ar is null;
 
 -- Cities — top of the hierarchy: City -> Projects -> Units
 create table if not exists public.cities (

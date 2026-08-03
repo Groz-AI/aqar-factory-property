@@ -860,7 +860,12 @@
   // translate a plain-text string; unknown strings pass through untouched
   function t(str) {
     if (lang !== 'ar' || str == null) return str;
-    return AR[normalize(str)] || AR[str] || str;
+    // admin-managed project categories / unit types aren't in the static
+    // dictionary below (a custom one has no fixed translation) — store.js's
+    // getCategories() fills this map in at runtime from each category's own
+    // Arabic name, so any t(project.category)/t(unit.type) call picks it up
+    // with no per-call-site change needed
+    return AR[normalize(str)] || AR[str] || (window.CATEGORY_NAMES_AR && window.CATEGORY_NAMES_AR[str]) || str;
   }
 
   // set direction/lang as early as possible (before body paints) to avoid

@@ -602,7 +602,8 @@ function wireReveals() {
   const S = window.store;
   try {
     const [cities, projects, units, devs, testis, content] = await Promise.all([
-      S.getCities(), S.getProjects(), S.getUnits ? S.getUnits() : [], S.getDevelopers(), S.getTestimonials(), S.getContent()
+      S.getCities(), S.getProjects(), S.getUnits ? S.getUnits() : [], S.getDevelopers(), S.getTestimonials(), S.getContent(),
+      S.getCategories ? S.getCategories() : null
     ]);
     allProjects = projects || [];
     allUnits = units || [];

@@ -186,7 +186,8 @@
         S.getProjects ? S.getProjects() : [],
         S.getUnits ? S.getUnits() : [],
         S.getCities ? S.getCities() : [],
-        S.getContent ? S.getContent() : {}
+        S.getContent ? S.getContent() : {},
+        S.getCategories ? S.getCategories() : null
       ]);
       dataset.projects = projects || [];
       dataset.units = units || [];
