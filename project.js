@@ -21,6 +21,10 @@ function pick(p, key, arKey) {
   }
   return p[key];
 }
+// the URL slug to link to for the CURRENT language — prefers the item's
+// Arabic slug on /ar/ pages when the admin set one, otherwise reuses the
+// same (English) slug on both languages, same as before slug_ar existed
+function linkSlug(p) { return (isAr() && p.slugAr) ? p.slugAr : p.id; }
 // paragraph/heading block text is trusted HTML (bold/italic/link formatting
 // from the rich-text toolbar — see blocks-render.js), so it must be
 // stripped down to plain text before use in a <meta description> or a
@@ -90,7 +94,12 @@ function populate() {
   // canonical/hreflang are handled generically (and language-aware) by
   // i18n.js's injectSeoLinks() — it self-references the current URL, which
   // already includes this page's ?id=, so no per-page override is needed
-  // here (a hardcoded English-only URL would be wrong on the /ar/ version).
+  // here UNLESS the project has a separate Arabic slug, in which case the
+  // *other* language's hreflang link must point at ITS slug, not this one.
+  if (window.i18n && window.i18n.setCrossLangSlug && (project.slugAr && project.slugAr !== project.id)) {
+    const otherId = isAr() ? project.id : project.slugAr;
+    window.i18n.setCrossLangSlug(`?id=${encodeURIComponent(otherId)}`);
+  }
 
   injectJsonLd({
     '@context': 'https://schema.org',
@@ -232,7 +241,7 @@ function renderRelated() {
     const devLogo = p.developerLogo
       ? `<span class="pcard-dev-logo"><img src="${U(p.developerLogo, 100)}" alt="${p.developer || ''}" title="${p.developer || ''}"></span>` : '';
     return `
-    <a class="pcard" href="project.html?id=${encodeURIComponent(p.id)}">
+    <a class="pcard" href="project.html?id=${encodeURIComponent(linkSlug(p))}">
       <div class="pcard-img" data-gallery>
         ${slides}<div class="pg-shade"></div>
         <span class="pcard-status ${statusClass(p.status)}"><i></i>${p.status || ''}</span>
@@ -297,7 +306,7 @@ let COMPANY = {};
   // different, unrelated project under the wrong URL — that's exactly the
   // kind of "wrong content at this URL" signal that confuses Google's
   // indexing, on top of just being wrong for real visitors
-  project = ALL.find(p => p.id === id);
+  project = ALL.find(p => p.id === id || (p.slugAr && p.slugAr === id));
   if (project) populate();
   else showNotFound();
 })();

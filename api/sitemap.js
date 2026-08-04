@@ -24,10 +24,10 @@
 const SUPA_URL = 'https://dwufpgsqblwjgmzoseev.supabase.co';
 const SUPA_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR3dWZwZ3NxYmx3amdtem9zZWV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5ODgyNTMsImV4cCI6MjA5ODU2NDI1M30.dvO4voO8tRIo-99kHJ3o_x3YvSiaEnq8I0gOmgf1YOY';
 
-async function fetchSlugs(table) {
+async function fetchSlugs(table, select) {
   try {
     const res = await fetch(
-      `${SUPA_URL}/rest/v1/${table}?select=slug,updated_at&published=eq.true`,
+      `${SUPA_URL}/rest/v1/${table}?select=${select}&published=eq.true`,
       { headers: { apikey: SUPA_ANON_KEY, Authorization: `Bearer ${SUPA_ANON_KEY}` } }
     );
     if (!res.ok) return [];
@@ -55,11 +55,30 @@ function urlPair(SITE_URL, path, lastmod, priority) {
   ];
 }
 
+// same as urlPair(), but for project/unit detail pages the Arabic URL may
+// use a DIFFERENT ?id= slug (an admin-set slug_ar) than the English one, so
+// the en/ar hreflang pair must be built from two separate slugs instead of
+// sharing one path+query
+function urlPairSlugged(SITE_URL, base, enSlug, arSlug, lastmod, priority) {
+  const enUrl = `${SITE_URL}${base}?id=${encodeURIComponent(enSlug)}`;
+  const arUrl = `${SITE_URL}/ar${base}?id=${encodeURIComponent(arSlug || enSlug)}`;
+  const lastmodTag = lastmod ? `\n    <lastmod>${lastmod}</lastmod>` : '';
+  const alt = () => `\n    <xhtml:link rel="alternate" hreflang="en" href="${esc(enUrl)}"/>\n    <xhtml:link rel="alternate" hreflang="ar" href="${esc(arUrl)}"/>\n    <xhtml:link rel="alternate" hreflang="x-default" href="${esc(enUrl)}"/>`;
+  return [
+    `  <url>\n    <loc>${esc(enUrl)}</loc>${alt()}${lastmodTag}\n    <priority>${priority}</priority>\n  </url>`,
+    `  <url>\n    <loc>${esc(arUrl)}</loc>${alt()}${lastmodTag}\n    <priority>${priority}</priority>\n  </url>`
+  ];
+}
+
 module.exports = async function handler(req, res) {
   const host = req.headers['x-forwarded-host'] || req.headers.host;
   const SITE_URL = `https://${host}`;
 
-  const [projects, units, posts] = await Promise.all([fetchSlugs('projects'), fetchSlugs('units'), fetchSlugs('blog_posts')]);
+  const [projects, units, posts] = await Promise.all([
+    fetchSlugs('projects', 'slug,slug_ar,updated_at'),
+    fetchSlugs('units', 'slug,slug_ar,updated_at'),
+    fetchSlugs('blog_posts', 'slug,updated_at')
+  ]);
 
   const staticPages = [
     { path: '/', priority: '1.0' },
@@ -72,8 +91,8 @@ module.exports = async function handler(req, res) {
 
   const urls = [
     ...staticPages.flatMap(p => urlPair(SITE_URL, p.path, null, p.priority)),
-    ...projects.flatMap(p => urlPair(SITE_URL, `/project.html?id=${encodeURIComponent(p.slug)}`, (p.updated_at || '').slice(0, 10) || null, '0.8')),
-    ...units.flatMap(u => urlPair(SITE_URL, `/unit.html?id=${encodeURIComponent(u.slug)}`, (u.updated_at || '').slice(0, 10) || null, '0.75')),
+    ...projects.flatMap(p => urlPairSlugged(SITE_URL, '/project.html', p.slug, p.slug_ar, (p.updated_at || '').slice(0, 10) || null, '0.8')),
+    ...units.flatMap(u => urlPairSlugged(SITE_URL, '/unit.html', u.slug, u.slug_ar, (u.updated_at || '').slice(0, 10) || null, '0.75')),
     ...posts.flatMap(p => urlPair(SITE_URL, `/blog-post.html?slug=${encodeURIComponent(p.slug)}`, (p.updated_at || '').slice(0, 10) || null, '0.7'))
   ];
 

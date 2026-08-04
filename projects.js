@@ -58,6 +58,9 @@ function buildFacets() {
 
 const statusClass = s => (s || '').toLowerCase().replace(/[^a-z]/g, '-');
 
+// the URL slug to link to for the CURRENT language — see project.js's
+// linkSlug() for the full explanation
+function linkSlug(p) { return ((window.i18n && window.i18n.lang === 'ar') && p.slugAr) ? p.slugAr : p.id; }
 function cardHTML(p){
   const stats = p.stats || {};
   const imgs = projectImages(p);
@@ -68,7 +71,7 @@ function cardHTML(p){
   const devLogo = p.developerLogo
     ? `<span class="pcard-dev-logo"><img src="${U(p.developerLogo, 100)}" alt="${p.developer || ''}" title="${p.developer || ''}"></span>` : '';
   return `
-  <a class="pcard" href="project.html?id=${encodeURIComponent(p.id)}">
+  <a class="pcard" href="project.html?id=${encodeURIComponent(linkSlug(p))}">
     <div class="pcard-img" data-gallery>
       ${slides}<div class="pg-shade"></div>
       <span class="pcard-status ${statusClass(p.status)}"><i></i>${p.status || ''}</span>

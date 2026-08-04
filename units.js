@@ -56,6 +56,9 @@ function buildFacets() {
     cities.map(c => `<option value="${c}">${c}</option>`).join(''));
 }
 
+// the URL slug to link to for the CURRENT language — see project.js's
+// linkSlug() for the full explanation
+function linkSlug(u) { return ((window.i18n && window.i18n.lang === 'ar') && u.slugAr) ? u.slugAr : u.id; }
 function cardHTML(u) {
   const imgs = unitImages(u);
   const slides = imgs.map((g, n) =>
@@ -63,7 +66,7 @@ function cardHTML(u) {
   const dots = imgs.length > 1
     ? `<div class="pg-dots">${imgs.map((_, n) => `<i class="${n === 0 ? 'on' : ''}"></i>`).join('')}</div>` : '';
   return `
-  <a class="pcard" href="unit.html?id=${encodeURIComponent(u.id)}">
+  <a class="pcard" href="unit.html?id=${encodeURIComponent(linkSlug(u))}">
     <div class="pcard-img" data-gallery>
       ${slides}<div class="pg-shade"></div>
       ${u.badge ? `<span class="pcard-status for-sale"><i></i>${t(u.badge)}</span>` : ''}

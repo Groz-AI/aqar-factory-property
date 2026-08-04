@@ -41,6 +41,17 @@
     .replace(/[\s-]+/g, '-')
     .replace(/^-+|-+$/g, '');
 
+  // Arabic-URL slug: same idea as slugify() above, but keeps Arabic letters
+  // and digits instead of dropping them — everything else (Latin left as-is,
+  // punctuation, diacritics) still collapses to dashes. Browsers/Google both
+  // handle raw Unicode characters in a URL path/query fine (shown decoded,
+  // transmitted percent-encoded), so no manual encoding is needed here.
+  const slugifyAr = (s) => String(s || '')
+    .trim()
+    .replace(/[^ء-ي٠-٩a-zA-Z0-9\s-]/g, '')
+    .replace(/[\s-]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+
   // is a block worth keeping on save? most types are keyed on text/image,
   // but several new block types carry their content in other properties
   function hasBlockContent(b) {
@@ -92,6 +103,7 @@
         { key: 'name', label: t('Name'), type: 'text', required: true, half: true },
         { key: 'name_ar', label: t('Name (Arabic)'), type: 'text', half: true, hint: t('Shown when the site is set to Arabic — leave empty to fall back to the English name above.') },
         { key: 'slug', label: t('Slug (URL id)'), type: 'text', required: true, half: true, hint: t('lowercase, dashes — e.g. azure-residences') },
+        { key: 'slug_ar', label: t('Slug (Arabic URL)'), type: 'text', half: true, hint: t('Used on the /ar/ version — Arabic words allowed, e.g. مشروع-ازور. Leave empty to reuse the English slug above.') },
         { key: 'category', label: t('Category'), type: 'select', options: ['Residential', 'Commercial', 'Mixed-use', 'Hospitality', 'Retail', 'Office'], half: true },
         { key: 'unit_types', label: t('Unit types available'), type: 'tags', hint: t('e.g. Villas, Apartments, Duplex, Townhouses, Studio — powers the hero search and the AI matchmaker') },
         { key: 'status', label: t('Status'), type: 'select', options: ['Completed', 'Ongoing', 'Off-plan'], half: true },
@@ -214,6 +226,7 @@
         { key: 'name', label: t('Name'), type: 'text', required: true, half: true },
         { key: 'name_ar', label: t('Name (Arabic)'), type: 'text', half: true, hint: t('Shown when the site is set to Arabic — leave empty to fall back to the English name above.') },
         { key: 'slug', label: t('Slug (URL id)'), type: 'text', required: true, half: true, hint: t('lowercase, dashes — e.g. marina-sky-villa') },
+        { key: 'slug_ar', label: t('Slug (Arabic URL)'), type: 'text', half: true, hint: t('Used on the /ar/ version — Arabic words allowed, e.g. فيلا-مارينا. Leave empty to reuse the English slug above.') },
         { key: 'type', label: t('Unit type'), type: 'select', options: [], half: true, hint: t('Manage this list under Categories → “Used for: Unit types”.') },
         { key: 'badge', label: t('Badge'), type: 'select', options: ['For Sale', 'New Listing', 'Exclusive'], half: true },
         {
@@ -676,6 +689,14 @@
         let slugDirty = !!(row && row.slug);
         slugInput.addEventListener('input', () => { slugDirty = true; });
         nameInput.addEventListener('input', () => { if (!slugDirty) slugInput.value = slugify(nameInput.value); });
+      }
+      // same auto-fill behavior for the Arabic slug, driven off the Arabic
+      // name field so it stays a native Arabic-word URL, not a transliteration
+      const nameArInput = $('#f_name_ar'), slugArInput = $('#f_slug_ar');
+      if (nameArInput && slugArInput) {
+        let slugArDirty = !!(row && row.slug_ar);
+        slugArInput.addEventListener('input', () => { slugArDirty = true; });
+        nameArInput.addEventListener('input', () => { if (!slugArDirty) slugArInput.value = slugifyAr(nameArInput.value); });
       }
     }
 
@@ -1535,6 +1556,10 @@
       // an empty selection on a reference field (city/project) means "unlinked" —
       // save it as null, not an empty string (uuid columns reject "")
       if (f.type === 'select' && (f.key === 'city_id' || f.key === 'project_id')) { out[f.key] = v === '' ? null : v; continue; }
+      // slug_ar is unique-but-optional — an empty string would collide with
+      // every other row that also left it blank (unlike NULL, which a unique
+      // index never treats as a duplicate)
+      if (f.key === 'slug_ar') { out[f.key] = v.trim() || null; continue; }
       if (f.type === 'tags') { out[f.key] = v.split(',').map(s => s.trim()).filter(Boolean); continue; }
       if (f.type === 'lines') { out[f.key] = v.split('\n').map(s => s.trim()).filter(Boolean); continue; }
       out[f.key] = v.trim ? v.trim() : v;

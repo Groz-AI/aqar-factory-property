@@ -19,6 +19,7 @@
   function mapProject(r) {
     return {
       id: r.slug || r.id,
+      slugAr: r.slug_ar || '',
       dbId: r.id,          // the real uuid primary key
       cityId: r.city_id || null,
       name: r.name, nameAr: r.name_ar || '', category: r.category, unitTypes: r.unit_types || [], city: r.city, location: r.location,
@@ -46,6 +47,7 @@
   function mapUnit(r) {
     return {
       id: r.slug || r.id,
+      slugAr: r.slug_ar || '',
       dbId: r.id,
       projectId: r.project_id || null,
       cityId: r.city_id || null,

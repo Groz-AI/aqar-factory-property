@@ -219,6 +219,11 @@ alter table public.projects   add column if not exists seo_title_ar       text;
 alter table public.projects   add column if not exists seo_description    text;
 alter table public.projects   add column if not exists seo_description_ar text;
 
+-- optional custom Arabic-language URL slug (e.g. مشروع-اسم), used on the
+-- /ar/ version of the project page; falls back to the English `slug` when
+-- empty. Unique like `slug` (NULLs don't collide under a unique index).
+alter table public.projects   add column if not exists slug_ar text unique;
+
 -- one-time backfill: turn each existing about[] paragraph into a paragraph
 -- block, so existing projects keep their content after switching the admin
 -- form over to the block editor (guarded so it only runs once — re-running
@@ -239,6 +244,10 @@ alter table public.units add column if not exists seo_title          text;
 alter table public.units add column if not exists seo_title_ar       text;
 alter table public.units add column if not exists seo_description    text;
 alter table public.units add column if not exists seo_description_ar text;
+
+-- optional custom Arabic-language URL slug — same purpose as
+-- projects.slug_ar above, see that comment.
+alter table public.units add column if not exists slug_ar text unique;
 
 -- one-time backfill: turn each existing plain-text description into a single
 -- paragraph block, so units keep their content after switching the admin

@@ -680,6 +680,9 @@
     'Name': 'الاسم',
     'Slug (URL id)': 'المعرّف (رابط URL)',
     'lowercase, dashes — e.g. azure-residences': 'أحرف صغيرة وشرطات — مثال: azure-residences',
+    'Slug (Arabic URL)': 'المعرّف (رابط URL عربي)',
+    'Used on the /ar/ version — Arabic words allowed, e.g. مشروع-ازور. Leave empty to reuse the English slug above.': 'يُستخدم في نسخة /ar/ — يمكن استخدام كلمات عربية، مثال: مشروع-ازور. اتركه فارغًا لاستخدام المعرّف الإنجليزي أعلاه.',
+    'Used on the /ar/ version — Arabic words allowed, e.g. فيلا-مارينا. Leave empty to reuse the English slug above.': 'يُستخدم في نسخة /ar/ — يمكن استخدام كلمات عربية، مثال: فيلا-مارينا. اتركه فارغًا لاستخدام المعرّف الإنجليزي أعلاه.',
     'Unit types available': 'أنواع الوحدات المتاحة',
     'e.g. Villas, Apartments, Duplex, Townhouses, Studio — powers the hero search and the AI matchmaker': 'مثال: فلل، شقق، دوبلكس، تاون هاوس، استوديو — يُستخدم في بحث القسم الرئيسي ومطابقة الذكاء الاصطناعي',
     '— No linked city —': '— لا توجد مدينة مرتبطة —',
@@ -942,6 +945,24 @@
     upsertLink('link[rel="alternate"][hreflang="x-default"]', { rel: 'alternate', hreflang: 'x-default', href: origin + enPath + search });
   }
 
+  // project.html/unit.html can have a DIFFERENT ?id= slug per language (see
+  // slug_ar in the admin) — injectSeoLinks() above only knows the *current*
+  // URL, so it self-references the same query string for both hreflang
+  // variants, which is wrong once the two languages diverge. The detail
+  // page's own script calls this once it knows both slugs, patching just
+  // the *other* language's hreflang link to point at its real URL (own-
+  // language canonical/hreflang and x-default, already correct, are untouched).
+  function setCrossLangSlug(otherLangSearch) {
+    if (isAdminPath()) return;
+    const origin = 'https://www.aqar-factory.com';
+    const path = location.pathname;
+    const ar = isArPath(path);
+    const enPath = ar ? (path.replace(/^\/ar/, '') || '/') : path;
+    const arPath = ar ? path : (enPath === '/' ? '/ar' : '/ar' + enPath);
+    let el = document.querySelector(ar ? 'link[rel="alternate"][hreflang="en"]' : 'link[rel="alternate"][hreflang="ar"]');
+    if (el) el.setAttribute('href', origin + (ar ? enPath : arPath) + otherLangSearch);
+  }
+
   function initSwitchers() {
     document.querySelectorAll('.lang-switch').forEach(btn => {
       btn.dataset.lang = lang;
@@ -954,6 +975,6 @@
 
   document.addEventListener('DOMContentLoaded', () => { applyStatic(); initSwitchers(); injectSeoLinks(); });
 
-  window.i18n = { lang, t, setLang, getLang, applyStatic };
+  window.i18n = { lang, t, setLang, getLang, applyStatic, setCrossLangSlug };
   window.t = t;
 })();

@@ -131,6 +131,9 @@ function unitTypesList() {
   return [...new Set(allUnits.map(u => u.type).filter(Boolean))];
 }
 
+// the URL slug to link to for the CURRENT language — see project.js's
+// linkSlug() for the full explanation
+function linkSlug(item) { return ((window.i18n && window.i18n.lang === 'ar') && item.slugAr) ? item.slugAr : item.id; }
 function unitCardHTML(u) {
   const imgs = (u.gallery && u.gallery.length ? u.gallery : [u.cover]).filter(Boolean).slice(0, 5);
   const slides = imgs.map((g, i) =>
@@ -142,7 +145,7 @@ function unitCardHTML(u) {
   if (u.baths) specs.push(`${u.baths} ${t('Baths')}`);
   if (u.area) specs.push(u.area);
   return `
-  <a class="project reveal" href="unit.html?id=${encodeURIComponent(u.id)}">
+  <a class="project reveal" href="unit.html?id=${encodeURIComponent(linkSlug(u))}">
     <div class="project-img" data-gallery>${slides}<div class="pg-shade"></div>${dots}${window.cardContact ? window.cardContact.markup(u.name) : ''}</div>
     <div class="project-body">
       <span class="project-tag">${u.type ? t(u.type) : ''}</span>
@@ -236,7 +239,7 @@ function renderProjects(projects) {
       </div>` : '';
 
     return `
-    <a class="project reveal" href="project.html?id=${encodeURIComponent(p.id)}">
+    <a class="project reveal" href="project.html?id=${encodeURIComponent(linkSlug(p))}">
       <div class="project-img" data-gallery>${slides}<div class="pg-shade"></div>${dots}${window.cardContact ? window.cardContact.markup(p.name) : ''}</div>
       <div class="project-body">
         <span class="project-tag">${p.category ? t(p.category) : ''}</span>

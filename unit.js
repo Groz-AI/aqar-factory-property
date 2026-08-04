@@ -15,6 +15,9 @@ function pick(u, key, arKey) {
   }
   return u[key];
 }
+// the URL slug to link to for the CURRENT language — see project.js's
+// linkSlug() for the full explanation
+function linkSlug(u) { return (isAr() && u.slugAr) ? u.slugAr : u.id; }
 // paragraph/heading block text is trusted HTML (bold/italic/link formatting
 // from the rich-text toolbar — see blocks-render.js), so it must be
 // stripped down to plain text before use in a <meta description> or a
@@ -83,6 +86,11 @@ function populate() {
   if (metaDesc && desc) metaDesc.setAttribute('content', desc.length > 160 ? desc.slice(0, 157) + '…' : desc);
   // canonical/hreflang are handled generically (and language-aware) by
   // i18n.js's injectSeoLinks() — see the note in project.js's populate().
+  // Same slug_ar override as project.js when this unit has its own Arabic slug.
+  if (window.i18n && window.i18n.setCrossLangSlug && (unit.slugAr && unit.slugAr !== unit.id)) {
+    const otherId = isAr() ? unit.id : unit.slugAr;
+    window.i18n.setCrossLangSlug(`?id=${encodeURIComponent(otherId)}`);
+  }
 
   injectJsonLd({
     '@context': 'https://schema.org',
@@ -142,7 +150,7 @@ function populate() {
   const banner = document.getElementById('projectBanner');
   const linkedProject = unit.projectId ? ALL_PROJECTS.find(p => p.dbId === unit.projectId) : null;
   if (linkedProject) {
-    banner.href = `project.html?id=${encodeURIComponent(linkedProject.id)}`;
+    banner.href = `project.html?id=${encodeURIComponent((isAr() && linkedProject.slugAr) ? linkedProject.slugAr : linkedProject.id)}`;
     document.getElementById('projectBannerName').textContent = linkedProject.name;
     banner.hidden = false;
   } else {
@@ -204,7 +212,7 @@ function renderRelated() {
     const dots = imgs.length > 1
       ? `<div class="pg-dots">${imgs.map((_, n) => `<i class="${n === 0 ? 'on' : ''}"></i>`).join('')}</div>` : '';
     return `
-    <a class="pcard" href="unit.html?id=${encodeURIComponent(u.id)}">
+    <a class="pcard" href="unit.html?id=${encodeURIComponent(linkSlug(u))}">
       <div class="pcard-img" data-gallery>
         ${slides}<div class="pg-shade"></div>
         <span class="pcard-cat">${u.type ? t(u.type) : ''}</span>
@@ -254,7 +262,7 @@ let COMPANY = {};
   // different, unrelated unit under the wrong URL — that's exactly the kind
   // of "wrong content at this URL" signal that confuses Google's indexing,
   // on top of just being wrong for real visitors
-  unit = ALL.find(u => u.id === id);
+  unit = ALL.find(u => u.id === id || (u.slugAr && u.slugAr === id));
   if (unit) populate();
   else {
     document.title = `${t('Unit not found')} — Aqar Factory`;
