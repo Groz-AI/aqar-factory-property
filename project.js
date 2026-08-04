@@ -94,31 +94,18 @@ function populate() {
 
   injectJsonLd({
     '@context': 'https://schema.org',
-    '@type': 'RealEstateListing',
+    '@type': 'BlogPosting',
     mainEntityOfPage: { '@type': 'WebPage', '@id': location.href },
-    url: location.href,
-    name: customTitle || pick(project, 'name', 'nameAr') || project.name,
+    headline: customTitle || pick(project, 'name', 'nameAr') || project.name,
     description: desc || undefined,
     image: project.cover ? U(project.cover, 1600) : undefined,
-    // `address` isn't a valid direct property of RealEstateListing per the
-    // schema.org spec (it belongs to Place-type things) — nest it under a
-    // Residence instead, which is where it's actually meant to live
-    about: (project.city || project.location || project.country) ? {
-      '@type': 'Residence',
-      name: customTitle || pick(project, 'name', 'nameAr') || project.name,
-      address: {
-        '@type': 'PostalAddress',
-        addressLocality: project.city || project.location || '',
-        addressCountry: project.country || undefined
-      }
-    } : undefined,
-    offers: (project.stats && project.stats.price) ? {
-      '@type': 'Offer',
-      price: project.priceValue || undefined,
-      priceCurrency: 'EGP',
-      availability: 'https://schema.org/InStock'
-    } : undefined,
-    publisher: { '@type': 'Organization', name: 'Aqar Factory', url: 'https://www.aqar-factory.com' }
+    author: { '@type': 'Organization', name: 'Aqar Factory', url: 'https://www.aqar-factory.com' },
+    publisher: {
+      '@type': 'Organization', name: 'Aqar Factory',
+      logo: { '@type': 'ImageObject', url: COMPANY.logo ? U(COMPANY.logo, 512) : undefined }
+    },
+    datePublished: project.createdAt || undefined,
+    dateModified: project.updatedAt || project.createdAt || undefined
   });
 
   const heroImg = document.getElementById('heroImg');
@@ -292,11 +279,18 @@ function showNotFound() {
   if (related) related.style.display = 'none';
 }
 
+let COMPANY = {};
+
 /* ---- boot ---- */
 (async function () {
   try {
-    const [projects] = await Promise.all([window.store.getProjects(), window.store.getCategories ? window.store.getCategories() : null]);
+    const [projects, , company] = await Promise.all([
+      window.store.getProjects(),
+      window.store.getCategories ? window.store.getCategories() : null,
+      window.store.getCompany ? window.store.getCompany() : {}
+    ]);
     ALL = projects;
+    COMPANY = company || {};
   } catch (e) { ALL = window.PROJECTS || []; }
   if (!ALL || !ALL.length) ALL = window.PROJECTS || [];
   // an unmatched ?id= (deleted/renamed/mistyped) must NOT silently render a

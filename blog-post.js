@@ -87,8 +87,12 @@ function populate() {
     author: post.authorName
       ? { '@type': 'Person', name: post.authorName, url: 'https://www.aqar-factory.com/about.html' }
       : { '@type': 'Organization', name: 'Aqar Factory', url: 'https://www.aqar-factory.com' },
-    publisher: { '@type': 'Organization', name: 'Aqar Factory', url: 'https://www.aqar-factory.com' },
-    datePublished: post.publishedAt || undefined
+    publisher: {
+      '@type': 'Organization', name: 'Aqar Factory',
+      logo: { '@type': 'ImageObject', url: COMPANY.logo ? U(COMPANY.logo, 512) : undefined }
+    },
+    datePublished: post.publishedAt || undefined,
+    dateModified: post.updatedAt || post.publishedAt || undefined
   });
 
   document.getElementById('heroImg').style.backgroundImage = `url('${U(post.cover, 1600)}')`;
@@ -123,9 +127,14 @@ const revealObserver = 'IntersectionObserver' in window
     }), { threshold: .16 })
   : null;
 
+let COMPANY = {};
+
 (async function () {
-  try { ALL = await window.store.getBlogPosts(); }
-  catch (e) { ALL = (window.FALLBACK && window.FALLBACK.blogPosts) || []; }
+  try {
+    const [posts, company] = await Promise.all([window.store.getBlogPosts(), window.store.getCompany ? window.store.getCompany() : {}]);
+    ALL = posts;
+    COMPANY = company || {};
+  } catch (e) { ALL = (window.FALLBACK && window.FALLBACK.blogPosts) || []; }
   if (!ALL || !ALL.length) ALL = (window.FALLBACK && window.FALLBACK.blogPosts) || [];
   // an unmatched ?slug= must NOT silently render a different, unrelated
   // post under the wrong URL — redirect away instead (this `if` used to be

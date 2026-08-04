@@ -86,29 +86,18 @@ function populate() {
 
   injectJsonLd({
     '@context': 'https://schema.org',
-    '@type': 'RealEstateListing',
+    '@type': 'BlogPosting',
     mainEntityOfPage: { '@type': 'WebPage', '@id': location.href },
-    url: location.href,
-    name: customTitle || pick(unit, 'name', 'nameAr') || unit.name,
+    headline: customTitle || pick(unit, 'name', 'nameAr') || unit.name,
     description: desc || undefined,
     image: unit.cover ? U(unit.cover, 1600) : undefined,
-    // address/numberOfRooms/numberOfBathroomsTotal aren't valid direct
-    // properties of RealEstateListing per the schema.org spec — they belong
-    // to Accommodation-type things, so nest them under an Apartment instead
-    about: (unit.location || unit.beds || unit.baths) ? {
-      '@type': 'Apartment',
-      name: customTitle || pick(unit, 'name', 'nameAr') || unit.name,
-      address: unit.location ? { '@type': 'PostalAddress', addressLocality: unit.location } : undefined,
-      numberOfRooms: unit.beds || undefined,
-      numberOfBathroomsTotal: unit.baths || undefined
-    } : undefined,
-    offers: unit.price ? {
-      '@type': 'Offer',
-      price: unit.priceValue || undefined,
-      priceCurrency: 'EGP',
-      availability: 'https://schema.org/InStock'
-    } : undefined,
-    publisher: { '@type': 'Organization', name: 'Aqar Factory', url: 'https://www.aqar-factory.com' }
+    author: { '@type': 'Organization', name: 'Aqar Factory', url: 'https://www.aqar-factory.com' },
+    publisher: {
+      '@type': 'Organization', name: 'Aqar Factory',
+      logo: { '@type': 'ImageObject', url: COMPANY.logo ? U(COMPANY.logo, 512) : undefined }
+    },
+    datePublished: unit.createdAt || undefined,
+    dateModified: unit.updatedAt || unit.createdAt || undefined
   });
 
   const heroImg = document.getElementById('heroImg');
@@ -246,16 +235,20 @@ const onHeaderScroll = () => header.classList.toggle('scrolled', window.scrollY 
 onHeaderScroll();
 window.addEventListener('scroll', onHeaderScroll, { passive: true });
 
+let COMPANY = {};
+
 /* ---- boot ---- */
 (async function () {
   try {
-    const [units, projects] = await Promise.all([
+    const [units, projects, , company] = await Promise.all([
       window.store.getUnits ? window.store.getUnits() : [],
       window.store.getProjects ? window.store.getProjects() : [],
-      window.store.getCategories ? window.store.getCategories() : null
+      window.store.getCategories ? window.store.getCategories() : null,
+      window.store.getCompany ? window.store.getCompany() : {}
     ]);
     ALL = units || [];
     ALL_PROJECTS = projects || [];
+    COMPANY = company || {};
   } catch (e) { ALL = []; ALL_PROJECTS = []; }
   // an unmatched ?id= (deleted/renamed/mistyped) must NOT silently render a
   // different, unrelated unit under the wrong URL — that's exactly the kind

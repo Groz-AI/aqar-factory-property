@@ -37,7 +37,8 @@
       brochurePdf: r.brochure_pdf || '', consultants: Array.isArray(r.consultants) ? r.consultants : [],
       stats: { price: r.price, units: r.units, floors: r.floors, area: r.area, handover: r.handover },
       seoTitle: r.seo_title || '', seoTitleAr: r.seo_title_ar || '',
-      seoDescription: r.seo_description || '', seoDescriptionAr: r.seo_description_ar || ''
+      seoDescription: r.seo_description || '', seoDescriptionAr: r.seo_description_ar || '',
+      createdAt: r.created_at || null, updatedAt: r.updated_at || null
     };
   }
 
@@ -65,7 +66,8 @@
       cover: r.cover, gallery: r.gallery || [],
       coords: [r.lat || 0, r.lng || 0],
       seoTitle: r.seo_title || '', seoTitleAr: r.seo_title_ar || '',
-      seoDescription: r.seo_description || '', seoDescriptionAr: r.seo_description_ar || ''
+      seoDescription: r.seo_description || '', seoDescriptionAr: r.seo_description_ar || '',
+      createdAt: r.created_at || null, updatedAt: r.updated_at || null
     };
   }
 
