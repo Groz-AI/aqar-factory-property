@@ -22,6 +22,21 @@ function pick(p, key, arKey) {
   return p[key];
 }
 
+// injects/updates a single <script type="application/ld+json"> in <head> —
+// JSON.stringify silently drops any key whose value is `undefined`, so
+// callers can freely include optional fields (image, offers, address…)
+// without a manual "is this set?" filter pass
+function injectJsonLd(data) {
+  let el = document.getElementById('ldJson');
+  if (!el) {
+    el = document.createElement('script');
+    el.type = 'application/ld+json';
+    el.id = 'ldJson';
+    document.head.appendChild(el);
+  }
+  el.textContent = JSON.stringify(data);
+}
+
 /* ---------- animated cover: cross-fades through the project's own gallery ---------- */
 function projectImages(p) {
   const imgs = (p.gallery || []).filter(Boolean);
@@ -63,6 +78,28 @@ function populate() {
   // i18n.js's injectSeoLinks() — it self-references the current URL, which
   // already includes this page's ?id=, so no per-page override is needed
   // here (a hardcoded English-only URL would be wrong on the /ar/ version).
+
+  injectJsonLd({
+    '@context': 'https://schema.org',
+    '@type': 'RealEstateListing',
+    mainEntityOfPage: { '@type': 'WebPage', '@id': location.href },
+    url: location.href,
+    name: customTitle || pick(project, 'name', 'nameAr') || project.name,
+    description: desc || undefined,
+    image: project.cover ? U(project.cover, 1600) : undefined,
+    address: (project.city || project.location || project.country) ? {
+      '@type': 'PostalAddress',
+      addressLocality: project.city || project.location || '',
+      addressCountry: project.country || undefined
+    } : undefined,
+    offers: (project.stats && project.stats.price) ? {
+      '@type': 'Offer',
+      price: project.priceValue || undefined,
+      priceCurrency: 'EGP',
+      availability: 'https://schema.org/InStock'
+    } : undefined,
+    publisher: { '@type': 'Organization', name: 'Aqar Factory', url: 'https://www.aqar-factory.com' }
+  });
 
   const heroImg = document.getElementById('heroImg');
   if (heroImg._tid) clearInterval(heroImg._tid);

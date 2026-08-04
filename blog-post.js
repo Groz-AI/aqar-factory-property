@@ -19,6 +19,20 @@ function pick(p, key, arKey) {
   return p[key];
 }
 
+// injects/updates a single <script type="application/ld+json"> in <head> —
+// JSON.stringify silently drops any key whose value is `undefined`, so
+// callers can freely include optional fields without a manual filter pass
+function injectJsonLd(data) {
+  let el = document.getElementById('ldJson');
+  if (!el) {
+    el = document.createElement('script');
+    el.type = 'application/ld+json';
+    el.id = 'ldJson';
+    document.head.appendChild(el);
+  }
+  el.textContent = JSON.stringify(data);
+}
+
 function formatDate(iso) {
   if (!iso) return '';
   const d = new Date(iso);
@@ -62,6 +76,18 @@ function populate() {
   if (metaDesc && desc) metaDesc.setAttribute('content', desc);
   // canonical/hreflang are handled generically (and language-aware) by
   // i18n.js's injectSeoLinks() — see the note in project.js's populate().
+
+  injectJsonLd({
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    mainEntityOfPage: { '@type': 'WebPage', '@id': location.href },
+    headline: customTitle || title,
+    description: desc || undefined,
+    image: post.cover ? U(post.cover, 1600) : undefined,
+    author: post.authorName ? { '@type': 'Person', name: post.authorName } : { '@type': 'Organization', name: 'Aqar Factory' },
+    publisher: { '@type': 'Organization', name: 'Aqar Factory', url: 'https://www.aqar-factory.com' },
+    datePublished: post.publishedAt || undefined
+  });
 
   document.getElementById('heroImg').style.backgroundImage = `url('${U(post.cover, 1600)}')`;
   document.getElementById('postTitle').textContent = title;
