@@ -84,7 +84,9 @@ function populate() {
     headline: customTitle || title,
     description: desc || undefined,
     image: post.cover ? U(post.cover, 1600) : undefined,
-    author: post.authorName ? { '@type': 'Person', name: post.authorName } : { '@type': 'Organization', name: 'Aqar Factory' },
+    author: post.authorName
+      ? { '@type': 'Person', name: post.authorName, url: 'https://www.aqar-factory.com/about.html' }
+      : { '@type': 'Organization', name: 'Aqar Factory', url: 'https://www.aqar-factory.com' },
     publisher: { '@type': 'Organization', name: 'Aqar Factory', url: 'https://www.aqar-factory.com' },
     datePublished: post.publishedAt || undefined
   });
