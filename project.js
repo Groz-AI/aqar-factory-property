@@ -21,8 +21,17 @@ function pick(p, key, arKey) {
   }
   return p[key];
 }
+// paragraph/heading block text is trusted HTML (bold/italic/link formatting
+// from the rich-text toolbar — see blocks-render.js), so it must be
+// stripped down to plain text before use in a <meta description> or a
+// JSON-LD string field, neither of which should ever contain markup
+function stripHtml(html) {
+  const tmp = document.createElement('div');
+  tmp.innerHTML = html || '';
+  return tmp.textContent || '';
+}
 function blocksToText(blocks) {
-  return (blocks || []).map(b => b && b.text).filter(Boolean).join(' ');
+  return (blocks || []).map(b => b && b.text ? stripHtml(b.text) : '').filter(Boolean).join(' ');
 }
 
 // injects/updates a single <script type="application/ld+json"> in <head> —
