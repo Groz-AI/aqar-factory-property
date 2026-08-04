@@ -21,6 +21,9 @@ function pick(p, key, arKey) {
   }
   return p[key];
 }
+function blocksToText(blocks) {
+  return (blocks || []).map(b => b && b.text).filter(Boolean).join(' ');
+}
 
 // injects/updates a single <script type="application/ld+json"> in <head> —
 // JSON.stringify silently drops any key whose value is `undefined`, so
@@ -72,7 +75,8 @@ function populate() {
   const customTitle = pick(project, 'seoTitle', 'seoTitleAr');
   document.title = customTitle || `${pick(project, 'name', 'nameAr') || project.name} — Aqar Factory`;
   const metaDesc = document.querySelector('meta[name="description"]');
-  const desc = pick(project, 'seoDescription', 'seoDescriptionAr') || project.tagline || (project.about && project.about[0]) || '';
+  const desc = pick(project, 'seoDescription', 'seoDescriptionAr') || project.tagline
+    || blocksToText(pick(project, 'aboutBlocks', 'aboutBlocksAr')) || (project.about && project.about[0]) || '';
   if (metaDesc && desc) metaDesc.setAttribute('content', desc.length > 160 ? desc.slice(0, 157) + '…' : desc);
   // canonical/hreflang are handled generically (and language-aware) by
   // i18n.js's injectSeoLinks() — it self-references the current URL, which
