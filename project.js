@@ -87,10 +87,17 @@ function populate() {
     name: customTitle || pick(project, 'name', 'nameAr') || project.name,
     description: desc || undefined,
     image: project.cover ? U(project.cover, 1600) : undefined,
-    address: (project.city || project.location || project.country) ? {
-      '@type': 'PostalAddress',
-      addressLocality: project.city || project.location || '',
-      addressCountry: project.country || undefined
+    // `address` isn't a valid direct property of RealEstateListing per the
+    // schema.org spec (it belongs to Place-type things) — nest it under a
+    // Residence instead, which is where it's actually meant to live
+    about: (project.city || project.location || project.country) ? {
+      '@type': 'Residence',
+      name: customTitle || pick(project, 'name', 'nameAr') || project.name,
+      address: {
+        '@type': 'PostalAddress',
+        addressLocality: project.city || project.location || '',
+        addressCountry: project.country || undefined
+      }
     } : undefined,
     offers: (project.stats && project.stats.price) ? {
       '@type': 'Offer',

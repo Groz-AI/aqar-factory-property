@@ -83,9 +83,16 @@ function populate() {
     name: customTitle || pick(unit, 'name', 'nameAr') || unit.name,
     description: desc || undefined,
     image: unit.cover ? U(unit.cover, 1600) : undefined,
-    address: unit.location ? { '@type': 'PostalAddress', addressLocality: unit.location } : undefined,
-    numberOfRooms: unit.beds || undefined,
-    numberOfBathroomsTotal: unit.baths || undefined,
+    // address/numberOfRooms/numberOfBathroomsTotal aren't valid direct
+    // properties of RealEstateListing per the schema.org spec — they belong
+    // to Accommodation-type things, so nest them under an Apartment instead
+    about: (unit.location || unit.beds || unit.baths) ? {
+      '@type': 'Apartment',
+      name: customTitle || pick(unit, 'name', 'nameAr') || unit.name,
+      address: unit.location ? { '@type': 'PostalAddress', addressLocality: unit.location } : undefined,
+      numberOfRooms: unit.beds || undefined,
+      numberOfBathroomsTotal: unit.baths || undefined
+    } : undefined,
     offers: unit.price ? {
       '@type': 'Offer',
       price: unit.priceValue || undefined,
