@@ -291,6 +291,10 @@
   // go(view) names for every sidebar item except overview/settings/users,
   // which are never assignable (personal-account-only, or Owner-only).
   const PAGE_KEYS = ['projects', 'units', 'cities', 'categories', 'testimonials', 'developers', 'posts', 'inquiries', 'newsletter', 'content'];
+  // pages that distinguish "create" from "edit existing" (matches the
+  // per-table policy loop in schema.sql) — inquiries/newsletter/content
+  // don't have that split, so they get no Edit checkbox in the Users form
+  const EDITABLE_PAGE_KEYS = ['projects', 'units', 'cities', 'categories', 'testimonials', 'developers', 'posts'];
   const PAGE_LABELS = () => ({
     projects: t('Projects'), units: t('Units'), cities: t('Cities'), categories: t('Categories'), testimonials: t('Testimonials'),
     developers: t('Developers'), posts: t('Blog'), inquiries: t('Inquiries'),
@@ -300,7 +304,7 @@
   // ============================================================
   // STATE
   // ============================================================
-  const state = { view: 'overview', user: null, cache: {}, query: '', currentAdmin: { role: 'staff', permissions: [], active: true, can_edit: false } };
+  const state = { view: 'overview', user: null, cache: {}, query: '', currentAdmin: { role: 'staff', permissions: [], editPermissions: [], active: true } };
 
   // ============================================================
   // AUTH GUARD
@@ -325,12 +329,12 @@
     // existing page keeps working, and hide the Users page (see go()/
     // applyPermissionVisibility() — nothing meaningful to manage there).
     if (localMode) {
-      state.currentAdmin = { role: 'owner', permissions: PAGE_KEYS.slice(), active: true, can_edit: true };
+      state.currentAdmin = { role: 'owner', permissions: PAGE_KEYS.slice(), editPermissions: PAGE_KEYS.slice(), active: true };
     } else {
       try {
-        const { data: me } = await sb.from('admins').select('role,permissions,active,can_edit')
+        const { data: me } = await sb.from('admins').select('role,permissions,active,edit_permissions')
           .eq('user_id', session.user.id).single();
-        if (me) state.currentAdmin = { role: me.role, permissions: me.permissions || [], active: me.active, can_edit: !!me.can_edit };
+        if (me) state.currentAdmin = { role: me.role, permissions: me.permissions || [], editPermissions: me.edit_permissions || [], active: me.active };
       } catch (_) { /* schema not migrated to RBAC yet, or a transient error — keep the safe staff-with-no-pages default */ }
     }
 
@@ -380,11 +384,12 @@
   }
 
   // staff always get CREATE on pages they're granted; UPDATE/DELETE of
-  // existing rows additionally needs the can_edit flag an Owner grants on
-  // the Users page (see can_edit_content() in schema.sql — this mirrors it
-  // client-side purely for UX, hiding buttons the RLS would reject anyway).
-  function canEditContent() {
-    return state.currentAdmin.role === 'owner' || !!state.currentAdmin.can_edit;
+  // existing rows on a given page additionally needs that page's key in
+  // editPermissions, granted per page by an Owner on the Users page (see
+  // can_edit_content(page) in schema.sql — this mirrors it client-side
+  // purely for UX, hiding buttons the RLS would reject anyway).
+  function canEditContent(view) {
+    return state.currentAdmin.role === 'owner' || state.currentAdmin.editPermissions.includes(view);
   }
 
   // hides sidebar buttons the current admin can't reach — a UX nicety, not
@@ -560,7 +565,7 @@
       $('#tblWrap').innerHTML = `<div class="empty-row">${t('No')} ${r.label.toLowerCase()} ${t('yet. Click')} “${t('Add')} ${r.singular.toLowerCase()}” ${t('to create one.')}</div>`;
       return;
     }
-    const canEdit = canEditContent();
+    const canEdit = canEditContent(view);
     const head = r.columns.map(c => `<th>${esc(c.label)}</th>`).join('') + '<th></th>';
     const body = rows.map(row => {
       const cells = r.columns.map(c => `<td>${cell(c, row)}</td>`).join('');
@@ -2061,10 +2066,6 @@
 
       const editBtn = r.role === 'staff'
         ? `<button class="icon-btn" data-edit-perms="${r.user_id}" title="${esc(t('Edit permissions'))}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>` : '';
-      const editAccessBtn = r.role === 'staff'
-        ? `<button class="icon-btn" data-toggle-edit="${r.user_id}" title="${esc(r.can_edit ? t('Revoke edit access') : t('Grant edit access'))}">${r.can_edit
-          ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>'
-          : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>'}</button>` : '';
       const resetBtn = `<button class="icon-btn" data-reset="${r.user_id}" title="${esc(t('Reset password'))}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg></button>`;
       const toggleBtn = `<button class="icon-btn" data-toggle-active="${r.user_id}" title="${esc(r.active ? t('Deactivate') : t('Reactivate'))}">${r.active
         ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/></svg>'
@@ -2076,9 +2077,17 @@
       const deleteBtn = (!isMe && !isLastOwner)
         ? `<button class="icon-btn del" data-delete="${r.user_id}" title="${esc(t('Delete'))}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>` : '';
 
+      // per-page edit summary: which of this staffer's accessible pages
+      // they can also edit (not just create in) — "All"/"None"/a short list
+      const editPages = (r.edit_permissions || []).filter(p => EDITABLE_PAGE_KEYS.includes(p));
+      const editableAccess = (r.permissions || []).filter(p => EDITABLE_PAGE_KEYS.includes(p));
       const editAccessCell = r.role === 'owner'
         ? `<span style="color:var(--ink-soft)">${esc(t('All'))}</span>`
-        : `<span class="pill ${r.can_edit ? 'on' : ''}"><i></i>${r.can_edit ? esc(t('Can edit')) : esc(t('Create only'))}</span>`;
+        : !editPages.length
+          ? `<span class="pill"><i></i>${esc(t('Create only'))}</span>`
+          : editPages.length >= editableAccess.length && editableAccess.length > 0
+            ? `<span class="pill on"><i></i>${esc(t('Can edit'))} (${esc(t('All'))})</span>`
+            : `<span class="pill on"><i></i>${esc(t('Can edit'))}: ${editPages.map(p => esc(labels[p] || p)).join(', ')}</span>`;
 
       return `<tr>
         <td><div class="name">${esc(r.email || '—')}</div>${isMe ? `<div style="color:var(--ink-soft);font-size:.8rem">${esc(t('You'))}</div>` : ''}</td>
@@ -2086,7 +2095,7 @@
         <td>${r.role === 'owner' ? `<span style="color:var(--ink-soft)">${esc(t('All pages'))}</span>` : perms}</td>
         <td>${editAccessCell}</td>
         <td><span class="pill ${r.active ? 'on' : 'off'}"><i></i>${r.active ? esc(t('Active')) : esc(t('Deactivated'))}</span></td>
-        <td><div class="row-actions">${editBtn}${editAccessBtn}${resetBtn}${toggleBtn}${promoteBtn}${demoteBtn}${deleteBtn}</div></td>
+        <td><div class="row-actions">${editBtn}${resetBtn}${toggleBtn}${promoteBtn}${demoteBtn}${deleteBtn}</div></td>
       </tr>`;
     }).join('');
 
@@ -2096,19 +2105,42 @@
     $$('[data-edit-perms]', wrap).forEach(b => b.addEventListener('click', () => openUserForm(rows.find(x => x.user_id === b.dataset.editPerms))));
     $$('[data-reset]', wrap).forEach(b => b.addEventListener('click', () => resetUserPassword(b.dataset.reset)));
     $$('[data-toggle-active]', wrap).forEach(b => b.addEventListener('click', () => toggleUserActive(b.dataset.toggleActive, rows.find(x => x.user_id === b.dataset.toggleActive))));
-    $$('[data-toggle-edit]', wrap).forEach(b => b.addEventListener('click', () => toggleUserEdit(b.dataset.toggleEdit, rows.find(x => x.user_id === b.dataset.toggleEdit))));
     $$('[data-promote]', wrap).forEach(b => b.addEventListener('click', () => promoteUser(b.dataset.promote)));
     $$('[data-demote]', wrap).forEach(b => b.addEventListener('click', () => demoteUser(b.dataset.demote)));
     $$('[data-delete]', wrap).forEach(b => b.addEventListener('click', () => deleteUser(b.dataset.delete)));
   }
 
-  function pageChecklistHTML(selected) {
+  // one row per page: an "Access" checkbox (create rights — same as before)
+  // plus, only for pages that distinguish create from edit, an "Edit"
+  // checkbox the Owner can tick independently — none, some, or all of a
+  // staffer's accessible pages can have edit rights granted this way.
+  function pageChecklistHTML(selected, editSelected) {
     const labels = PAGE_LABELS();
-    return PAGE_KEYS.map(k => `
-      <label style="display:flex;align-items:center;gap:.5rem;padding:.4em 0">
-        <input type="checkbox" value="${k}" ${selected.includes(k) ? 'checked' : ''}>
-        <span>${esc(labels[k])}</span>
-      </label>`).join('');
+    return `<div class="perm-grid">
+      <div class="perm-grid-head"><span></span><span>${esc(t('Access'))}</span><span>${esc(t('Can edit'))}</span></div>
+      ${PAGE_KEYS.map(k => {
+        const editable = EDITABLE_PAGE_KEYS.includes(k);
+        const hasAccess = selected.includes(k);
+        const hasEdit = editSelected.includes(k);
+        return `<div class="perm-grid-row" data-page="${k}">
+          <span>${esc(labels[k])}</span>
+          <input type="checkbox" class="perm-access" value="${k}" ${hasAccess ? 'checked' : ''}>
+          ${editable ? `<input type="checkbox" class="perm-edit" value="${k}" ${hasEdit ? 'checked' : ''} ${hasAccess ? '' : 'disabled'}>` : '<span></span>'}
+        </div>`;
+      }).join('')}
+    </div>`;
+  }
+
+  // unticking Access also clears (and disables) that page's Edit checkbox —
+  // a staffer can't have edit rights on a page they can't even access
+  function wirePageChecklist() {
+    $$('#u_pages .perm-access').forEach(cb => cb.addEventListener('change', () => {
+      const row = cb.closest('.perm-grid-row');
+      const editCb = row && row.querySelector('.perm-edit');
+      if (!editCb) return;
+      editCb.disabled = !cb.checked;
+      if (!cb.checked) editCb.checked = false;
+    }));
   }
 
   function openUserForm(row) {
@@ -2116,25 +2148,32 @@
     $('#drawerSave').textContent = t('Save');
     $('#drawerTitle').textContent = row ? t('Edit permissions') : (t('Add') + ' ' + t('user'));
     const selected = (row && row.permissions) || [];
+    const editSelected = (row && row.edit_permissions) || [];
     $('#drawerBody').innerHTML = row
       ? `<div class="field"><label>${esc(t('Email'))}</label><input type="text" value="${esc(row.email || '')}" disabled></div>
-         <div class="field"><label>${esc(t('Pages this user can access'))}</label><div id="u_pages">${pageChecklistHTML(selected)}</div></div>`
+         <div class="field"><label>${esc(t('Pages this user can access'))}</label><div id="u_pages">${pageChecklistHTML(selected, editSelected)}</div>
+           <div class="field-hint">${esc(t('Access lets them view and create new items. Can edit additionally lets them update or delete existing ones — grant it per page, for as many or as few pages as you like.'))}</div>
+         </div>`
       : `<div class="field"><label for="u_email">${esc(t('Email'))}</label><input type="email" id="u_email" autocomplete="off"></div>
          <div class="field"><label for="u_password">${esc(t('Password'))}</label><input type="text" id="u_password" autocomplete="off">
            <div class="field-hint">${esc(t('At least 6 characters. They can sign in immediately with this email + password.'))}</div>
          </div>
-         <div class="field"><label>${esc(t('Pages this user can access'))}</label><div id="u_pages">${pageChecklistHTML(selected)}</div></div>`;
+         <div class="field"><label>${esc(t('Pages this user can access'))}</label><div id="u_pages">${pageChecklistHTML(selected, editSelected)}</div>
+           <div class="field-hint">${esc(t('Access lets them view and create new items. Can edit additionally lets them update or delete existing ones — grant it per page, for as many or as few pages as you like.'))}</div>
+         </div>`;
+    wirePageChecklist();
     $('#drawerSave').onclick = () => saveUserForm(row);
     openDrawer();
   }
 
   async function saveUserForm(row) {
     const btn = $('#drawerSave');
-    const permissions = $$('#u_pages input[type="checkbox"]:checked').map(i => i.value);
+    const permissions = $$('#u_pages .perm-access:checked').map(i => i.value);
+    const editPermissions = $$('#u_pages .perm-edit:checked').map(i => i.value);
 
     if (row) {
       btn.disabled = true;
-      const { error } = await sb.from('admins').update({ permissions }).eq('user_id', row.user_id);
+      const { error } = await sb.from('admins').update({ permissions, edit_permissions: editPermissions }).eq('user_id', row.user_id);
       btn.disabled = false;
       if (error) { toast(error.message, 'err'); return; }
       closeDrawer();
@@ -2154,7 +2193,7 @@
       const { data: { session } } = await sb.auth.getSession();
       const res = await fetch('/api/admin-users', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'create', callerToken: session.access_token, email, password, permissions })
+        body: JSON.stringify({ action: 'create', callerToken: session.access_token, email, password, permissions, editPermissions })
       });
       const out = await res.json();
       btn.disabled = false; btn.textContent = original;
@@ -2202,19 +2241,9 @@
 
   // grants/revokes UPDATE + DELETE on this user's granted pages (they keep
   // CREATE either way — that's the staff default and isn't gated by this flag)
-  async function toggleUserEdit(userId, row) {
-    const next = !row.can_edit;
-    if (next && !confirm(t('Grant this user edit access? They will be able to update and delete existing content on any page they can access, not just create new items.'))) return;
-    if (!next && !confirm(t('Revoke edit access? They will only be able to create new items from now on, not change or delete existing ones.'))) return;
-    const { error } = await sb.from('admins').update({ can_edit: next }).eq('user_id', userId);
-    if (error) { toast(error.message, 'err'); return; }
-    toast(next ? t('Edit access granted') : t('Edit access revoked'));
-    renderUsers();
-  }
-
   async function promoteUser(userId) {
     if (!confirm(t('Promote this user to Owner? They will gain full, unrestricted access to everything, including managing other users.'))) return;
-    const { error } = await sb.from('admins').update({ role: 'owner', permissions: [] }).eq('user_id', userId);
+    const { error } = await sb.from('admins').update({ role: 'owner', permissions: [], edit_permissions: [] }).eq('user_id', userId);
     if (error) { toast(error.message, 'err'); return; }
     toast(t('User promoted to Owner'));
     renderUsers();
@@ -2222,7 +2251,7 @@
 
   async function demoteUser(userId) {
     if (!confirm(t('Demote this Owner to Staff? They will lose all access until you assign specific pages.'))) return;
-    const { error } = await sb.from('admins').update({ role: 'staff', permissions: [] }).eq('user_id', userId);
+    const { error } = await sb.from('admins').update({ role: 'staff', permissions: [], edit_permissions: [] }).eq('user_id', userId);
     if (error) { toast(error.message, 'err'); return; }
     toast(t('User demoted to Staff'));
     renderUsers();

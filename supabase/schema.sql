@@ -25,10 +25,23 @@ alter table public.admins add column if not exists role        text not null def
 alter table public.admins add column if not exists permissions jsonb not null default '[]'::jsonb;
 alter table public.admins add column if not exists active      boolean not null default true;
 -- Staff get CREATE (adding new rows) on their granted pages by default; an
--- Owner must separately grant `can_edit` before a staffer can also UPDATE or
--- DELETE existing rows there. Owners are always unrestricted regardless of
--- this flag.
+-- Owner must separately grant edit rights before a staffer can also UPDATE
+-- or DELETE existing rows there. Owners are always unrestricted regardless.
+-- (Legacy: `can_edit` was a single all-or-nothing boolean; superseded by the
+-- per-page `edit_permissions` below, which lets an Owner grant edit rights
+-- to one page, several, or all of a staffer's accessible pages independently.
+-- Column kept around unused rather than dropped, and one-time-backfilled
+-- into edit_permissions just below so nobody's existing edit access is lost.)
 alter table public.admins add column if not exists can_edit    boolean not null default false;
+alter table public.admins add column if not exists edit_permissions jsonb not null default '[]'::jsonb;
+
+-- one-time backfill: a staffer who had the old blanket can_edit=true gets
+-- edit rights on every page they can already access, preserving their
+-- current effective permissions under the new granular model. Guarded so
+-- re-running this file won't clobber edit rights an Owner later narrowed.
+update public.admins
+   set edit_permissions = permissions
+ where can_edit = true and (edit_permissions is null or edit_permissions = '[]'::jsonb);
 
 -- Is the current request made by an active admin (any role)?
 create or replace function public.is_admin()
@@ -57,15 +70,16 @@ language sql stable security definer set search_path = public as $$
   );
 $$;
 
--- Can the current request's admin UPDATE or DELETE existing rows (as
--- opposed to just creating new ones)? Owners always can; Staff need the
--- `can_edit` flag granted explicitly (see Users page in the dashboard).
-create or replace function public.can_edit_content()
+-- Can the current request's admin UPDATE or DELETE existing rows on this
+-- specific page (as opposed to just creating new ones)? Owners always can;
+-- Staff need this page's key granted in `edit_permissions` explicitly (see
+-- the per-page Edit checkboxes on the Users page in the dashboard).
+create or replace function public.can_edit_content(page text)
 returns boolean
 language sql stable security definer set search_path = public as $$
   select exists (
     select 1 from public.admins
-    where user_id = auth.uid() and active = true and (role = 'owner' or can_edit = true)
+    where user_id = auth.uid() and active = true and (role = 'owner' or edit_permissions ? page)
   );
 $$;
 
@@ -454,9 +468,9 @@ begin
     execute format(
       'create policy "admin create" on public.%I for insert with check (public.has_page(%L));', tables[i], pages[i]);
     execute format(
-      'create policy "admin edit" on public.%I for update using (public.has_page(%L) and public.can_edit_content()) with check (public.has_page(%L) and public.can_edit_content());', tables[i], pages[i], pages[i]);
+      'create policy "admin edit" on public.%I for update using (public.has_page(%L) and public.can_edit_content(%L)) with check (public.has_page(%L) and public.can_edit_content(%L));', tables[i], pages[i], pages[i], pages[i], pages[i]);
     execute format(
-      'create policy "admin delete" on public.%I for delete using (public.has_page(%L) and public.can_edit_content());', tables[i], pages[i]);
+      'create policy "admin delete" on public.%I for delete using (public.has_page(%L) and public.can_edit_content(%L));', tables[i], pages[i], pages[i]);
   end loop;
 end $$;
 

@@ -25,7 +25,10 @@
    Supabase's REST/Admin HTTP API directly via fetch().
    ============================================================ */
 
-const PAGE_KEYS = ['projects', 'cities', 'testimonials', 'developers', 'posts', 'inquiries', 'newsletter', 'content'];
+const PAGE_KEYS = ['projects', 'cities', 'testimonials', 'developers', 'posts', 'inquiries', 'newsletter', 'content', 'units', 'categories'];
+// subset of PAGE_KEYS that distinguish create from edit — mirrors
+// EDITABLE_PAGE_KEYS in admin/admin.js and the policy loop in schema.sql
+const EDITABLE_PAGE_KEYS = ['projects', 'units', 'cities', 'categories', 'testimonials', 'developers', 'posts'];
 
 function send(res, status, body) {
   res.status(status).json(body);
@@ -102,6 +105,11 @@ module.exports = async function handler(req, res) {
       const email = String(body.email || '').trim().toLowerCase();
       const password = String(body.password || '');
       const permissions = Array.isArray(body.permissions) ? body.permissions.filter(p => PAGE_KEYS.includes(p)) : [];
+      // edit rights can only be granted on a page the user also has access
+      // to, and only on pages that distinguish create from edit at all
+      const editPermissions = Array.isArray(body.editPermissions)
+        ? body.editPermissions.filter(p => EDITABLE_PAGE_KEYS.includes(p) && permissions.includes(p))
+        : [];
 
       if (!/^\S+@\S+\.\S+$/.test(email)) { send(res, 400, { error: 'invalid_email' }); return; }
       if (password.length < 6) { send(res, 400, { error: 'invalid_password' }); return; }
@@ -118,7 +126,7 @@ module.exports = async function handler(req, res) {
       const insertRes = await fetch(`${SUPABASE_URL}/rest/v1/admins`, {
         method: 'POST',
         headers: { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: newId, email, role: 'staff', permissions, active: true })
+        body: JSON.stringify({ user_id: newId, email, role: 'staff', permissions, edit_permissions: editPermissions, active: true })
       });
       if (!insertRes.ok) {
         // don't leave an orphaned, permission-less auth user behind
@@ -130,7 +138,7 @@ module.exports = async function handler(req, res) {
         return;
       }
 
-      send(res, 200, { ok: true, user: { id: newId, email, role: 'staff', permissions, active: true } });
+      send(res, 200, { ok: true, user: { id: newId, email, role: 'staff', permissions, edit_permissions: editPermissions, active: true } });
       return;
     }
 
