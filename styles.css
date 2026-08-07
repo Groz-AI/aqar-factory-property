@@ -814,6 +814,28 @@ em{font-style:normal}
 .ai-fab-icon svg{width:20px;height:20px}
 .ai-fab-label{white-space:nowrap}
 
+/* floating WhatsApp button — opposite corner from the AI fab, opens a
+   pre-filled wa.me chat directly on click, no form in between */
+.wa-fab{
+  position:fixed;inset-inline-start:26px;bottom:26px;z-index:300;
+  width:58px;height:58px;border-radius:50%;border:none;cursor:pointer;
+  display:grid;place-items:center;background:#25D366;color:#fff;
+  box-shadow:0 10px 30px -8px rgba(37,211,102,.6);
+  transition:transform .3s var(--ease),box-shadow .3s var(--ease);
+  animation:waFabPulse 2.6s ease-in-out infinite;
+}
+.wa-fab svg{width:30px;height:30px}
+.wa-fab:hover{transform:translateY(-3px) scale(1.05);box-shadow:0 14px 34px -8px rgba(37,211,102,.75)}
+.wa-fab:active{transform:translateY(-1px) scale(.97)}
+@keyframes waFabPulse{
+  0%,100%{box-shadow:0 10px 30px -8px rgba(37,211,102,.6),0 0 0 0 rgba(37,211,102,.5)}
+  50%{box-shadow:0 10px 30px -8px rgba(37,211,102,.6),0 0 0 10px rgba(37,211,102,0)}
+}
+@media (max-width:640px){
+  .wa-fab{width:52px;height:52px;inset-inline-start:16px;bottom:16px}
+  .wa-fab svg{width:26px;height:26px}
+}
+
 /* chat panel — always rides 74px above wherever the fab button currently is */
 .ai-panel{
   position:fixed;inset-inline-end:26px;bottom:calc(var(--ai-fab-bottom,26px) + 74px);width:min(400px,calc(100vw - 40px));

@@ -82,6 +82,7 @@ function cycleGalleries(scopeSel, hoverSel, baseInterval) {
 }
 
 let ALL = [];
+let ALL_UNITS = [];
 let project = null;
 
 function populate() {
@@ -147,6 +148,7 @@ function populate() {
     sidebarContact.innerHTML = window.cardContact.markup(project.name, { inline: true });
     window.cardContact.wire(sidebarContact);
   }
+  if (window.waFab) window.waFab.setMessage(`${t("Hi! I'm interested in")} ${displayName} — ${t('could you share more details?')}`);
 
   const facts = [
     ['Status', project.status],
@@ -189,6 +191,7 @@ function populate() {
     `<figure data-idx="${i}"><img src="${U(g, 800)}" alt="${project.name} photo ${i + 1}" loading="lazy" /></figure>`).join('');
 
   renderRelated();
+  renderDeveloperPicks();
   cycleGalleries('#detailHero', '.detail-hero', 7000);
   window.scrollTo(0, 0);
 }
@@ -225,6 +228,32 @@ document.addEventListener('keydown', e => {
 });
 
 /* ---- related projects ---- */
+function projectCardHTML(p) {
+  const imgs = projectImages(p);
+  const slides = imgs.map((g, n) =>
+    `<div class="pg-slide${n === 0 ? ' active' : ''}" style="background-image:url('${U(g, 800)}')"></div>`).join('');
+  const dots = imgs.length > 1
+    ? `<div class="pg-dots">${imgs.map((_, n) => `<i class="${n === 0 ? 'on' : ''}"></i>`).join('')}</div>` : '';
+  const devLogo = p.developerLogo
+    ? `<span class="pcard-dev-logo"><img src="${U(p.developerLogo, 100)}" alt="${p.developer || ''}" title="${p.developer || ''}"></span>` : '';
+  return `
+  <a class="pcard" href="project.html?id=${encodeURIComponent(linkSlug(p))}">
+    <div class="pcard-img" data-gallery>
+      ${slides}<div class="pg-shade"></div>
+      <span class="pcard-status ${statusClass(p.status)}"><i></i>${p.status || ''}</span>
+      <span class="pcard-cat">${p.category ? t(p.category) : ''}</span>
+      ${devLogo}
+      ${dots}${window.cardContact ? window.cardContact.markup(p.name) : ''}
+    </div>
+    <div class="pcard-body">
+      <h3>${p.name}</h3>
+      <p class="pcard-loc">${pinSVG}${p.location || ''}</p>
+      <p class="pcard-tag">${p.tagline || ''}</p>
+      <div class="pcard-foot"><span class="pcard-price">${window.formatPrice ? window.formatPrice((p.stats || {}).price) : ((p.stats || {}).price || '')}</span><span class="arrow">${arrowSVG}</span></div>
+    </div>
+  </a>`;
+}
+
 function renderRelated() {
   const grid = document.getElementById('related');
   grid.querySelectorAll('[data-gallery]').forEach(b => { if (b._tid) clearInterval(b._tid); });
@@ -232,32 +261,52 @@ function renderRelated() {
     .filter(p => p.id !== project.id)
     .sort((a, b) => (b.city === project.city) - (a.city === project.city) || (b.category === project.category) - (a.category === project.category))
     .slice(0, 3);
-  grid.innerHTML = related.map(p => {
-    const imgs = projectImages(p);
-    const slides = imgs.map((g, n) =>
-      `<div class="pg-slide${n === 0 ? ' active' : ''}" style="background-image:url('${U(g, 800)}')"></div>`).join('');
-    const dots = imgs.length > 1
-      ? `<div class="pg-dots">${imgs.map((_, n) => `<i class="${n === 0 ? 'on' : ''}"></i>`).join('')}</div>` : '';
-    const devLogo = p.developerLogo
-      ? `<span class="pcard-dev-logo"><img src="${U(p.developerLogo, 100)}" alt="${p.developer || ''}" title="${p.developer || ''}"></span>` : '';
-    return `
-    <a class="pcard" href="project.html?id=${encodeURIComponent(linkSlug(p))}">
-      <div class="pcard-img" data-gallery>
-        ${slides}<div class="pg-shade"></div>
-        <span class="pcard-status ${statusClass(p.status)}"><i></i>${p.status || ''}</span>
-        <span class="pcard-cat">${p.category ? t(p.category) : ''}</span>
-        ${devLogo}
-        ${dots}${window.cardContact ? window.cardContact.markup(p.name) : ''}
-      </div>
-      <div class="pcard-body">
-        <h3>${p.name}</h3>
-        <p class="pcard-loc">${pinSVG}${p.location || ''}</p>
-        <p class="pcard-tag">${p.tagline || ''}</p>
-        <div class="pcard-foot"><span class="pcard-price">${window.formatPrice ? window.formatPrice((p.stats || {}).price) : ((p.stats || {}).price || '')}</span><span class="arrow">${arrowSVG}</span></div>
-      </div>
-    </a>`;
-  }).join('');
+  grid.innerHTML = related.map(projectCardHTML).join('');
   cycleGalleries('#related', '.pcard', 4000);
+  if (window.cardContact) window.cardContact.wire(grid);
+}
+
+/* ---- more from the same developer (other projects + units) ---- */
+function unitCardHTML(u) {
+  const imgs = (u.gallery || []).filter(Boolean).slice(0, 6);
+  const cover = imgs.length ? imgs : [u.cover].filter(Boolean);
+  const slides = cover.map((g, n) =>
+    `<div class="pg-slide${n === 0 ? ' active' : ''}" style="background-image:url('${U(g, 800)}')"></div>`).join('');
+  const dots = cover.length > 1
+    ? `<div class="pg-dots">${cover.map((_, n) => `<i class="${n === 0 ? 'on' : ''}"></i>`).join('')}</div>` : '';
+  return `
+  <a class="pcard" href="unit.html?id=${encodeURIComponent((isAr() && u.slugAr) ? u.slugAr : u.id)}">
+    <div class="pcard-img" data-gallery>
+      ${slides}<div class="pg-shade"></div>
+      <span class="pcard-cat">${u.type ? t(u.type) : ''}</span>
+      ${dots}${window.cardContact ? window.cardContact.markup(u.name) : ''}
+    </div>
+    <div class="pcard-body">
+      <h3>${u.name}</h3>
+      <p class="pcard-loc">${pinSVG}${u.location || ''}</p>
+      <div class="pcard-foot"><span class="pcard-price">${window.formatPrice ? window.formatPrice(u.price) : (u.price || '')}</span><span class="arrow">${arrowSVG}</span></div>
+    </div>
+  </a>`;
+}
+
+function renderDeveloperPicks() {
+  const section = document.getElementById('devPicksSection');
+  const grid = document.getElementById('devPicks');
+  if (!section || !grid) return;
+  if (!project.developer) { section.hidden = true; return; }
+
+  const devProjects = ALL.filter(p => p.id !== project.id && p.developer === project.developer);
+  const devUnits = ALL_UNITS.filter(u => {
+    const linked = u.projectId ? ALL.find(p => p.dbId === u.projectId) : null;
+    return linked && linked.developer === project.developer;
+  });
+  if (!devProjects.length && !devUnits.length) { section.hidden = true; return; }
+
+  section.hidden = false;
+  document.getElementById('devPicksTitle').textContent = `${t('More from')} ${project.developer}`;
+  grid.querySelectorAll('[data-gallery]').forEach(b => { if (b._tid) clearInterval(b._tid); });
+  grid.innerHTML = devProjects.map(projectCardHTML).join('') + devUnits.map(unitCardHTML).join('');
+  cycleGalleries('#devPicks', '.pcard', 4000);
   if (window.cardContact) window.cardContact.wire(grid);
 }
 
@@ -293,12 +342,14 @@ let COMPANY = {};
 /* ---- boot ---- */
 (async function () {
   try {
-    const [projects, , company] = await Promise.all([
+    const [projects, units, , company] = await Promise.all([
       window.store.getProjects(),
+      window.store.getUnits ? window.store.getUnits() : [],
       window.store.getCategories ? window.store.getCategories() : null,
       window.store.getCompany ? window.store.getCompany() : {}
     ]);
     ALL = projects;
+    ALL_UNITS = units || [];
     COMPANY = company || {};
   } catch (e) { ALL = window.PROJECTS || []; }
   if (!ALL || !ALL.length) ALL = window.PROJECTS || [];

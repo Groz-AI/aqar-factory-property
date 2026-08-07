@@ -166,8 +166,30 @@
     openModal();
   });
 
+  // ---------- floating WhatsApp button — direct chat, no form ----------
+  // Always-visible corner button (opposite the AI fab). Unlike the header
+  // button above, this skips the lead-capture modal entirely: one click
+  // opens wa.me with a message already filled in, ready to send. On a
+  // project/unit detail page, project.js/unit.js call window.waFab.setMessage()
+  // once the item's name has loaded so the message is contextual; everywhere
+  // else it stays on the generic default below.
+  let fabMessage = t("Hi! I'm interested in your listings") + ' — ' + t('could you share more details?');
+  const fab = document.createElement('button');
+  fab.type = 'button';
+  fab.className = 'wa-fab';
+  fab.setAttribute('aria-label', t('Chat with us on WhatsApp'));
+  fab.hidden = true;
+  fab.innerHTML = waIconSVG;
+  document.body.appendChild(fab);
+  fab.addEventListener('click', () => {
+    if (!waNumber) return;
+    window.open(`https://wa.me/${waNumber}?text=${encodeURIComponent(fabMessage)}`, '_blank', 'noopener');
+  });
+  window.waFab = { setMessage(msg) { if (msg) fabMessage = msg; } };
+
   // resolve WhatsApp + call numbers from the editable company profile; the
-  // header button stays hidden if neither is configured
+  // header button and floating button stay hidden if no WhatsApp number is
+  // configured (the header button also needs at least a call number)
   (async function resolveNumbers() {
     try {
       const c = window.store && window.store.getCompany ? await window.store.getCompany() : null;
@@ -175,6 +197,7 @@
       waNumber = String(c.phoneSecondary || c.phone || '').replace(/\D/g, '');
       callNumber = String(c.phone || c.phoneSecondary || '').replace(/[^\d+]/g, '');
       if (waNumber || callNumber) { btn.style.display = ''; paintModal(); }
+      fab.hidden = !waNumber;
     } catch (_) { /* keep hidden on failure */ }
   })();
 })();
