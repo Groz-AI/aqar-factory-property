@@ -32,6 +32,19 @@
   };
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
+  // Chrome's contenteditable wraps every new line (Enter, or pasted content
+  // from Word/Google Docs) in its own <div> by default. blocks-render.js
+  // renders a paragraph's text inside a single <p>...</p> — and <div> isn't
+  // valid inside <p>, so the browser silently force-closes the <p> before
+  // each <div> when parsing, splitting one typed paragraph into several on
+  // the live page. Flatten those divs into plain <br> line breaks instead,
+  // so multi-line text always stays the single block it was typed as.
+  const normalizeRTE = (html) => String(html || '')
+    .replace(/<div><br\s*\/?><\/div>/gi, '<br>')
+    .replace(/<div[^>]*>/gi, '')
+    .replace(/<\/div>/gi, '<br>')
+    .replace(/(<br\s*\/?>\s*)+$/i, '');
+
   // name -> URL slug: lowercase, spaces/anything non-alphanumeric collapsed
   // to a single dash (drops accents/non-Latin characters rather than
   // percent-encoding them, so the slug stays a clean, readable ASCII string)
@@ -1262,7 +1275,8 @@
 
       $$('[data-btext]', canvas).forEach(node => {
         const isCE = node.hasAttribute('contenteditable');
-        node.addEventListener('input', () => { arr()[+node.dataset.btext].text = isCE ? node.innerHTML : node.value; });
+        node.addEventListener('input', () => { arr()[+node.dataset.btext].text = isCE ? normalizeRTE(node.innerHTML) : node.value; });
+        if (isCE) node.addEventListener('focus', () => document.execCommand('defaultParagraphSeparator', false, 'br'));
         trackBlock(node, +node.dataset.btext);
       });
       $$('[data-bupload]', canvas).forEach(b => b.addEventListener('click', () => { uploadTarget = +b.dataset.bupload; uploadTargetLang = activeLang; file.click(); }));
@@ -1308,10 +1322,13 @@
         resizeTableBlock(arr()[i], +rowsInput.value, +colsInput.value);
         paintCanvas();
       }));
-      $$('[data-ttext]', canvas).forEach(el => el.addEventListener('input', () => {
-        const [i, ri, ci] = el.dataset.ttext.split(':').map(Number);
-        arr()[i].cells[ri][ci].text = el.innerHTML;
-      }));
+      $$('[data-ttext]', canvas).forEach(el => {
+        el.addEventListener('input', () => {
+          const [i, ri, ci] = el.dataset.ttext.split(':').map(Number);
+          arr()[i].cells[ri][ci].text = normalizeRTE(el.innerHTML);
+        });
+        el.addEventListener('focus', () => document.execCommand('defaultParagraphSeparator', false, 'br'));
+      });
       $$('[data-tcolor]', canvas).forEach(inp => inp.addEventListener('input', () => {
         const [i, ri, ci] = inp.dataset.tcolor.split(':').map(Number);
         arr()[i].cells[ri][ci].bg = inp.value;
@@ -1343,10 +1360,13 @@
         arr()[+i][side].type = newType;
         paintCanvas();
       }));
-      $$('[data-ctext]', canvas).forEach(el => el.addEventListener('input', () => {
-        const [i, side] = el.dataset.ctext.split(':');
-        arr()[+i][side].text = el.innerHTML;
-      }));
+      $$('[data-ctext]', canvas).forEach(el => {
+        el.addEventListener('input', () => {
+          const [i, side] = el.dataset.ctext.split(':');
+          arr()[+i][side].text = normalizeRTE(el.innerHTML);
+        });
+        el.addEventListener('focus', () => document.execCommand('defaultParagraphSeparator', false, 'br'));
+      });
       $$('[data-cupload]', canvas).forEach(btn => btn.addEventListener('click', () => { uploadTarget = btn.dataset.cupload; uploadTargetLang = activeLang; file.click(); }));
       $$('[data-cpick]', canvas).forEach(img => img.addEventListener('click', () => {
         const [i, side] = img.dataset.cpick.split(':');
