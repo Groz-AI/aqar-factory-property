@@ -69,10 +69,22 @@ const img = (id, w = 1200) =>
 const stripHtml = (html) => String(html || '').replace(/<[^>]*>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
 const blocksToText = (blocks) => (Array.isArray(blocks) ? blocks : []).map(b => b && b.text ? stripHtml(b.text) : '').filter(Boolean).join(' ');
 
-async function fetchRow(table, slug) {
+// preview bots (WhatsApp/Facebook/Twitter/…) only ever read title/description/
+// image — fetching and regex-stripping the rich-text about/description
+// blocks (which can be several thousand words of nested HTML) for those was
+// pure wasted latency. AI-content bots still get the full row (select=*) so
+// they can read the actual article/about text.
+const LEAN_SELECT = {
+  projects: 'slug,seo_title,seo_title_ar,seo_description,seo_description_ar,name,name_ar,tagline,cover,developer,location,city,category,status,price',
+  units: 'slug,seo_title,seo_title_ar,seo_description,seo_description_ar,name,name_ar,description,description_ar,cover,type,price,beds,baths,area,location',
+  blog_posts: 'slug,seo_title,seo_title_ar,seo_description,seo_description_ar,title,title_ar,excerpt,excerpt_ar,cover,author_name'
+};
+
+async function fetchRow(table, slug, rich) {
   try {
+    const select = rich ? '*' : LEAN_SELECT[table];
     const res = await fetch(
-      `${SUPA_URL}/rest/v1/${table}?select=*&slug=eq.${encodeURIComponent(slug)}&published=eq.true&limit=1`,
+      `${SUPA_URL}/rest/v1/${table}?select=${select}&slug=eq.${encodeURIComponent(slug)}&published=eq.true&limit=1`,
       { headers: { apikey: SUPA_ANON_KEY, Authorization: `Bearer ${SUPA_ANON_KEY}` } }
     );
     if (!res.ok) return null;
@@ -112,7 +124,8 @@ ${factsList}
 
 export default async function middleware(request) {
   const ua = request.headers.get('user-agent') || '';
-  if (!BOT_RE.test(ua)) return; // not a link-unfurl bot — serve the normal site unchanged
+  if (!BOT_RE.test(ua)) return; // not a link-unfurl/AI bot — serve the normal site unchanged
+  const richMode = AI_BOT_RE.test(ua); // AI bots get full article text; preview bots get the lean/fast path
 
   const url = new URL(request.url);
   const isAr = url.pathname.startsWith('/ar/');
@@ -123,7 +136,7 @@ export default async function middleware(request) {
   const table = page === '/project.html' ? 'projects' : page === '/unit.html' ? 'units' : page === '/blog-post.html' ? 'blog_posts' : null;
   if (!table) return;
 
-  const row = await fetchRow(table, id);
+  const row = await fetchRow(table, id, richMode);
   if (!row) return; // let the page's own "not found" handling take over
 
   const pick = (en, ar) => (isAr && row[ar]) ? row[ar] : row[en];
@@ -134,13 +147,13 @@ export default async function middleware(request) {
     description = pick('seo_description', 'seo_description_ar') || pick('excerpt', 'excerpt_ar');
     image = img(row.cover, 1200);
     if (row.author_name) facts.push([isAr ? 'الكاتب' : 'Author', row.author_name]);
-    bodyText = description + ' ' + blocksToText(pick('blocks', 'blocks_ar'));
+    bodyText = richMode ? description + ' ' + blocksToText(pick('blocks', 'blocks_ar')) : description;
   } else if (table === 'projects') {
     const name = pick('name', 'name_ar') || row.name;
     const customTitle = pick('seo_title', 'seo_title_ar');
     title = customTitle || `${name} — Aqar Factory`;
     description = pick('seo_description', 'seo_description_ar') || row.tagline
-      || blocksToText(pick('about_blocks', 'about_blocks_ar')) || (row.about && row.about[0]) || '';
+      || (richMode ? blocksToText(pick('about_blocks', 'about_blocks_ar')) || (row.about && row.about[0]) : '') || '';
     image = img(row.cover, 1200);
     if (row.developer) facts.push([isAr ? 'المطوّر' : 'Developer', row.developer]);
     if (row.location) facts.push([isAr ? 'الموقع' : 'Location', row.location]);
@@ -148,13 +161,17 @@ export default async function middleware(request) {
     if (row.category) facts.push([isAr ? 'الفئة' : 'Category', row.category]);
     if (row.status) facts.push([isAr ? 'الحالة' : 'Status', row.status]);
     if (row.price) facts.push([isAr ? 'السعر' : 'Price', row.price]);
-    bodyText = description + ' ' + blocksToText(pick('about_blocks', 'about_blocks_ar'))
-      + (row.amenities && row.amenities.length ? ' ' + (isAr ? 'المرافق: ' : 'Amenities: ') + row.amenities.join(', ') : '');
+    bodyText = richMode
+      ? description + ' ' + blocksToText(pick('about_blocks', 'about_blocks_ar'))
+        + (row.amenities && row.amenities.length ? ' ' + (isAr ? 'المرافق: ' : 'Amenities: ') + row.amenities.join(', ') : '')
+      : description;
   } else {
     const name = pick('name', 'name_ar') || row.name;
     const customTitle = pick('seo_title', 'seo_title_ar');
     title = customTitle || `${name} — Aqar Factory`;
-    description = pick('seo_description', 'seo_description_ar') || blocksToText(pick('description_blocks', 'description_blocks_ar')) || pick('description', 'description_ar') || '';
+    description = pick('seo_description', 'seo_description_ar')
+      || (richMode ? blocksToText(pick('description_blocks', 'description_blocks_ar')) : '')
+      || pick('description', 'description_ar') || '';
     image = img(row.cover, 1200);
     if (row.type) facts.push([isAr ? 'النوع' : 'Type', row.type]);
     if (row.price) facts.push([isAr ? 'السعر' : 'Price', row.price]);
@@ -162,7 +179,7 @@ export default async function middleware(request) {
     if (row.baths) facts.push([isAr ? 'دورات المياه' : 'Bathrooms', row.baths]);
     if (row.area) facts.push([isAr ? 'المساحة' : 'Area', row.area]);
     if (row.location) facts.push([isAr ? 'الموقع' : 'Location', row.location]);
-    bodyText = description + ' ' + blocksToText(pick('description_blocks', 'description_blocks_ar'));
+    bodyText = richMode ? description + ' ' + blocksToText(pick('description_blocks', 'description_blocks_ar')) : description;
   }
   description = String(description || '').trim();
   bodyText = String(bodyText || '').trim();
@@ -179,9 +196,14 @@ export default async function middleware(request) {
   });
 
   return new Response(html, {
-    // no caching at any layer — a SEO title/description edit must show up on
-    // the very next bot fetch, not up to 5 minutes later (same rule as
-    // api/sitemap.js's Cache-Control)
-    headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store, must-revalidate' }
+    headers: {
+      'content-type': 'text/html; charset=utf-8',
+      // fresh for 30s at the edge, then serve last-known copy instantly
+      // while quietly refetching in the background — an edit shows up on
+      // the very next fetch after that 30s window, but repeat/retry fetches
+      // (WhatsApp, testing tools) are near-instant instead of round-tripping
+      // to Supabase every single time
+      'cache-control': 'public, max-age=0, s-maxage=30, stale-while-revalidate=120'
+    }
   });
 }
