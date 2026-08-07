@@ -296,7 +296,8 @@ label.switch{position:relative;display:inline-flex;align-items:center;gap:.6rem;
 .fmt-btn:hover{background:#fff;border-color:var(--sky)}
 .fmt-btn svg{width:15px;height:15px}
 .fmt-color{width:28px;height:26px;padding:1px;border:1px solid var(--line);border-radius:6px;cursor:pointer;background:#fff}
-.fmt-size{height:26px;border:1px solid var(--line);border-radius:6px;font-size:.78rem;background:#fff;color:var(--ink);padding:0 .3em}
+.fmt-size-group{display:inline-flex;align-items:center;gap:5px}
+.fmt-size{width:56px;height:26px;border:1px solid var(--line);border-radius:6px;font-size:.78rem;background:#fff;color:var(--ink);padding:0 .4em}
 .icon-popover{position:absolute;top:calc(100% + 6px);left:0;z-index:95;display:grid;grid-template-columns:repeat(6,32px);gap:4px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px;box-shadow:var(--shadow);max-width:260px}
 .icon-popover[hidden]{display:none}
 .icon-pick-opt{width:32px;height:32px;border:1px solid transparent;border-radius:8px;background:none;display:grid;place-items:center;cursor:pointer;color:var(--ink-soft);transition:.15s}
@@ -338,6 +339,13 @@ label.switch{position:relative;display:inline-flex;align-items:center;gap:.6rem;
 .callout-color-row{margin-bottom:8px}
 .callout-color-row label{display:flex;align-items:center;gap:8px;font-size:.78rem;color:var(--ink-soft)}
 .callout-color{width:26px;height:24px;padding:1px;border:1px solid var(--line);border-radius:6px;cursor:pointer}
+
+/* divider block editor */
+.divider-opts-row{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:10px}
+.divider-opts-row label{display:flex;flex-direction:column;gap:4px;font-size:.78rem;color:var(--ink-soft)}
+.divider-color{width:36px;height:24px;padding:1px;border:1px solid var(--line);border-radius:6px;cursor:pointer}
+.divider-thickness,.divider-width{width:64px;border:1px solid var(--line);border-radius:6px;padding:.35em .5em;font-family:inherit}
+.block-divider-preview{margin:4px auto 0}
 
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;
   padding:.9em 1.4em;border-radius:12px;font-size:.92rem;font-weight:500;opacity:0;transition:.3s;z-index:60;box-shadow:var(--shadow)}

@@ -89,7 +89,12 @@
       const src = toEmbedURL(b.text);
       return src ? `<div class="blog-block-video"><iframe src="${esc(src)}" loading="lazy" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen title="video"></iframe></div>` : '';
     }
-    if (b.type === 'divider') return `<hr class="block-divider">`;
+    if (b.type === 'divider') {
+      const color = b.color || '#e2e2e2';
+      const thickness = Number(b.thickness) || 2;
+      const width = Number(b.width) || 100;
+      return `<hr class="block-divider" style="border:none;border-top:${thickness}px solid ${esc(color)};width:${width}%;margin-left:auto;margin-right:auto">`;
+    }
     if (b.type === 'callout') {
       if (!b.text) return '';
       const bg = b.color || 'var(--sky-soft)';

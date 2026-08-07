@@ -990,7 +990,7 @@
       video: () => ({ type: 'video', text: '', image: '' }),
       table: () => ({ type: 'table', text: '', image: '', rows: 2, cols: 2 }),
       'icon-row': () => ({ type: 'icon-row', text: '', image: '', items: [{ icon: 'star', label: '' }] }),
-      divider: () => ({ type: 'divider', text: '', image: '' }),
+      divider: () => ({ type: 'divider', text: '', image: '', color: '#e2e2e2', thickness: 2, width: 100 }),
       callout: () => ({ type: 'callout', text: '', image: '', color: '#fce6eb' }),
       columns: () => ({ type: 'columns', text: '', image: '', left: { type: 'paragraph', text: '' }, right: { type: 'paragraph', text: '' } }),
       button: () => ({ type: 'button', text: '', image: '', label: '', url: '' })
@@ -1050,12 +1050,10 @@
           <button type="button" class="fmt-btn" data-cmd="bold" title="${esc(t('Bold'))}"><b>B</b></button>
           <button type="button" class="fmt-btn" data-cmd="italic" title="${esc(t('Italic'))}"><i>I</i></button>
           <input type="color" class="fmt-color" id="${id}_bsColor" title="${esc(t('Font color'))}" value="#131a21">
-          <select class="fmt-size" id="${id}_bsSize" title="${esc(t('Font size'))}">
-            <option value="0.85em">${t('Small')}</option>
-            <option value="1em" selected>${t('Normal')}</option>
-            <option value="1.25em">${t('Large')}</option>
-            <option value="1.6em">${t('X-Large')}</option>
-          </select>
+          <span class="fmt-size-group">
+            <input type="number" class="fmt-size" id="${id}_bsSize" title="${esc(t('Font size (px)'))}" min="8" max="120" step="1" placeholder="16">
+            <button type="button" class="btn btn-ghost btn-sm" id="${id}_bsSizeApply">${esc(t('Apply size'))}</button>
+          </span>
           <button type="button" class="fmt-btn" data-align="left" title="${esc(t('Align left'))}">${BLOCK_SVG.alignLeft}</button>
           <button type="button" class="fmt-btn" data-align="center" title="${esc(t('Align center'))}">${BLOCK_SVG.alignCenter}</button>
           <button type="button" class="fmt-btn" data-align="right" title="${esc(t('Align right'))}">${BLOCK_SVG.alignRight}</button>
@@ -1135,14 +1133,20 @@
     });
     const colorInput = overlay.querySelector('#' + id + '_bsColor');
     colorInput.addEventListener('input', () => { if (restoreSelection()) document.execCommand('foreColor', false, colorInput.value); });
-    const sizeSelect = overlay.querySelector('#' + id + '_bsSize');
-    sizeSelect.addEventListener('change', () => {
+    // numeric px size (like Word's size box) instead of small/normal/large
+    // presets — select text, type any number, click Apply
+    const sizeInput = overlay.querySelector('#' + id + '_bsSize');
+    const sizeApplyBtn = overlay.querySelector('#' + id + '_bsSizeApply');
+    sizeApplyBtn.addEventListener('mousedown', e => e.preventDefault());
+    sizeApplyBtn.addEventListener('click', () => {
+      const px = parseInt(sizeInput.value, 10);
+      if (!px || px < 1) return;
       if (!restoreSelection()) return;
       const sel = document.getSelection();
       if (!sel.rangeCount || sel.isCollapsed) return;
       const range = sel.getRangeAt(0);
       const span = document.createElement('span');
-      span.style.fontSize = sizeSelect.value;
+      span.style.fontSize = px + 'px';
       span.appendChild(range.extractContents());
       range.insertNode(span);
       const host = span.parentElement && span.parentElement.closest('[contenteditable]');
@@ -1192,7 +1196,12 @@
           body = `<input type="text" placeholder="${esc(t('YouTube or Vimeo URL'))}" value="${esc(b.text)}" data-btext="${i}">
             <div class="field-hint">${esc(t('Paste a normal YouTube or Vimeo link — it is embedded automatically'))}</div>`;
         } else if (b.type === 'divider') {
-          body = `<div class="field-hint">${esc(t('A horizontal line — no options needed'))}</div>`;
+          body = `<div class="divider-opts-row">
+            <label>${t('Color')} <input type="color" class="divider-color" data-dcolor="${i}" value="${esc(b.color || '#e2e2e2')}"></label>
+            <label>${t('Thickness (px)')} <input type="number" min="1" max="20" class="divider-thickness" data-dthick="${i}" value="${esc(b.thickness || 2)}"></label>
+            <label>${t('Width (%)')} <input type="number" min="5" max="100" class="divider-width" data-dwidth="${i}" value="${esc(b.width || 100)}"></label>
+          </div>
+          <hr class="block-divider-preview" style="border-color:${esc(b.color || '#e2e2e2')};border-top-width:${esc(b.thickness || 2)}px;width:${esc(b.width || 100)}%">`;
         } else if (b.type === 'button') {
           body = `<input type="text" placeholder="${esc(t('Button label'))}" value="${esc(b.label || '')}" data-blabel="${i}">
             <input type="text" placeholder="${esc(t('URL (https://…)'))}" value="${esc(b.url || '')}" data-burl="${i}" style="margin-top:8px">`;
@@ -1346,6 +1355,23 @@
 
       // callout / button
       $$('[data-ccolor]', canvas).forEach(inp => inp.addEventListener('input', () => { arr()[+inp.dataset.ccolor].color = inp.value; }));
+      $$('[data-dcolor]', canvas).forEach(inp => inp.addEventListener('input', () => {
+        arr()[+inp.dataset.dcolor].color = inp.value;
+        const hr = inp.closest('.block-row').querySelector('.block-divider-preview');
+        if (hr) hr.style.borderColor = inp.value;
+      }));
+      $$('[data-dthick]', canvas).forEach(inp => inp.addEventListener('input', () => {
+        const v = Math.max(1, +inp.value || 1);
+        arr()[+inp.dataset.dthick].thickness = v;
+        const hr = inp.closest('.block-row').querySelector('.block-divider-preview');
+        if (hr) hr.style.borderTopWidth = v + 'px';
+      }));
+      $$('[data-dwidth]', canvas).forEach(inp => inp.addEventListener('input', () => {
+        const v = Math.min(100, Math.max(5, +inp.value || 100));
+        arr()[+inp.dataset.dwidth].width = v;
+        const hr = inp.closest('.block-row').querySelector('.block-divider-preview');
+        if (hr) hr.style.width = v + '%';
+      }));
       $$('[data-blabel]', canvas).forEach(inp => inp.addEventListener('input', () => { arr()[+inp.dataset.blabel].label = inp.value; }));
       $$('[data-burl]', canvas).forEach(inp => inp.addEventListener('input', () => { arr()[+inp.dataset.burl].url = inp.value; }));
     };
