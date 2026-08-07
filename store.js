@@ -32,7 +32,7 @@
         ? r.about_blocks
         : (r.about || []).map(p => ({ type: 'paragraph', text: p })),
       aboutBlocksAr: Array.isArray(r.about_blocks_ar) ? r.about_blocks_ar : [],
-      amenities: r.amenities || [], developer: r.developer, developerLogo: r.developer_logo || '',
+      amenities: r.amenities || [], developer: r.developer, developerId: r.developer_id || null, developerLogo: r.developer_logo || '',
       gallery: r.gallery || [], coords: [r.lat || 0, r.lng || 0],
       priceValue: Number(r.price_value) || 0, areaValue: Number(r.area_value) || 0, isRental: !!r.is_rental,
       brochurePdf: r.brochure_pdf || '', consultants: Array.isArray(r.consultants) ? r.consultants : [],
@@ -67,6 +67,7 @@
       descriptionBlocksAr: Array.isArray(r.description_blocks_ar) ? r.description_blocks_ar : [],
       cover: r.cover, gallery: r.gallery || [],
       coords: [r.lat || 0, r.lng || 0],
+      developer: r.developer || '', developerId: r.developer_id || null,
       seoTitle: r.seo_title || '', seoTitleAr: r.seo_title_ar || '',
       seoDescription: r.seo_description || '', seoDescriptionAr: r.seo_description_ar || '',
       createdAt: r.created_at || null, updatedAt: r.updated_at || null

@@ -115,7 +115,11 @@
         { key: 'country', label: t('Country'), type: 'text', half: true },
         { key: 'location', label: t('Location / address'), type: 'text' },
         { key: 'tagline', label: t('Tagline'), type: 'text' },
-        { key: 'developer', label: t('Developer'), type: 'text', half: true },
+        {
+          key: 'developer_id', label: t('Developer'), type: 'select', half: true,
+          options: [{ value: '', label: t('— No linked developer —') }],
+          hint: t('Add developers under the Developers section first. Linking (instead of free text) is what lets "more from this developer" recommendations match reliably.')
+        },
         { key: 'developer_logo', label: t('Developer logo'), type: 'image', half: true, hint: t('Shown on the project card and sidebar') },
         { key: 'year', label: t('Year'), type: 'number', half: true },
         { key: 'cover', label: t('Cover image'), type: 'image' },
@@ -238,6 +242,11 @@
           key: 'city_id', label: t('City (optional)'), type: 'select', half: true,
           options: [{ value: '', label: t('— No linked city —') }],
           hint: t('Only used when there\'s no linked project above. Powers the homepage "By Cities" unit counts.')
+        },
+        {
+          key: 'developer_id', label: t('Developer (optional)'), type: 'select', half: true,
+          options: [{ value: '', label: t('— No linked developer —') }],
+          hint: t('Set this directly for a standalone unit with no linked project — used to match "more from this developer" recommendations.')
         },
         { key: 'location', label: t('Location / address'), type: 'text' },
         { key: 'price', label: t('Price (display)'), type: 'text', half: true, hint: t('e.g. EGP 3,200,000') },
@@ -613,6 +622,7 @@
   let uploads = {};   // transient per-form state for arrays/gallery
   let pendingUploads = 0; // in-flight image uploads — block saves until they finish
   let dynamicCitiesList = [];   // { id, name } — cached whenever a City picker is populated
+  let dynamicDevelopersList = []; // { id, name } — cached whenever a Developer picker is populated
 
   async function openForm(view, row) {
     const r = RESOURCES[view];
@@ -631,6 +641,15 @@
       if (cityField) {
         cityField.options = [{ value: '', label: '— No linked city —' }]
           .concat(dynamicCitiesList.map(c => ({ value: c.id, label: c.name })));
+      }
+
+      // same pattern for the linked-Developer picker
+      const { data: devs } = await sb.from('developers').select('id,name').order('name', { ascending: true }).then(res => res, () => ({ data: [] }));
+      dynamicDevelopersList = devs || [];
+      const developerField = r.fields.find(f => f.key === 'developer_id');
+      if (developerField) {
+        developerField.options = [{ value: '', label: '— No linked developer —' }]
+          .concat(dynamicDevelopersList.map(d => ({ value: d.id, label: d.name })));
       }
     }
 
@@ -1560,7 +1579,7 @@
       if (f.type === 'number') { out[f.key] = v === '' ? null : Number(v); continue; }
       // an empty selection on a reference field (city/project) means "unlinked" —
       // save it as null, not an empty string (uuid columns reject "")
-      if (f.type === 'select' && (f.key === 'city_id' || f.key === 'project_id')) { out[f.key] = v === '' ? null : v; continue; }
+      if (f.type === 'select' && (f.key === 'city_id' || f.key === 'project_id' || f.key === 'developer_id')) { out[f.key] = v === '' ? null : v; continue; }
       // slug_ar is unique-but-optional — an empty string would collide with
       // every other row that also left it blank (unlike NULL, which a unique
       // index never treats as a duplicate)
@@ -1587,6 +1606,12 @@
     if (view === 'projects' && 'city_id' in payload) {
       const picked = dynamicCitiesList.find(c => c.id === payload.city_id);
       payload.city = picked ? picked.name : '';
+    }
+    // same for the linked developer — projects.developer / units.developer
+    // stay in sync as plain text for anything still reading it directly
+    if ((view === 'projects' || view === 'units') && 'developer_id' in payload) {
+      const picked = dynamicDevelopersList.find(d => d.id === payload.developer_id);
+      payload.developer = picked ? picked.name : '';
     }
     const save = $('#drawerSave');
     save.disabled = true; save.innerHTML = '<span class="spinner"></span>';

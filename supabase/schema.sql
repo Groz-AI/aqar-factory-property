@@ -238,6 +238,31 @@ alter table public.projects   add column if not exists seo_description_ar text;
 -- empty. Unique like `slug` (NULLs don't collide under a unique index).
 alter table public.projects   add column if not exists slug_ar text unique;
 
+-- link to the shared `developers` list instead of a free-typed name, so
+-- "same developer" recommendations (and anything else site-wide) match
+-- exactly instead of relying on identical spelling/casing in a text field.
+-- `developer` (free text) is kept in sync from this on every save — see
+-- admin.js's saveForm() — so existing code reading it directly still works.
+alter table public.projects   add column if not exists developer_id uuid references public.developers(id) on delete set null;
+
+-- units never had a developer of their own before (only inherited via a
+-- linked project) — same linked-list pattern as projects.developer_id,
+-- letting a unit declare its developer directly even with no project link.
+alter table public.units add column if not exists developer_id uuid references public.developers(id) on delete set null;
+alter table public.units add column if not exists developer text;
+
+-- one-time backfill: auto-link any existing project whose free-typed
+-- `developer` text exactly matches a name already in the `developers`
+-- table, so existing content doesn't lose its developer on migration.
+-- Anything that doesn't match exactly (typo, different casing) is left
+-- for the admin to pick manually in the now-dropdown field.
+update public.projects p
+   set developer_id = d.id
+  from public.developers d
+ where p.developer_id is null
+   and p.developer is not null
+   and lower(trim(p.developer)) = lower(trim(d.name));
+
 -- one-time backfill: turn each existing about[] paragraph into a paragraph
 -- block, so existing projects keep their content after switching the admin
 -- form over to the block editor (guarded so it only runs once — re-running

@@ -289,16 +289,27 @@ function unitCardHTML(u) {
   </a>`;
 }
 
+// true when both sides resolve to the same developer — prefers the linked
+// developer_id (exact, immune to spelling/casing) and only falls back to a
+// plain name match for any legacy row that predates the linked-developer
+// migration and hasn't been assigned one yet
+function sameDeveloper(a, b) {
+  if (!a || !b) return false;
+  if (a.developerId && b.developerId) return a.developerId === b.developerId;
+  return !!a.developer && a.developer === b.developer;
+}
+
 function renderDeveloperPicks() {
   const section = document.getElementById('devPicksSection');
   const grid = document.getElementById('devPicks');
   if (!section || !grid) return;
-  if (!project.developer) { section.hidden = true; return; }
+  if (!project.developerId && !project.developer) { section.hidden = true; return; }
 
-  const devProjects = ALL.filter(p => p.id !== project.id && p.developer === project.developer);
+  const devProjects = ALL.filter(p => p.id !== project.id && sameDeveloper(p, project));
   const devUnits = ALL_UNITS.filter(u => {
+    if (sameDeveloper(u, project)) return true;
     const linked = u.projectId ? ALL.find(p => p.dbId === u.projectId) : null;
-    return linked && linked.developer === project.developer;
+    return sameDeveloper(linked, project);
   });
   if (!devProjects.length && !devUnits.length) { section.hidden = true; return; }
 

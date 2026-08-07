@@ -235,22 +235,37 @@ function renderRelated() {
 }
 
 /* ---- more units from the same developer ---- */
+// true when both sides resolve to the same developer — prefers the linked
+// developer_id (exact, immune to spelling/casing) and only falls back to a
+// plain name match for any legacy row that predates the linked-developer
+// migration and hasn't been assigned one yet
+function sameDeveloper(a, b) {
+  if (!a || !b) return false;
+  if (a.developerId && b.developerId) return a.developerId === b.developerId;
+  return !!a.developer && a.developer === b.developer;
+}
+
 function renderDeveloperPicks() {
   const section = document.getElementById('devPicksSection');
   const grid = document.getElementById('devPicks');
   if (!section || !grid) return;
-  if (!linkedProject || !linkedProject.developer) { section.hidden = true; return; }
+  // a unit's developer is its own direct pick if set, otherwise inherited
+  // from its linked project (same fallback order used to compute this once
+  // for display purposes elsewhere on the page)
+  const self = (unit.developerId || unit.developer) ? unit : linkedProject;
+  if (!self || (!self.developerId && !self.developer)) { section.hidden = true; return; }
+  const developerLabel = self.developer || '';
 
-  const developer = linkedProject.developer;
   const devUnits = ALL.filter(u => {
     if (u.id === unit.id) return false;
+    if (sameDeveloper(u, self)) return true;
     const uProject = u.projectId ? ALL_PROJECTS.find(p => p.dbId === u.projectId) : null;
-    return uProject && uProject.developer === developer;
+    return sameDeveloper(uProject, self);
   });
   if (!devUnits.length) { section.hidden = true; return; }
 
   section.hidden = false;
-  document.getElementById('devPicksTitle').textContent = `${t('More from')} ${developer}`;
+  document.getElementById('devPicksTitle').textContent = `${t('More from')} ${developerLabel}`;
   grid.querySelectorAll('[data-gallery]').forEach(b => { if (b._tid) clearInterval(b._tid); });
   grid.innerHTML = devUnits.map(unitCardHTML).join('');
   cycleGalleries('#devPicks', '.pcard', 4000);
