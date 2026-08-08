@@ -72,6 +72,25 @@
   // look so this still renders cleanly rather than raw browser defaults.
   const BLOCK_TAG_RE = /<(h[1-6]|p|div|hr|ul|ol|li|blockquote|table)[\s>]/i;
 
+  // some pastes go further and wrap several whole paragraphs *inside* a
+  // single heading tag (<h2><p>…</p><p>…</p></h2>) — browsers don't reject
+  // that at parse time (unlike <div> inside <p>), so those paragraphs become
+  // real DOM children of the heading. Since headings are styled
+  // display:flex (for the bullet-dot marker), that silently turns the
+  // paragraphs into flex items and lines them up side by side instead of
+  // stacking — the reported "3 columns". Unwrap any heading that wrongly
+  // contains block-level content, keeping everything it contained but
+  // discarding the invalid heading shell around it.
+  const HEADING_BLOCK_CHILD_SELECTOR = ':is(h1,h2,h3,h4,h5,h6) > :is(p,div,ul,ol,li,hr,blockquote,table,h1,h2,h3,h4,h5,h6)';
+  function unwrapInvalidHeadingNesting(container) {
+    let offender, guard = 0;
+    while ((offender = container.querySelector(HEADING_BLOCK_CHILD_SELECTOR)) && guard++ < 200) {
+      const heading = offender.parentElement;
+      while (heading.firstChild) heading.parentNode.insertBefore(heading.firstChild, heading);
+      heading.remove();
+    }
+  }
+
   function slotHTML(slot) {
     if (!slot) return '';
     if (slot.type === 'image' && slot.image) {
@@ -139,10 +158,15 @@
     }
     // paragraph (default) — trusted HTML: may contain <b>/<i>/<span style>/<a>
     // from the rich-text toolbar, or a whole pasted document's worth of
-    // headings/dividers/lists — see the BLOCK_TAG_RE comment above for why
-    // those two cases can't both be wrapped in <p> the same way
+    // headings/dividers/lists — see the BLOCK_TAG_RE / unwrapInvalidHeadingNesting
+    // comments above for why those two cases can't both be wrapped in <p>
+    // the same way, and why a heading can't just keep whatever it was pasted with
     if (!b.text) return '';
-    return BLOCK_TAG_RE.test(b.text) ? b.text : `<p${alignStyle(b)}>${b.text}</p>`;
+    if (!BLOCK_TAG_RE.test(b.text)) return `<p${alignStyle(b)}>${b.text}</p>`;
+    const tmp = document.createElement('div');
+    tmp.innerHTML = b.text;
+    unwrapInvalidHeadingNesting(tmp);
+    return tmp.innerHTML;
   }
 
   window.renderBlocks = function renderBlocks(blocks) {
