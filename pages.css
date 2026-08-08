@@ -261,6 +261,30 @@
 .rich-content h2:first-child{margin-top:0}
 .rich-content h2::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--sky);flex:none}
 
+/* a paragraph block can contain a whole pasted document (e.g. copied from an
+   AI tool's formatted answer) with its own real heading levels — keep that
+   hierarchy exactly as pasted (h1 bigger than h2, h3 smaller, etc.) rather
+   than flattening it, but still give every level a proper styled look
+   instead of raw browser defaults. Same dot-marker family as h2 above. */
+.rich-content :where(h1,h3,h4,h5,h6){display:flex;align-items:center;gap:.65em;font-family:"Bricolage Grotesque",sans-serif;font-weight:700;color:var(--sky-deep);margin:2.8rem 0 1rem}
+.rich-content :where(h1,h3,h4,h5,h6):first-child{margin-top:0}
+.rich-content :where(h1,h3,h4,h5,h6)::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--sky);flex:none}
+.rich-content h1{font-size:1.38rem}
+.rich-content h3{font-size:1.02rem}
+.rich-content :where(h4,h5,h6){font-size:.92rem}
+
+.blog-article :where(h1,h3,h4,h5,h6){font-family:"Bricolage Grotesque",sans-serif;font-weight:700;letter-spacing:-.01em;margin:2.3rem 0 1.1rem;color:var(--ink)}
+.blog-article :where(h1,h3,h4,h5,h6):first-child{margin-top:0}
+.blog-article h1{font-size:1.75rem}
+.blog-article h3{font-size:1.25rem}
+.blog-article :where(h4,h5,h6){font-size:1.05rem}
+
+/* a bare <hr> from pasted content (as opposed to a deliberately-added
+   Divider block, which carries its own inline color/thickness/width via
+   the .block-divider class set in blocks-render.js) — keep it simple and
+   unobtrusive rather than unstyled browser default */
+.blog-article hr:not(.block-divider), .rich-content hr:not(.block-divider){border:none;border-top:1px solid var(--line);margin:2.4rem 0}
+
 .blog-article p, .rich-content p{color:rgba(19,26,33,.74);margin-bottom:1.3rem}
 .blog-article a, .rich-content a{color:var(--sky-deep);text-decoration:underline;text-underline-offset:2px}
 

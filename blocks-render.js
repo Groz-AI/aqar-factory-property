@@ -60,30 +60,17 @@
   const alignStyle = (b) => b && b.align ? ` style="text-align:${esc(b.align)}"` : '';
 
   // a paragraph block is normally wrapped in a single <p>...</p> — but if an
-  // admin pastes a whole pre-formatted document (headings, dividers, lists)
-  // into one paragraph field, the pasted HTML already contains its own
-  // block-level tags. Nesting those inside another <p> is invalid HTML, so
-  // the browser silently force-closes the outer <p> at the first nested
-  // block tag when parsing the live page — splitting one block into several
-  // stray pieces instead of rendering the structure that was pasted in.
+  // admin pastes a whole pre-formatted document (headings, dividers, lists,
+  // e.g. copied straight out of an AI chat tool's formatted answer) into one
+  // paragraph field, the pasted HTML already contains its own block-level
+  // tags. Nesting those inside another <p> is invalid HTML, so the browser
+  // silently force-closes the outer <p> at the first nested block tag when
+  // parsing the live page — splitting one block into several stray pieces
+  // instead of rendering the structure that was pasted in. Render it
+  // unwrapped instead, so it keeps its original heading levels/hierarchy
+  // exactly as pasted — styles.css gives h1/h3–h6 and bare <hr> their own
+  // look so this still renders cleanly rather than raw browser defaults.
   const BLOCK_TAG_RE = /<(h[1-6]|p|div|hr|ul|ol|li|blockquote|table)[\s>]/i;
-
-  // render pasted rich structure as its own valid HTML instead of wrapping
-  // it — and normalize heading levels / bare <hr>s to match the styling the
-  // block editor's own Heading/Divider block types already get, so pasted
-  // content looks consistent with hand-built blocks rather than raw
-  // browser-default h1/h3/hr styling
-  function renderPastedStructure(html) {
-    const tmp = document.createElement('div');
-    tmp.innerHTML = html;
-    tmp.querySelectorAll('h1,h3,h4,h5,h6').forEach(h => {
-      const h2 = document.createElement('h2');
-      h2.innerHTML = h.innerHTML;
-      h.replaceWith(h2);
-    });
-    tmp.querySelectorAll('hr:not([class])').forEach(hr => { hr.className = 'block-divider'; });
-    return tmp.innerHTML;
-  }
 
   function slotHTML(slot) {
     if (!slot) return '';
@@ -152,10 +139,10 @@
     }
     // paragraph (default) — trusted HTML: may contain <b>/<i>/<span style>/<a>
     // from the rich-text toolbar, or a whole pasted document's worth of
-    // headings/dividers/lists — see renderPastedStructure() above for why
+    // headings/dividers/lists — see the BLOCK_TAG_RE comment above for why
     // those two cases can't both be wrapped in <p> the same way
     if (!b.text) return '';
-    return BLOCK_TAG_RE.test(b.text) ? renderPastedStructure(b.text) : `<p${alignStyle(b)}>${b.text}</p>`;
+    return BLOCK_TAG_RE.test(b.text) ? b.text : `<p${alignStyle(b)}>${b.text}</p>`;
   }
 
   window.renderBlocks = function renderBlocks(blocks) {
