@@ -976,8 +976,24 @@
     const ar = isArPath(path);
     const enPath = ar ? (path.replace(/^\/ar/, '') || '/') : path;
     const arPath = ar ? path : (enPath === '/' ? '/ar' : '/ar' + enPath);
-    let el = document.querySelector(ar ? 'link[rel="alternate"][hreflang="en"]' : 'link[rel="alternate"][hreflang="ar"]');
-    if (el) el.setAttribute('href', origin + (ar ? enPath : arPath) + otherLangSearch);
+    if (ar) {
+      // on the Arabic page: fix both "en" AND "x-default" (which mirrors
+      // "en" by convention — injectSeoLinks() sets them identically) to the
+      // real English slug. Leaving x-default on the old self-referencing
+      // value here previously produced an invalid English-path + Arabic-
+      // slug URL that doesn't correspond to any real page — a broken signal
+      // that can confuse which URL Google treats as canonical.
+      const enHref = origin + enPath + otherLangSearch;
+      const enEl = document.querySelector('link[rel="alternate"][hreflang="en"]');
+      if (enEl) enEl.setAttribute('href', enHref);
+      const xdEl = document.querySelector('link[rel="alternate"][hreflang="x-default"]');
+      if (xdEl) xdEl.setAttribute('href', enHref);
+    } else {
+      // on the English page: only "ar" needs fixing — x-default already
+      // correctly points at this page's own (English) URL
+      const arEl = document.querySelector('link[rel="alternate"][hreflang="ar"]');
+      if (arEl) arEl.setAttribute('href', origin + arPath + otherLangSearch);
+    }
   }
 
   function initSwitchers() {
