@@ -605,6 +605,34 @@ create policy "admin delete subscribers" on public.newsletter_subscribers
   for delete using (public.has_page('newsletter'));
 
 -- ============================================================
+-- ACTIVITY LOG — append-only audit trail of admin actions, shown on
+-- the Users → Activity Log page (Owner only). `email` is a snapshot
+-- taken at the time of the action, so the log stays readable even if
+-- that admin is later renamed/deleted. Nobody can UPDATE or DELETE a
+-- row through the client — no policy grants it — so the trail can't
+-- be edited or covered up from the admin UI.
+-- ============================================================
+create table if not exists public.activity_log (
+  id             uuid primary key default gen_random_uuid(),
+  user_id        uuid references auth.users(id) on delete set null,
+  email          text,
+  action         text not null,   -- 'create' | 'update' | 'delete' | other admin actions (e.g. 'deactivate_user')
+  resource       text not null,   -- page key: projects | units | cities | ... | users
+  resource_label text,            -- display name/title snapshot at the time of the action
+  created_at     timestamptz default now()
+);
+
+alter table public.activity_log enable row level security;
+
+drop policy if exists "admin insert own log" on public.activity_log;
+create policy "admin insert own log" on public.activity_log
+  for insert with check (auth.uid() = user_id and public.is_admin());
+
+drop policy if exists "owner read log" on public.activity_log;
+create policy "owner read log" on public.activity_log
+  for select using (public.is_owner());
+
+-- ============================================================
 -- REALTIME — let the public site receive live updates when an
 -- admin edits content (branding, listings, projects, etc.)
 -- ============================================================

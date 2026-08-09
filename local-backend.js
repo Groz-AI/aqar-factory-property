@@ -148,6 +148,7 @@
   };
   Query.prototype.eq = function (col, val) { this._filters.push([col, val]); return this; };
   Query.prototype.order = function (col, opts) { this._order = { col, asc: !opts || opts.ascending !== false }; return this; };
+  Query.prototype.limit = function (n) { this._limit = n; return this; };
   Query.prototype.insert = function (rows) { this.op = 'insert'; this._payload = rows; return this; };
   Query.prototype.update = function (payload) { this.op = 'update'; this._payload = payload; return this; };
   Query.prototype.delete = function () { this.op = 'delete'; return this; };
@@ -209,6 +210,7 @@
         });
       }
       if (this._head) return { data: null, count: rows.length, error: null };
+      if (this._limit != null) rows = rows.slice(0, this._limit);
       return { data: rows, count: rows.length, error: null };
     } catch (e) {
       return { data: null, error: { message: e.message || String(e) } };

@@ -401,7 +401,7 @@
   // ---------- RBAC: what the signed-in admin can see/access ----------
   function canAccessView(view) {
     if (view === 'overview' || view === 'settings') return true;
-    if (view === 'users') return state.currentAdmin.role === 'owner' && !localMode;
+    if (view === 'users' || view === 'activitylog') return state.currentAdmin.role === 'owner' && !localMode;
     return state.currentAdmin.role === 'owner' || state.currentAdmin.permissions.includes(view);
   }
 
@@ -496,6 +496,7 @@
       pa.style.display = 'inline-flex';
       renderUsers();
     }
+    else if (view === 'activitylog') { renderActivityLog(); pa.style.display = 'none'; }
     else if (RESOURCES[view]) {
       const r = RESOURCES[view];
       $('#primaryAction').querySelector('span').textContent = t('Add') + ' ' + r.singular.toLowerCase();
@@ -1662,6 +1663,11 @@
     const save = $('#drawerSave');
     save.disabled = true; save.innerHTML = '<span class="spinner"></span>';
 
+    // capture before closeDrawer() below resets the module-level `editing`
+    // to null — reading editing.id after that point is exactly the
+    // pre-existing bug this fixes (see commit message for the full story)
+    const wasEditing = !!editing.id;
+
     let res;
     if (editing.id) res = await sb.from(r.table).update(payload).eq('id', editing.id);
     else res = await sb.from(r.table).insert(payload);
@@ -1670,7 +1676,8 @@
     if (res.error) { toast(res.error.message, 'err'); return; }
 
     closeDrawer();
-    toast(editing.id ? t('Saved') : `${r.singular} ${t('created')}`);
+    toast(wasEditing ? t('Saved') : `${r.singular} ${t('created')}`);
+    logAction(wasEditing ? 'update' : 'create', view, payload.name || payload.title || payload.quote || '');
     await refreshCounts();
     renderList(view);
   }
@@ -1699,11 +1706,29 @@
     const r = RESOURCES[view];
     const warning = await linkedChildrenWarning(view, id);
     if (!confirm(`${t('Delete this')} ${r.singular.toLowerCase()}? ${t('This can’t be undone.')}${warning}`)) return;
+    // grab a display name before it's gone — nothing left to read from after delete
+    const row = (state.cache[view] || []).find(x => x.id === id);
+    const label = row ? (row.name || row.title || row.quote || '') : '';
     const { error } = await sb.from(r.table).delete().eq('id', id);
     if (error) { toast(error.message, 'err'); return; }
     toast(`${r.singular} ${t('deleted')}`);
+    logAction('delete', view, label);
     await refreshCounts();
     renderList(view);
+  }
+
+  // ---------- activity log ----------
+  // fire-and-forget: a logging failure must never block or error out the
+  // admin's actual action, which has already succeeded by the time this runs
+  async function logAction(action, resource, label) {
+    if (!sb || !state.user) return;
+    try {
+      await sb.from('activity_log').insert([{
+        user_id: state.user.id, email: state.user.email || '',
+        action, resource, resource_label: label || '',
+        created_at: new Date().toISOString()
+      }]);
+    } catch (_) { /* non-critical */ }
   }
 
   function openDrawer() { $('#overlay').classList.add('open'); $('#drawer').classList.add('open'); }
@@ -2249,6 +2274,7 @@
       if (error) { toast(error.message, 'err'); return; }
       closeDrawer();
       toast(t('Permissions updated'));
+      logAction('update_permissions', 'users', row.email || '');
       renderUsers();
       return;
     }
@@ -2276,6 +2302,7 @@
       }
       closeDrawer();
       toast(t('User created'));
+      logAction('create', 'users', email);
       renderUsers();
     } catch (_) {
       btn.disabled = false; btn.textContent = original;
@@ -2307,6 +2334,7 @@
     const { error } = await sb.from('admins').update({ active: next }).eq('user_id', userId);
     if (error) { toast(error.message, 'err'); return; }
     toast(next ? t('User reactivated') : t('User deactivated'));
+    logAction(next ? 'reactivate_user' : 'deactivate_user', 'users', row.email || '');
     renderUsers();
   }
 
@@ -2314,22 +2342,27 @@
   // CREATE either way — that's the staff default and isn't gated by this flag)
   async function promoteUser(userId) {
     if (!confirm(t('Promote this user to Owner? They will gain full, unrestricted access to everything, including managing other users.'))) return;
+    const target = (state.cache.users || []).find(x => x.user_id === userId);
     const { error } = await sb.from('admins').update({ role: 'owner', permissions: [], edit_permissions: [] }).eq('user_id', userId);
     if (error) { toast(error.message, 'err'); return; }
     toast(t('User promoted to Owner'));
+    logAction('promote_user', 'users', (target && target.email) || '');
     renderUsers();
   }
 
   async function demoteUser(userId) {
     if (!confirm(t('Demote this Owner to Staff? They will lose all access until you assign specific pages.'))) return;
+    const target = (state.cache.users || []).find(x => x.user_id === userId);
     const { error } = await sb.from('admins').update({ role: 'staff', permissions: [], edit_permissions: [] }).eq('user_id', userId);
     if (error) { toast(error.message, 'err'); return; }
     toast(t('User demoted to Staff'));
+    logAction('demote_user', 'users', (target && target.email) || '');
     renderUsers();
   }
 
   async function deleteUser(userId) {
     if (!confirm(t('Permanently delete this user? This can’t be undone.'))) return;
+    const target = (state.cache.users || []).find(x => x.user_id === userId);
     try {
       const { data: { session } } = await sb.auth.getSession();
       const res = await fetch('/api/admin-users', {
@@ -2345,10 +2378,48 @@
         return;
       }
       toast(t('User deleted'));
+      logAction('delete', 'users', (target && target.email) || '');
       renderUsers();
     } catch (_) {
       toast(t('Network error — please try again'), 'err');
     }
+  }
+
+  // ============================================================
+  // ACTIVITY LOG (Owner only) — append-only audit trail; see
+  // logAction() and schema.sql's activity_log RLS (insert-only from the
+  // client, no update/delete policy at all, so the trail can't be edited).
+  // ============================================================
+  async function renderActivityLog() {
+    $('#viewTitle').textContent = t('Activity Log');
+    $('#viewSub').textContent = t('Who did what, and when');
+    $('#content').innerHTML = `<div class="panel"><div id="logWrap"><div class="empty-row"><span class="spinner" style="border-color:rgba(0,0,0,.15);border-top-color:var(--sky)"></span></div></div></div>`;
+    const { data, error } = await sb.from('activity_log').select('*').order('created_at', { ascending: false }).limit(300);
+    if (error) {
+      $('#logWrap').innerHTML = `<div class="empty-row">${t('Couldn’t load:')} ${esc(error.message)}<br><span class="field-hint">${t('If you haven’t yet, run the updated')} <code>supabase/schema.sql</code> ${t('in your Supabase SQL editor.')}</span></div>`;
+      return;
+    }
+    paintActivityLog(data || []);
+  }
+
+  function paintActivityLog(rows) {
+    if (!rows.length) { $('#logWrap').innerHTML = `<div class="empty-row">${t('No activity yet.')}</div>`; return; }
+    const labels = PAGE_LABELS();
+    const ACTION_LABELS = {
+      create: t('Created'), update: t('Updated'), delete: t('Deleted'),
+      update_permissions: t('Updated permissions'),
+      deactivate_user: t('Deactivated'), reactivate_user: t('Reactivated'),
+      promote_user: t('Promoted to Owner'), demote_user: t('Demoted to Staff')
+    };
+    const resourceLabel = (r) => r === 'users' ? t('Users') : (labels[r] || r);
+    const body = rows.map(r => `<tr>
+      <td>${esc(r.email || '—')}</td>
+      <td>${esc(ACTION_LABELS[r.action] || r.action)}</td>
+      <td>${esc(resourceLabel(r.resource))}</td>
+      <td>${esc(r.resource_label || '—')}</td>
+      <td>${esc(new Date(r.created_at).toLocaleString())}</td>
+    </tr>`).join('');
+    $('#logWrap').innerHTML = `<table class="tbl"><thead><tr><th>${t('Email')}</th><th>${t('Action')}</th><th>${t('Page')}</th><th>${t('Item')}</th><th>${t('Time')}</th></tr></thead><tbody>${body}</tbody></table>`;
   }
 
   // ---------- icons ----------
