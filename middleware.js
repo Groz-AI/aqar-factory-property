@@ -103,9 +103,54 @@ async function fetchRow(table, slug, rich) {
   }
 }
 
-function pageHTML({ title, description, image, url, type, facts, bodyText }) {
+async function fetchById(table, id, select) {
+  if (!id) return null;
+  try {
+    const res = await fetch(
+      `${SUPA_URL}/rest/v1/${table}?select=${select}&id=eq.${encodeURIComponent(id)}&limit=1`,
+      { headers: { apikey: SUPA_ANON_KEY, Authorization: `Bearer ${SUPA_ANON_KEY}` } }
+    );
+    if (!res.ok) return null;
+    const rows = await res.json();
+    return rows[0] || null;
+  } catch (_) {
+    return null;
+  }
+}
+
+// "more from the same developer" — mirrors renderDeveloperPicks() in
+// project.js/unit.js, so richMode fetchers see the same recommendations a
+// real visitor would scroll down to
+async function fetchRelated(table, devId, devName, excludeSlug, limit = 6) {
+  if (!devId && !devName) return [];
+  try {
+    const filter = devId ? `developer_id=eq.${encodeURIComponent(devId)}` : `developer=eq.${encodeURIComponent(devName)}`;
+    const res = await fetch(
+      `${SUPA_URL}/rest/v1/${table}?select=slug,slug_ar,name,name_ar&${filter}&published=eq.true&limit=${limit}`,
+      { headers: { apikey: SUPA_ANON_KEY, Authorization: `Bearer ${SUPA_ANON_KEY}` } }
+    );
+    if (!res.ok) return [];
+    const rows = await res.json();
+    return rows.filter(r => r.slug !== excludeSlug);
+  } catch (_) {
+    return [];
+  }
+}
+
+function pageHTML({ title, description, image, url, type, facts, bodyText, amenities, gallery, consultants, brochurePdf, related }) {
   const factsList = facts.length
-    ? `<ul>${facts.map(([k, v]) => `<li><b>${esc(k)}:</b> ${esc(v)}</li>`).join('')}</ul>` : '';
+    ? `<h2>Key facts</h2><ul>${facts.map(([k, v]) => `<li><b>${esc(k)}:</b> ${esc(v)}</li>`).join('')}</ul>` : '';
+  const amenitiesList = (amenities && amenities.length)
+    ? `<h2>Amenities</h2><ul>${amenities.map(a => `<li>${esc(a)}</li>`).join('')}</ul>` : '';
+  const consultantsList = (consultants && consultants.length)
+    ? `<h2>Consultants</h2><ul>${consultants.map(c => `<li>${esc(c)}</li>`).join('')}</ul>` : '';
+  const brochureLink = brochurePdf ? `<p><a href="${esc(brochurePdf)}">Brochure (PDF)</a></p>` : '';
+  const galleryHtml = (gallery && gallery.length)
+    ? `<h2>Gallery (${gallery.length} photos)</h2>` + gallery.map((g, i) => `<img src="${esc(g)}" alt="photo ${i + 1}">`).join('')
+    : '';
+  const relatedHtml = (related && related.length)
+    ? `<h2>Related, from the same developer</h2><ul>${related.map(r => `<li><a href="${esc(r.url)}">${esc(r.name)}</a></li>`).join('')}</ul>`
+    : '';
   return `<!DOCTYPE html>
 <html><head>
 <meta charset="utf-8">
@@ -124,8 +169,13 @@ ${image ? `<meta name="twitter:image" content="${esc(image)}">` : ''}
 </head><body>
 <h1>${esc(title)}</h1>
 ${image ? `<img src="${esc(image)}" alt="${esc(title)}">` : ''}
-${factsList}
 <p>${esc(bodyText)}</p>
+${factsList}
+${amenitiesList}
+${brochureLink}
+${consultantsList}
+${galleryHtml}
+${relatedHtml}
 <p><a href="${esc(url)}">${esc(url)}</a></p>
 </body></html>`;
 }
@@ -158,13 +208,22 @@ export default async function middleware(request) {
   if (!row) return; // let the page's own "not found" handling take over
 
   const pick = (en, ar) => (isAr && row[ar]) ? row[ar] : row[en];
+  const linkUrl = (slug, slugAr, otherTable) => {
+    const p = otherTable === 'units' ? '/unit.html' : otherTable === 'blog_posts' ? '/blog-post.html' : '/project.html';
+    const s = (isAr && slugAr) ? slugAr : slug;
+    return `https://www.aqar-factory.com${isAr ? '/ar' : ''}${p}?id=${encodeURIComponent(s)}`;
+  };
 
   let title, description, image, facts = [], bodyText = '';
+  let amenities = [], gallery = [], consultants = [], brochurePdf = '', related = [];
   if (table === 'blog_posts') {
     title = pick('seo_title', 'seo_title_ar') || pick('title', 'title_ar');
     description = pick('seo_description', 'seo_description_ar') || pick('excerpt', 'excerpt_ar');
     image = img(row.cover, 1200);
     if (row.author_name) facts.push([isAr ? 'الكاتب' : 'Author', row.author_name]);
+    if (row.published_at) facts.push([isAr ? 'تاريخ النشر' : 'Published', row.published_at]);
+    const tags = pick('tags', 'tags_ar') || row.tags;
+    if (tags && tags.length) facts.push([isAr ? 'الوسوم' : 'Tags', tags.join(', ')]);
     bodyText = richMode ? description + ' ' + blocksToText(pick('blocks', 'blocks_ar')) : description;
   } else if (table === 'projects') {
     const name = pick('name', 'name_ar') || row.name;
@@ -176,13 +235,32 @@ export default async function middleware(request) {
     if (row.developer) facts.push([isAr ? 'المطوّر' : 'Developer', row.developer]);
     if (row.location) facts.push([isAr ? 'الموقع' : 'Location', row.location]);
     if (row.city) facts.push([isAr ? 'المدينة' : 'City', row.city]);
+    if (row.country) facts.push([isAr ? 'الدولة' : 'Country', row.country]);
     if (row.category) facts.push([isAr ? 'الفئة' : 'Category', row.category]);
     if (row.status) facts.push([isAr ? 'الحالة' : 'Status', row.status]);
+    if (row.year) facts.push([isAr ? 'السنة' : 'Year', row.year]);
     if (row.price) facts.push([isAr ? 'السعر' : 'Price', row.price]);
-    bodyText = richMode
-      ? description + ' ' + blocksToText(pick('about_blocks', 'about_blocks_ar'))
-        + (row.amenities && row.amenities.length ? ' ' + (isAr ? 'المرافق: ' : 'Amenities: ') + row.amenities.join(', ') : '')
-      : description;
+    if (row.units) facts.push([isAr ? 'عدد الوحدات' : 'Units', row.units]);
+    if (row.floors) facts.push([isAr ? 'الطوابق' : 'Floors', row.floors]);
+    if (row.area) facts.push([isAr ? 'مساحة الوحدة' : 'Unit size', row.area]);
+    if (row.handover) facts.push([isAr ? 'التسليم' : 'Handover', row.handover]);
+    if (row.is_rental) facts.push([isAr ? 'إيجار' : 'Rental', isAr ? 'نعم' : 'Yes']);
+    if (Array.isArray(row.unit_types) && row.unit_types.length) facts.push([isAr ? 'أنواع الوحدات' : 'Unit types', row.unit_types.join(', ')]);
+    bodyText = richMode ? (description + ' ' + blocksToText(pick('about_blocks', 'about_blocks_ar'))).trim() : description;
+    if (richMode) {
+      amenities = row.amenities || [];
+      gallery = (row.gallery || []).map(g => img(g, 800));
+      consultants = (Array.isArray(row.consultants) ? row.consultants : []).map(c => c && c.name).filter(Boolean);
+      brochurePdf = row.brochure_pdf || '';
+      const [relProjects, relUnits] = await Promise.all([
+        fetchRelated('projects', row.developer_id, row.developer, row.slug),
+        fetchRelated('units', row.developer_id, row.developer, null)
+      ]);
+      related = [
+        ...relProjects.map(r => ({ name: (isAr && r.name_ar) || r.name, url: linkUrl(r.slug, r.slug_ar, 'projects') })),
+        ...relUnits.map(r => ({ name: (isAr && r.name_ar) || r.name, url: linkUrl(r.slug, r.slug_ar, 'units') }))
+      ];
+    }
   } else {
     const name = pick('name', 'name_ar') || row.name;
     const customTitle = pick('seo_title', 'seo_title_ar');
@@ -191,13 +269,24 @@ export default async function middleware(request) {
       || (richMode ? blocksToText(pick('description_blocks', 'description_blocks_ar')) : '')
       || pick('description', 'description_ar') || '';
     image = img(row.cover, 1200);
+    if (row.developer) facts.push([isAr ? 'المطوّر' : 'Developer', row.developer]);
     if (row.type) facts.push([isAr ? 'النوع' : 'Type', row.type]);
+    if (row.badge) facts.push([isAr ? 'الوسم' : 'Badge', row.badge]);
     if (row.price) facts.push([isAr ? 'السعر' : 'Price', row.price]);
     if (row.beds) facts.push([isAr ? 'غرف النوم' : 'Bedrooms', row.beds]);
     if (row.baths) facts.push([isAr ? 'دورات المياه' : 'Bathrooms', row.baths]);
     if (row.area) facts.push([isAr ? 'المساحة' : 'Area', row.area]);
     if (row.location) facts.push([isAr ? 'الموقع' : 'Location', row.location]);
-    bodyText = richMode ? description + ' ' + blocksToText(pick('description_blocks', 'description_blocks_ar')) : description;
+    bodyText = richMode ? (description + ' ' + blocksToText(pick('description_blocks', 'description_blocks_ar'))).trim() : description;
+    if (richMode) {
+      gallery = (row.gallery || []).map(g => img(g, 800));
+      if (row.project_id) {
+        const proj = await fetchById('projects', row.project_id, 'slug,slug_ar,name,name_ar');
+        if (proj) facts.unshift([isAr ? 'جزء من مشروع' : 'Part of project', (isAr && proj.name_ar) || proj.name]);
+      }
+      const relUnits = await fetchRelated('units', row.developer_id, row.developer, row.slug);
+      related = relUnits.map(r => ({ name: (isAr && r.name_ar) || r.name, url: linkUrl(r.slug, r.slug_ar, 'units') }));
+    }
   }
   description = String(description || '').trim();
   bodyText = String(bodyText || '').trim();
@@ -208,7 +297,7 @@ export default async function middleware(request) {
   if (!bodyText) bodyText = description;
 
   const html = pageHTML({
-    title, description, image, facts, bodyText,
+    title, description, image, facts, bodyText, amenities, gallery, consultants, brochurePdf, related,
     url: url.toString(),
     type: table === 'blog_posts' ? 'article' : 'website'
   });
