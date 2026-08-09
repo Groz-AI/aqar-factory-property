@@ -17,22 +17,30 @@
         Perplexity's PerplexityBot, Google-Extended, etc.) — these
         want the actual page TEXT, not just meta tags, so an AI
         assistant can answer questions about the project/unit/post.
-     Note: a consumer chat app's interactive "fetch this link for me"
-     feature (e.g. asking Gemini/ChatGPT about a URL mid-conversation)
-     often does NOT use one of these official crawler user agents —
-     that request looks just like a generic HTTP client, which we
-     have no reliable way to distinguish from a real visitor. This
-     fix covers every bot that identifies itself; it can't cover ones
-     that don't.
+     3. Consumer chat apps' interactive "fetch this link for me"
+        feature (e.g. asking Gemini/ChatGPT about a URL mid-conversation)
+        often does NOT use one of the official crawler user agents
+        above — it looks like a generic HTTP client. We can't match
+        it by name, but we CAN detect it by what's MISSING: every
+        real browser automatically attaches Sec-Fetch-Mode (and the
+        rest of the Fetch Metadata family) to every request it makes,
+        including page navigations — it's baked into the browser's
+        network stack, not something a page or a simple server-side
+        fetch()/curl-style client sends. A request to one of these
+        exact detail-page URLs with NO Sec-Fetch-Mode header at all
+        is, in practice, not a browser. This is intentionally a
+        broader net than exact-name matching (it also catches unnamed
+        bots we've never heard of), which is exactly the point.
 
-   FIX: intercept ONLY requests whose User-Agent matches a known bot
-   from either list above, fetch the item straight from Supabase
-   here (runs on Vercel's edge, before any static file is served),
-   and return an HTML document with the correct <title>, meta
-   description, Open Graph/Twitter tags, AND the actual readable
-   content as plain text/HTML in the body. Every other visitor (real
-   users, Googlebot, everything else) is untouched and gets the
-   normal site exactly as before.
+   FIX: intercept requests whose User-Agent matches a known bot from
+   either list above, OR that are missing the Sec-Fetch-Mode header
+   entirely (see group 3 above). Fetch the item straight from
+   Supabase here (runs on Vercel's edge, before any static file is
+   served), and return an HTML document with the correct <title>,
+   meta description, Open Graph/Twitter tags, AND the actual readable
+   content as plain text/HTML in the body. Every real browser request
+   (Sec-Fetch-Mode always present) is untouched and gets the normal
+   site exactly as before.
    ============================================================ */
 
 export const config = {
@@ -124,8 +132,18 @@ ${factsList}
 
 export default async function middleware(request) {
   const ua = request.headers.get('user-agent') || '';
-  if (!BOT_RE.test(ua)) return; // not a link-unfurl/AI bot — serve the normal site unchanged
-  const richMode = AI_BOT_RE.test(ua); // AI bots get full article text; preview bots get the lean/fast path
+  const isNamedBot = BOT_RE.test(ua);
+  // every real browser attaches Sec-Fetch-Mode to every request automatically;
+  // a simple server-side fetcher (curl, a chat app's link-reader, an unnamed
+  // bot) generally doesn't. Missing it entirely — on a request that isn't
+  // even a named bot — is our signal for "not a browser".
+  const looksLikeNonBrowser = !isNamedBot && !request.headers.get('sec-fetch-mode');
+  if (!isNamedBot && !looksLikeNonBrowser) return; // real browser — serve the normal site unchanged
+  // AI bots and unidentified non-browser clients both get full article text
+  // (the latter is exactly the case we're adding this for — a chat app
+  // fetching the link wants the same real content a named AI crawler gets);
+  // named preview bots (WhatsApp/Facebook/…) get the lean/fast title+meta path
+  const richMode = AI_BOT_RE.test(ua) || looksLikeNonBrowser;
 
   const url = new URL(request.url);
   const isAr = url.pathname.startsWith('/ar/');
