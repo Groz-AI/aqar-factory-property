@@ -104,7 +104,10 @@
 
   function blockHTML(b) {
     if (!b) return '';
-    if (b.type === 'heading') return b.text ? `<h2${alignStyle(b)}>${esc(b.text)}</h2>` : '';
+    // trusted HTML like paragraph/quote — the heading field is now the same
+    // contenteditable toolbar-driven area, so it carries the same inline
+    // <b>/<i>/<span style> formatting and must not be re-escaped
+    if (b.type === 'heading') return b.text ? `<h2${alignStyle(b)}>${b.text}</h2>` : '';
     if (b.type === 'image') {
       if (!b.image) return '';
       const src = /^(https?:)?\/\//.test(b.image) || /^data:/.test(b.image)

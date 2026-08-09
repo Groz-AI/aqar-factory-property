@@ -311,6 +311,14 @@ label.switch{position:relative;display:inline-flex;align-items:center;gap:.6rem;
 .rte{width:100%;min-height:80px;border:1px solid var(--line);border-radius:8px;padding:.55em .8em;font-family:inherit;font-size:.92rem;background:#fff;color:var(--ink);outline:none}
 .rte:focus{border-color:var(--sky);box-shadow:0 0 0 3px var(--sky-soft)}
 .rte a{color:var(--sky-deep)}
+/* single-line heading field — same rich-text box as .rte, just input-height.
+   Deliberately NOT bold here even though the live page renders headings
+   bold (pages.css's .rich-content h2): if this field started out visually
+   bold, clicking the toolbar's Bold button would detect "already bold" and
+   toggle it OFF instead of on, which is backwards from what clicking Bold
+   should do. Plain weight here keeps that toggle behaving normally. */
+.rte-heading{min-height:auto}
+.rte[data-placeholder]:empty::before{content:attr(data-placeholder);color:var(--ink-soft);font-weight:400;pointer-events:none}
 
 /* table block editor */
 .table-size-row{display:flex;align-items:flex-end;gap:14px;margin-bottom:10px;flex-wrap:wrap}

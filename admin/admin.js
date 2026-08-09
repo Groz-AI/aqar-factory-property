@@ -1208,7 +1208,12 @@
         const alignStyle = b.align ? ` style="text-align:${esc(b.align)}"` : '';
         let body;
         if (b.type === 'heading') {
-          body = `<input type="text" placeholder="${esc(t('Heading text'))}" value="${esc(b.text)}" data-btext="${i}"${alignStyle}>`;
+          // contenteditable (not a plain <input>) so the same Bold/Italic/
+          // Color/Size toolbar that works on paragraphs also works here —
+          // a plain text input can only ever hold plain text, no inline
+          // formatting at all, which is exactly why none of those buttons
+          // did anything on a heading before this
+          body = `<div class="rte rte-heading" contenteditable="true" data-btext="${i}" data-placeholder="${esc(t('Heading text'))}"${alignStyle}>${b.text || ''}</div>`;
         } else if (b.type === 'image') {
           body = `<div class="block-img-row">
             <img class="block-img-prev" src="${esc(imgUrl(b.image, 200))}" alt="" data-bpick="${i}" title="${esc(t('Click to choose an existing image'))}">
@@ -1289,6 +1294,8 @@
         const isCE = node.hasAttribute('contenteditable');
         node.addEventListener('input', () => { arr()[+node.dataset.btext].text = isCE ? normalizeRTE(node.innerHTML) : node.value; });
         if (isCE) node.addEventListener('focus', () => document.execCommand('defaultParagraphSeparator', false, 'br'));
+        // a heading is a single line — swallow Enter instead of starting a new line
+        if (node.classList.contains('rte-heading')) node.addEventListener('keydown', e => { if (e.key === 'Enter') e.preventDefault(); });
         trackBlock(node, +node.dataset.btext);
       });
       $$('[data-bupload]', canvas).forEach(b => b.addEventListener('click', () => { uploadTarget = +b.dataset.bupload; uploadTargetLang = activeLang; file.click(); }));
