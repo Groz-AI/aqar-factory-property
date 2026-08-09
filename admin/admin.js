@@ -1128,6 +1128,17 @@
     });
     function restoreSelection() {
       if (!savedRange) return false;
+      // Bold/Italic never lose focus (their mousedown handler blocks it), so
+      // re-adding the range alone is enough for them. The color swatch and
+      // font-size box DO steal focus (a native color picker / typing into a
+      // number field can't be blocked the same way) — re-adding the range
+      // without restoring focus back to the editable text leaves
+      // document.execCommand() with nowhere to apply to, so it silently
+      // does nothing. Explicitly re-focus the actual contenteditable the
+      // range belongs to before restoring the range itself.
+      const node = savedRange.commonAncestorContainer;
+      const host = (node.nodeType === 1 ? node : node.parentElement) && (node.nodeType === 1 ? node : node.parentElement).closest('[contenteditable]');
+      if (host) host.focus({ preventScroll: true });
       const sel = document.getSelection();
       sel.removeAllRanges();
       sel.addRange(savedRange);
