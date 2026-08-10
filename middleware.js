@@ -158,6 +158,37 @@ async function fetchRelated(table, devId, devName, excludeSlug, limit = 6) {
   }
 }
 
+// units-specific version of fetchRelated: a unit frequently has no
+// developer_id/developer of its own, inheriting it only via its linked
+// project (see the "Part of project" fallback above) — and the SAME is true
+// of sibling units, so a plain units.developer_id=eq.X filter misses them.
+// Mirrors unit.js's renderDeveloperPicks(), which checks each candidate
+// unit's own developer OR its linked project's developer.
+async function fetchRelatedUnits(devId, devName, excludeSlug, limit = 6) {
+  if (!devId && !devName) return [];
+  try {
+    const devFilter = devId ? `developer_id=eq.${encodeURIComponent(devId)}` : `developer=eq.${encodeURIComponent(devName)}`;
+    const projRes = await fetch(
+      `${SUPA_URL}/rest/v1/projects?select=id&${devFilter}&published=eq.true`,
+      { headers: { apikey: SUPA_ANON_KEY, Authorization: `Bearer ${SUPA_ANON_KEY}` } }
+    );
+    const projIds = projRes.ok ? (await projRes.json()).map(p => p.id) : [];
+
+    const unitDevFilter = devId ? `developer_id.eq.${encodeURIComponent(devId)}` : `developer.eq.${encodeURIComponent(devName)}`;
+    const orParts = [unitDevFilter];
+    if (projIds.length) orParts.push(`project_id.in.(${projIds.join(',')})`);
+    const res = await fetch(
+      `${SUPA_URL}/rest/v1/units?select=slug,slug_ar,name,name_ar&or=(${orParts.join(',')})&published=eq.true&limit=${limit}`,
+      { headers: { apikey: SUPA_ANON_KEY, Authorization: `Bearer ${SUPA_ANON_KEY}` } }
+    );
+    if (!res.ok) return [];
+    const rows = await res.json();
+    return rows.filter(r => r.slug !== excludeSlug);
+  } catch (_) {
+    return [];
+  }
+}
+
 function pageHTML({ title, description, image, url, type, facts, bodyText, amenities, gallery, consultants, brochurePdf, related }) {
   const factsList = facts.length
     ? `<h2>Key facts</h2><ul>${facts.map(([k, v]) => `<li><b>${esc(k)}:</b> ${esc(v)}</li>`).join('')}</ul>` : '';
@@ -206,7 +237,7 @@ export default async function middleware(request) {
   const isAr = url.pathname.startsWith('/ar/');
   const page = isAr ? url.pathname.slice(3) : url.pathname;
 
-  // OLD query-string form (/project.html?id=…) -> always 308-redirect to the
+  // OLD query-string form (/project.html?id=…) -> always 301-redirect to the
   // new clean path, for every client (bot or real browser) — one canonical
   // URL going forward, and this transfers the SEO value already earned by
   // the old, already-indexed URLs. Built directly here (not via vercel.json
@@ -293,7 +324,7 @@ export default async function middleware(request) {
       brochurePdf = row.brochure_pdf || '';
       const [relProjects, relUnits] = await Promise.all([
         fetchRelated('projects', row.developer_id, row.developer, row.slug),
-        fetchRelated('units', row.developer_id, row.developer, null)
+        fetchRelatedUnits(row.developer_id, row.developer, null)
       ]);
       related = [
         ...relProjects.map(r => ({ name: (isAr && r.name_ar) || r.name, url: linkUrl(r.slug, r.slug_ar, 'projects') })),
@@ -329,7 +360,7 @@ export default async function middleware(request) {
           if (!devId && !devName) { devId = proj.developer_id; devName = proj.developer; }
         }
       }
-      const relUnits = await fetchRelated('units', devId, devName, row.slug);
+      const relUnits = await fetchRelatedUnits(devId, devName, row.slug);
       related = relUnits.map(r => ({ name: (isAr && r.name_ar) || r.name, url: linkUrl(r.slug, r.slug_ar, 'units') }));
     }
     if (devName) facts.unshift([isAr ? 'المطوّر' : 'Developer', devName]);
