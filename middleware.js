@@ -88,11 +88,19 @@ const LEAN_SELECT = {
   blog_posts: 'slug,seo_title,seo_title_ar,seo_description,seo_description_ar,title,title_ar,excerpt,excerpt_ar,cover,author_name'
 };
 
+// projects/units can have a custom Arabic slug (slug_ar) used on /ar/ URLs
+// instead of the default slug — match either column so a shared /ar/ link
+// using the Arabic slug isn't silently missed
+const HAS_SLUG_AR = { projects: true, units: true, blog_posts: false };
+
 async function fetchRow(table, slug, rich) {
   try {
     const select = rich ? '*' : LEAN_SELECT[table];
+    const filter = HAS_SLUG_AR[table]
+      ? `or=(slug.eq.${encodeURIComponent(slug)},slug_ar.eq.${encodeURIComponent(slug)})`
+      : `slug=eq.${encodeURIComponent(slug)}`;
     const res = await fetch(
-      `${SUPA_URL}/rest/v1/${table}?select=${select}&slug=eq.${encodeURIComponent(slug)}&published=eq.true&limit=1`,
+      `${SUPA_URL}/rest/v1/${table}?select=${select}&${filter}&published=eq.true&limit=1`,
       { headers: { apikey: SUPA_ANON_KEY, Authorization: `Bearer ${SUPA_ANON_KEY}` } }
     );
     if (!res.ok) return null;
