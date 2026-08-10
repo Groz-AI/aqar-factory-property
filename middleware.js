@@ -269,7 +269,10 @@ export default async function middleware(request) {
       || (richMode ? blocksToText(pick('description_blocks', 'description_blocks_ar')) : '')
       || pick('description', 'description_ar') || '';
     image = img(row.cover, 1200);
-    if (row.developer) facts.push([isAr ? 'المطوّر' : 'Developer', row.developer]);
+    // a unit doesn't always carry its own developer — many are only linked via
+    // project_id, with the developer set on the parent project instead (see
+    // richMode block below, which fetches the linked project and fills these in)
+    let devId = row.developer_id, devName = row.developer;
     if (row.type) facts.push([isAr ? 'النوع' : 'Type', row.type]);
     if (row.badge) facts.push([isAr ? 'الوسم' : 'Badge', row.badge]);
     if (row.price) facts.push([isAr ? 'السعر' : 'Price', row.price]);
@@ -281,12 +284,16 @@ export default async function middleware(request) {
     if (richMode) {
       gallery = (row.gallery || []).map(g => img(g, 800));
       if (row.project_id) {
-        const proj = await fetchById('projects', row.project_id, 'slug,slug_ar,name,name_ar');
-        if (proj) facts.unshift([isAr ? 'جزء من مشروع' : 'Part of project', (isAr && proj.name_ar) || proj.name]);
+        const proj = await fetchById('projects', row.project_id, 'slug,slug_ar,name,name_ar,developer,developer_id');
+        if (proj) {
+          facts.unshift([isAr ? 'جزء من مشروع' : 'Part of project', (isAr && proj.name_ar) || proj.name]);
+          if (!devId && !devName) { devId = proj.developer_id; devName = proj.developer; }
+        }
       }
-      const relUnits = await fetchRelated('units', row.developer_id, row.developer, row.slug);
+      const relUnits = await fetchRelated('units', devId, devName, row.slug);
       related = relUnits.map(r => ({ name: (isAr && r.name_ar) || r.name, url: linkUrl(r.slug, r.slug_ar, 'units') }));
     }
+    if (devName) facts.unshift([isAr ? 'المطوّر' : 'Developer', devName]);
   }
   description = String(description || '').trim();
   bodyText = String(bodyText || '').trim();
