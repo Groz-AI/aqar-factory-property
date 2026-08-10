@@ -41,13 +41,20 @@
    content as plain text/HTML in the body. Every real browser request
    (Sec-Fetch-Mode always present) is untouched and gets the normal
    site exactly as before.
+
+   This file also owns the old-URL -> new-clean-URL redirect (see the
+   `oldKind` branch below): project.html?id=/unit.html?id=/blog-post.html?slug=
+   now 301-redirect to /project/<slug>, /unit/<slug>, /blog/<slug> (and
+   /ar/... variants) for every client, not just bots — it's done here
+   rather than in vercel.json's "redirects" because Vercel auto-appends
+   the original query string to a redirect destination with no documented
+   way to turn that off, which produced a broken double-slug URL.
    ============================================================ */
 
 export const config = {
   matcher: [
-    // old query-string form — kept indefinitely as a safety net (this
-    // middleware runs BEFORE vercel.json's redirects, so a bot hitting an
-    // old link gets served correctly here directly, with no redirect hop)
+    // old query-string form — matched so this middleware can 301-redirect
+    // it to the new clean path (see the redirect logic below)
     '/project.html', '/unit.html', '/blog-post.html',
     '/ar/project.html', '/ar/unit.html', '/ar/blog-post.html',
     // new clean-path form — what every internal link now points to
@@ -195,6 +202,27 @@ ${relatedHtml}
 }
 
 export default async function middleware(request) {
+  const url = new URL(request.url);
+  const isAr = url.pathname.startsWith('/ar/');
+  const page = isAr ? url.pathname.slice(3) : url.pathname;
+
+  // OLD query-string form (/project.html?id=…) -> always 308-redirect to the
+  // new clean path, for every client (bot or real browser) — one canonical
+  // URL going forward, and this transfers the SEO value already earned by
+  // the old, already-indexed URLs. Built directly here (not via vercel.json
+  // "redirects") because Vercel's redirects auto-append the original query
+  // string to the destination with no documented way to suppress it, which
+  // produced a broken double-slug URL (verified live before switching to
+  // this approach); this middleware also runs before vercel.json's routing
+  // is applied, so there's no ordering issue doing it here instead.
+  const oldKind = page === '/project.html' ? 'project' : page === '/unit.html' ? 'unit' : page === '/blog-post.html' ? 'blog' : null;
+  if (oldKind) {
+    const oldId = url.searchParams.get('id') || url.searchParams.get('slug');
+    if (!oldId) return; // no id/slug at all — let the page's own "not found" handling take over
+    const newPath = `${isAr ? '/ar' : ''}/${oldKind}/${encodeURIComponent(oldId)}`;
+    return Response.redirect(new URL(newPath, url.origin), 301);
+  }
+
   const ua = request.headers.get('user-agent') || '';
   const isNamedBot = BOT_RE.test(ua);
   // every real browser attaches Sec-Fetch-Mode to every request automatically;
@@ -209,27 +237,11 @@ export default async function middleware(request) {
   // named preview bots (WhatsApp/Facebook/…) get the lean/fast title+meta path
   const richMode = AI_BOT_RE.test(ua) || looksLikeNonBrowser;
 
-  const url = new URL(request.url);
-  const isAr = url.pathname.startsWith('/ar/');
-  const page = isAr ? url.pathname.slice(3) : url.pathname;
-
-  // old query-string form (/project.html?id=…) and new clean-path form
-  // (/project/…) both need to resolve to a table + identifier
-  let table = null, pathId = null;
-  if (page === '/project.html') table = 'projects';
-  else if (page === '/unit.html') table = 'units';
-  else if (page === '/blog-post.html') table = 'blog_posts';
-  else {
-    const m = page.match(/^\/(project|unit|blog)\/([^/]+)\/?$/);
-    if (m) {
-      table = m[1] === 'unit' ? 'units' : m[1] === 'blog' ? 'blog_posts' : 'projects';
-      pathId = decodeURIComponent(m[2]);
-    }
-  }
-  if (!table) return;
-
-  const id = url.searchParams.get('id') || url.searchParams.get('slug') || pathId;
-  if (!id) return;
+  // NEW clean-path form (/project/slug, /ar/unit/slug, …)
+  const m = page.match(/^\/(project|unit|blog)\/([^/]+)\/?$/);
+  if (!m) return;
+  const table = m[1] === 'unit' ? 'units' : m[1] === 'blog' ? 'blog_posts' : 'projects';
+  const id = decodeURIComponent(m[2]);
 
   const row = await fetchRow(table, id, richMode);
   if (!row) return; // let the page's own "not found" handling take over
