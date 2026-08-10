@@ -11,6 +11,10 @@
   gtag('config', 'G-VEY6DJ9GKT');
 </script>
 <meta charset="UTF-8" />
+<!-- this page can now be served at /project/<slug> (extra path segment vs
+     the site root), so every relative href/src below needs a fixed base to
+     resolve against — without this they'd resolve as /project/<file> -->
+<base href="/" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title data-i18n>Project — Aqar Factory</title>
 <meta name="description" content="Aqar Factory project detail — gallery, key facts, amenities and location." data-i18n-content />
