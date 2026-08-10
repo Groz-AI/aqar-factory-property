@@ -962,28 +962,32 @@
     upsertLink('link[rel="alternate"][hreflang="x-default"]', { rel: 'alternate', hreflang: 'x-default', href: origin + enPath + search });
   }
 
-  // project.html/unit.html can have a DIFFERENT ?id= slug per language (see
+  // project/unit detail pages can have a DIFFERENT slug per language (see
   // slug_ar in the admin) — injectSeoLinks() above only knows the *current*
-  // URL, so it self-references the same query string for both hreflang
-  // variants, which is wrong once the two languages diverge. The detail
-  // page's own script calls this once it knows both slugs, patching just
-  // the *other* language's hreflang link to point at its real URL (own-
-  // language canonical/hreflang and x-default, already correct, are untouched).
-  function setCrossLangSlug(otherLangSearch) {
+  // URL, so it self-references the same path for both hreflang variants,
+  // which is wrong once the two languages diverge (the slug lives inside
+  // the path itself, e.g. /project/<slug> vs /ar/project/<slug_ar>). The
+  // detail page's own script calls this once it knows both slugs, passing
+  // the OTHER language's raw slug — this swaps out just the last path
+  // segment (own-language canonical/hreflang and x-default, already
+  // correct, are untouched).
+  function setCrossLangSlug(otherSlug) {
     if (isAdminPath()) return;
     const origin = 'https://www.aqar-factory.com';
     const path = location.pathname;
     const ar = isArPath(path);
-    const enPath = ar ? (path.replace(/^\/ar/, '') || '/') : path;
-    const arPath = ar ? path : (enPath === '/' ? '/ar' : '/ar' + enPath);
+    // path with /ar stripped and the trailing slug segment dropped, e.g.
+    // "/ar/project/Wadi-Yemm-..." -> "/project"
+    const basePath = (ar ? path.replace(/^\/ar/, '') : path).replace(/\/[^/]+\/?$/, '');
+    const seg = encodeURIComponent(otherSlug);
     if (ar) {
       // on the Arabic page: fix both "en" AND "x-default" (which mirrors
       // "en" by convention — injectSeoLinks() sets them identically) to the
       // real English slug. Leaving x-default on the old self-referencing
-      // value here previously produced an invalid English-path + Arabic-
-      // slug URL that doesn't correspond to any real page — a broken signal
-      // that can confuse which URL Google treats as canonical.
-      const enHref = origin + enPath + otherLangSearch;
+      // value here previously produced an invalid URL that doesn't
+      // correspond to any real page — a broken signal that can confuse
+      // which URL Google treats as canonical.
+      const enHref = origin + basePath + '/' + seg;
       const enEl = document.querySelector('link[rel="alternate"][hreflang="en"]');
       if (enEl) enEl.setAttribute('href', enHref);
       const xdEl = document.querySelector('link[rel="alternate"][hreflang="x-default"]');
@@ -992,7 +996,7 @@
       // on the English page: only "ar" needs fixing — x-default already
       // correctly points at this page's own (English) URL
       const arEl = document.querySelector('link[rel="alternate"][hreflang="ar"]');
-      if (arEl) arEl.setAttribute('href', origin + arPath + otherLangSearch);
+      if (arEl) arEl.setAttribute('href', origin + '/ar' + basePath + '/' + seg);
     }
   }
 

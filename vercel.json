@@ -5,7 +5,21 @@
   "rewrites": [
     { "source": "/sitemap.xml", "destination": "/api/sitemap" },
     { "source": "/robots.txt", "destination": "/api/robots" },
+    { "source": "/project/:slug", "destination": "/project.html?id=:slug" },
+    { "source": "/unit/:slug", "destination": "/unit.html?id=:slug" },
+    { "source": "/blog/:slug", "destination": "/blog-post.html?slug=:slug" },
+    { "source": "/ar/project/:slug", "destination": "/project.html?id=:slug" },
+    { "source": "/ar/unit/:slug", "destination": "/unit.html?id=:slug" },
+    { "source": "/ar/blog/:slug", "destination": "/blog-post.html?slug=:slug" },
     { "source": "/ar/:path*", "destination": "/:path*" }
+  ],
+  "redirects": [
+    { "source": "/project.html", "has": [{ "type": "query", "key": "id", "value": "(?<id>.*)" }], "destination": "/project/:id", "permanent": true },
+    { "source": "/unit.html", "has": [{ "type": "query", "key": "id", "value": "(?<id>.*)" }], "destination": "/unit/:id", "permanent": true },
+    { "source": "/blog-post.html", "has": [{ "type": "query", "key": "slug", "value": "(?<slug>.*)" }], "destination": "/blog/:slug", "permanent": true },
+    { "source": "/ar/project.html", "has": [{ "type": "query", "key": "id", "value": "(?<id>.*)" }], "destination": "/ar/project/:id", "permanent": true },
+    { "source": "/ar/unit.html", "has": [{ "type": "query", "key": "id", "value": "(?<id>.*)" }], "destination": "/ar/unit/:id", "permanent": true },
+    { "source": "/ar/blog-post.html", "has": [{ "type": "query", "key": "slug", "value": "(?<slug>.*)" }], "destination": "/ar/blog/:slug", "permanent": true }
   ],
   "headers": [
     {

@@ -195,7 +195,7 @@
     const imgs = (it.gallery && it.gallery.length ? it.gallery : [it.cover]).filter(Boolean).slice(0, 5);
     const slides = imgs.map((g, i) => `<div class="pg-slide${i === 0 ? ' active' : ''}" style="background-image:url('${IMG(g, 900)}')"></div>`).join('');
     const dots = imgs.length > 1 ? `<div class="pg-dots">${imgs.map((_, i) => `<i class="${i === 0 ? 'on' : ''}"></i>`).join('')}</div>` : '';
-    const href = (it._kind === 'unit' ? 'unit.html' : 'project.html') + '?id=' + encodeURIComponent(it.id);
+    const href = window.buildUrl(it._kind === 'unit' ? 'unit' : 'project', it);
     const kindBadge = `<span class="result-kind-badge ${it._kind}">${t(it._kind === 'unit' ? 'Unit' : 'Project')}</span>`;
     const contact = window.cardContact ? window.cardContact.markup(it.name) : '';
     return `

@@ -15,6 +15,16 @@
 
   const F = window.FALLBACK || {};
 
+  // shared clean-URL builder for project/unit/blog detail links — prefers
+  // the item's Arabic slug on /ar/ pages when the admin set one, otherwise
+  // reuses the same (English) slug on both languages
+  window.buildUrl = function (kind, item) {
+    const ar = !!(window.i18n && window.i18n.lang === 'ar');
+    const slug = (ar && item.slugAr) ? item.slugAr : item.id;
+    const base = kind === 'unit' ? '/unit/' : kind === 'blog' ? '/blog/' : '/project/';
+    return (ar ? '/ar' : '') + base + encodeURIComponent(slug);
+  };
+
   // map a DB project row to the shape pages expect
   function mapProject(r) {
     return {

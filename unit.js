@@ -2,7 +2,8 @@
    AQAR FACTORY — Unit detail: populate from ?id, gallery lightbox
    ============================================================ */
 const params = new URLSearchParams(location.search);
-const id = params.get('id');
+const pathMatch = location.pathname.match(/\/unit\/([^/]+)\/?$/);
+const id = params.get('id') || (pathMatch && decodeURIComponent(pathMatch[1]));
 
 const pinSVG = `<svg viewBox="0 0 24 24" fill="none"><path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11Z" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="10" r="2.5" stroke="currentColor" stroke-width="1.6"/></svg>`;
 const arrowSVG = `<svg viewBox="0 0 24 24" fill="none"><path d="M7 17 17 7M9 7h8v8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
@@ -15,9 +16,6 @@ function pick(u, key, arKey) {
   }
   return u[key];
 }
-// the URL slug to link to for the CURRENT language — see project.js's
-// linkSlug() for the full explanation
-function linkSlug(u) { return (isAr() && u.slugAr) ? u.slugAr : u.id; }
 // paragraph/heading block text is trusted HTML (bold/italic/link formatting
 // from the rich-text toolbar — see blocks-render.js), so it must be
 // stripped down to plain text before use in a <meta description> or a
@@ -89,8 +87,7 @@ function populate() {
   // i18n.js's injectSeoLinks() — see the note in project.js's populate().
   // Same slug_ar override as project.js when this unit has its own Arabic slug.
   if (window.i18n && window.i18n.setCrossLangSlug && (unit.slugAr && unit.slugAr !== unit.id)) {
-    const otherId = isAr() ? unit.id : unit.slugAr;
-    window.i18n.setCrossLangSlug(`?id=${encodeURIComponent(otherId)}`);
+    window.i18n.setCrossLangSlug(isAr() ? unit.id : unit.slugAr);
   }
 
   injectJsonLd({
@@ -152,7 +149,7 @@ function populate() {
   const banner = document.getElementById('projectBanner');
   linkedProject = unit.projectId ? ALL_PROJECTS.find(p => p.dbId === unit.projectId) : null;
   if (linkedProject) {
-    banner.href = `project.html?id=${encodeURIComponent((isAr() && linkedProject.slugAr) ? linkedProject.slugAr : linkedProject.id)}`;
+    banner.href = window.buildUrl('project', linkedProject);
     document.getElementById('projectBannerName').textContent = linkedProject.name;
     banner.hidden = false;
   } else {
@@ -208,7 +205,7 @@ function unitCardHTML(u) {
   const dots = imgs.length > 1
     ? `<div class="pg-dots">${imgs.map((_, n) => `<i class="${n === 0 ? 'on' : ''}"></i>`).join('')}</div>` : '';
   return `
-  <a class="pcard" href="unit.html?id=${encodeURIComponent(linkSlug(u))}">
+  <a class="pcard" href="${window.buildUrl('unit', u)}">
     <div class="pcard-img" data-gallery>
       ${slides}<div class="pg-shade"></div>
       <span class="pcard-cat">${u.type ? t(u.type) : ''}</span>

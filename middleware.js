@@ -45,8 +45,14 @@
 
 export const config = {
   matcher: [
+    // old query-string form — kept indefinitely as a safety net (this
+    // middleware runs BEFORE vercel.json's redirects, so a bot hitting an
+    // old link gets served correctly here directly, with no redirect hop)
     '/project.html', '/unit.html', '/blog-post.html',
-    '/ar/project.html', '/ar/unit.html', '/ar/blog-post.html'
+    '/ar/project.html', '/ar/unit.html', '/ar/blog-post.html',
+    // new clean-path form — what every internal link now points to
+    '/project/:slug*', '/unit/:slug*', '/blog/:slug*',
+    '/ar/project/:slug*', '/ar/unit/:slug*', '/ar/blog/:slug*'
   ]
 };
 
@@ -206,20 +212,33 @@ export default async function middleware(request) {
   const url = new URL(request.url);
   const isAr = url.pathname.startsWith('/ar/');
   const page = isAr ? url.pathname.slice(3) : url.pathname;
-  const id = url.searchParams.get('id') || url.searchParams.get('slug');
-  if (!id) return;
 
-  const table = page === '/project.html' ? 'projects' : page === '/unit.html' ? 'units' : page === '/blog-post.html' ? 'blog_posts' : null;
+  // old query-string form (/project.html?id=…) and new clean-path form
+  // (/project/…) both need to resolve to a table + identifier
+  let table = null, pathId = null;
+  if (page === '/project.html') table = 'projects';
+  else if (page === '/unit.html') table = 'units';
+  else if (page === '/blog-post.html') table = 'blog_posts';
+  else {
+    const m = page.match(/^\/(project|unit|blog)\/([^/]+)\/?$/);
+    if (m) {
+      table = m[1] === 'unit' ? 'units' : m[1] === 'blog' ? 'blog_posts' : 'projects';
+      pathId = decodeURIComponent(m[2]);
+    }
+  }
   if (!table) return;
+
+  const id = url.searchParams.get('id') || url.searchParams.get('slug') || pathId;
+  if (!id) return;
 
   const row = await fetchRow(table, id, richMode);
   if (!row) return; // let the page's own "not found" handling take over
 
   const pick = (en, ar) => (isAr && row[ar]) ? row[ar] : row[en];
   const linkUrl = (slug, slugAr, otherTable) => {
-    const p = otherTable === 'units' ? '/unit.html' : otherTable === 'blog_posts' ? '/blog-post.html' : '/project.html';
+    const p = otherTable === 'units' ? '/unit/' : otherTable === 'blog_posts' ? '/blog/' : '/project/';
     const s = (isAr && slugAr) ? slugAr : slug;
-    return `https://www.aqar-factory.com${isAr ? '/ar' : ''}${p}?id=${encodeURIComponent(s)}`;
+    return `https://www.aqar-factory.com${isAr ? '/ar' : ''}${p}${encodeURIComponent(s)}`;
   };
 
   let title, description, image, facts = [], bodyText = '';

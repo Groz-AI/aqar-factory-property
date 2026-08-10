@@ -56,12 +56,12 @@ function urlPair(SITE_URL, path, lastmod, priority) {
 }
 
 // same as urlPair(), but for project/unit detail pages the Arabic URL may
-// use a DIFFERENT ?id= slug (an admin-set slug_ar) than the English one, so
+// use a DIFFERENT slug (an admin-set slug_ar) than the English one, so
 // the en/ar hreflang pair must be built from two separate slugs instead of
-// sharing one path+query
+// sharing one path. `base` is the clean-path prefix, e.g. "/project"
 function urlPairSlugged(SITE_URL, base, enSlug, arSlug, lastmod, priority) {
-  const enUrl = `${SITE_URL}${base}?id=${encodeURIComponent(enSlug)}`;
-  const arUrl = `${SITE_URL}/ar${base}?id=${encodeURIComponent(arSlug || enSlug)}`;
+  const enUrl = `${SITE_URL}${base}/${encodeURIComponent(enSlug)}`;
+  const arUrl = `${SITE_URL}/ar${base}/${encodeURIComponent(arSlug || enSlug)}`;
   const lastmodTag = lastmod ? `\n    <lastmod>${lastmod}</lastmod>` : '';
   const alt = () => `\n    <xhtml:link rel="alternate" hreflang="en" href="${esc(enUrl)}"/>\n    <xhtml:link rel="alternate" hreflang="ar" href="${esc(arUrl)}"/>\n    <xhtml:link rel="alternate" hreflang="x-default" href="${esc(enUrl)}"/>`;
   return [
@@ -91,9 +91,9 @@ module.exports = async function handler(req, res) {
 
   const urls = [
     ...staticPages.flatMap(p => urlPair(SITE_URL, p.path, null, p.priority)),
-    ...projects.flatMap(p => urlPairSlugged(SITE_URL, '/project.html', p.slug, p.slug_ar, (p.updated_at || '').slice(0, 10) || null, '0.8')),
-    ...units.flatMap(u => urlPairSlugged(SITE_URL, '/unit.html', u.slug, u.slug_ar, (u.updated_at || '').slice(0, 10) || null, '0.75')),
-    ...posts.flatMap(p => urlPair(SITE_URL, `/blog-post.html?slug=${encodeURIComponent(p.slug)}`, (p.updated_at || '').slice(0, 10) || null, '0.7'))
+    ...projects.flatMap(p => urlPairSlugged(SITE_URL, '/project', p.slug, p.slug_ar, (p.updated_at || '').slice(0, 10) || null, '0.8')),
+    ...units.flatMap(u => urlPairSlugged(SITE_URL, '/unit', u.slug, u.slug_ar, (u.updated_at || '').slice(0, 10) || null, '0.75')),
+    ...posts.flatMap(p => urlPair(SITE_URL, `/blog/${encodeURIComponent(p.slug)}`, (p.updated_at || '').slice(0, 10) || null, '0.7'))
   ];
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n${urls.join('\n')}\n</urlset>\n`;

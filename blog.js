@@ -30,7 +30,7 @@ function formatDate(iso) {
 function cardHTML(p) {
   const tags = (pick(p, 'tags', 'tagsAr') || []).map(tag => `<span class="blog-tag">${tag}</span>`).join('');
   return `
-  <a class="blog-card reveal" href="blog-post.html?slug=${encodeURIComponent(p.id)}">
+  <a class="blog-card reveal" href="${window.buildUrl('blog', p)}">
     <div class="blog-card-img" style="background-image:url('${U(p.cover, 800)}')"></div>
     <div class="blog-card-body">
       ${tags ? `<div class="blog-card-tags">${tags}</div>` : ''}

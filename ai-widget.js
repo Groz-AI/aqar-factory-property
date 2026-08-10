@@ -370,7 +370,7 @@
       const isUnit = p._kind === 'unit';
       const price = isUnit ? p.price : ((p.stats && p.stats.price) || '');
       const card = document.createElement('a');
-      card.href = `${isUnit ? 'unit.html' : 'project.html'}?id=${encodeURIComponent(p.id)}`;
+      card.href = window.buildUrl(isUnit ? 'unit' : 'project', p);
       card.className = 'ai-match';
       card.innerHTML = `
         <img src="${IMG(p.cover, 160)}" alt="" loading="lazy">

@@ -2,7 +2,8 @@
    AQAR FACTORY — Blog article detail: populate from ?slug
    ============================================================ */
 const params = new URLSearchParams(location.search);
-const slug = params.get('slug');
+const pathMatch = location.pathname.match(/\/blog\/([^/]+)\/?$/);
+const slug = params.get('slug') || (pathMatch && decodeURIComponent(pathMatch[1]));
 
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const arrowSVG = `<svg viewBox="0 0 24 24" fill="none"><path d="M7 17 17 7M9 7h8v8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
@@ -52,7 +53,7 @@ let post = null;
 function cardHTML(p) {
   const tags = (pick(p, 'tags', 'tagsAr') || []).map(tag => `<span class="blog-tag">${tag}</span>`).join('');
   return `
-  <a class="blog-card reveal" href="blog-post.html?slug=${encodeURIComponent(p.id)}">
+  <a class="blog-card reveal" href="${window.buildUrl('blog', p)}">
     <div class="blog-card-img" style="background-image:url('${U(p.cover, 800)}')"></div>
     <div class="blog-card-body">
       ${tags ? `<div class="blog-card-tags">${tags}</div>` : ''}
