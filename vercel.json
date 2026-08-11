@@ -23,8 +23,7 @@
   ],
   "functions": {
     "api/prerender.js": {
-      "maxDuration": 60,
-      "memory": 2048
+      "maxDuration": 60
     }
   }
 }
