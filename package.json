@@ -5,6 +5,7 @@
   "description": "Aqar Factory — static site with Vercel serverless functions and Edge Middleware. No build step for the site itself; these dependencies are used only by api/prerender.js (headless-render a page into static HTML) and middleware.js (read the cached result from Vercel Blob).",
   "dependencies": {
     "@vercel/blob": "^0.27.1",
+    "@vercel/functions": "^3.9.2",
     "puppeteer-core": "^23.9.0",
     "@sparticuz/chromium": "^131.0.1"
   }

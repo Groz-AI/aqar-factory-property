@@ -64,6 +64,12 @@
    ============================================================ */
 
 import { get } from '@vercel/blob';
+// on the Node.js Middleware runtime (unlike the Edge default), a bare
+// `return;`/`return undefined` does NOT reliably fall through to normal
+// request handling — verified live: it served an empty 200 body instead of
+// the real page. `next()` is the documented, explicit "continue the chain"
+// signal for non-Next.js frameworks on this runtime.
+import { next } from '@vercel/functions';
 
 export const config = {
   matcher: [
@@ -292,7 +298,7 @@ export default async function middleware(request) {
   const oldKind = page === '/project.html' ? 'project' : page === '/unit.html' ? 'unit' : page === '/blog-post.html' ? 'blog' : null;
   if (oldKind) {
     const oldId = url.searchParams.get('id') || url.searchParams.get('slug');
-    if (!oldId) return; // no id/slug at all — let the page's own "not found" handling take over
+    if (!oldId) return next(); // no id/slug at all — let the page's own "not found" handling take over
     const newPath = `${isAr ? '/ar' : ''}/${oldKind}/${encodeURIComponent(oldId)}`;
     return Response.redirect(new URL(newPath, url.origin), 301);
   }
@@ -301,7 +307,7 @@ export default async function middleware(request) {
   // used both by the pre-rendered-cache check below (real visitors) and
   // by the bot-content generation further down
   const m = page.match(/^\/(project|unit|blog)\/([^/]+)\/?$/);
-  if (!m) return;
+  if (!m) return next();
   const kindPath = m[1]; // 'project' | 'unit' | 'blog'
   const slugFromUrl = decodeURIComponent(m[2]);
 
@@ -331,7 +337,7 @@ export default async function middleware(request) {
         });
       }
     }
-    return; // no cached snapshot yet (or this IS the snapshotter) — normal CSR shell, exactly as before
+    return next(); // no cached snapshot yet (or this IS the snapshotter) — normal CSR shell, exactly as before
   }
 
   // AI bots and unidentified non-browser clients both get full article text
@@ -344,7 +350,7 @@ export default async function middleware(request) {
   const id = slugFromUrl;
 
   const row = await fetchRow(table, id, richMode);
-  if (!row) return; // let the page's own "not found" handling take over
+  if (!row) return next(); // let the page's own "not found" handling take over
 
   const pick = (en, ar) => (isAr && row[ar]) ? row[ar] : row[en];
   const linkUrl = (slug, slugAr, otherTable) => {
