@@ -74,7 +74,11 @@ export const config = {
     // new clean-path form — what every internal link now points to
     '/project/:slug*', '/unit/:slug*', '/blog/:slug*',
     '/ar/project/:slug*', '/ar/unit/:slug*', '/ar/blog/:slug*'
-  ]
+  ],
+  // @vercel/blob's get() pulls in Node-specific modules (net/tls/stream/etc.)
+  // that aren't supported on the default Edge runtime — verified via a real
+  // deploy failure ("referencing unsupported modules") before switching this
+  runtime: 'nodejs'
 };
 
 const SUPA_URL = 'https://dwufpgsqblwjgmzoseev.supabase.co';
