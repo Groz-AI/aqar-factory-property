@@ -120,6 +120,9 @@ function populate() {
   } else if (relatedSection) {
     relatedSection.hidden = true;
   }
+  // signals to the headless-render prerender step (api/prerender.js) that
+  // the async Supabase fetch + DOM population above has actually finished
+  document.body.setAttribute('data-prerendered-ready', '1');
 }
 
 const revealObserver = 'IntersectionObserver' in window

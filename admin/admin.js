@@ -1696,6 +1696,7 @@
     closeDrawer();
     toast(wasEditing ? t('Saved') : `${r.singular} ${t('created')}`);
     logAction(wasEditing ? 'update' : 'create', view, payload.name || payload.title || payload.quote || '');
+    triggerPrerender(view, payload.slug, payload.slug_ar, payload.published);
     await refreshCounts();
     renderList(view);
   }
@@ -1731,6 +1732,7 @@
     if (error) { toast(error.message, 'err'); return; }
     toast(`${r.singular} ${t('deleted')}`);
     logAction('delete', view, label);
+    if (row) triggerPrerender(view, row.slug, row.slug_ar, false);
     await refreshCounts();
     renderList(view);
   }
@@ -1746,6 +1748,30 @@
         action, resource, resource_label: label || '',
         created_at: new Date().toISOString()
       }]);
+    } catch (_) { /* non-critical */ }
+  }
+
+  // ---------- pre-rendered page cache (api/prerender.js) ----------
+  // fire-and-forget, same shape as logAction(): a failure here never blocks
+  // or errors out the save/delete, which has already succeeded by the time
+  // this runs — that item just stays on the slower client-rendered path
+  // until the next successful regenerate.
+  const PRERENDER_KIND = { projects: 'project', units: 'unit', posts: 'blog' };
+  async function triggerPrerender(view, slug, slugAr, published) {
+    const kind = PRERENDER_KIND[view];
+    if (!kind || !sb || !slug) return;
+    try {
+      const { data: { session } } = await sb.auth.getSession();
+      if (!session) return;
+      await fetch('/api/prerender', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: published ? 'regenerate' : 'invalidate',
+          kind, slug, slugAr: slugAr || null,
+          callerToken: session.access_token
+        })
+      });
     } catch (_) { /* non-critical */ }
   }
 

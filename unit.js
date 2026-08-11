@@ -164,6 +164,9 @@ function populate() {
   renderDeveloperPicks();
   cycleGalleries('#detailHero', '.detail-hero', 7000);
   window.scrollTo(0, 0);
+  // signals to the headless-render prerender step (api/prerender.js) that
+  // the async Supabase fetch + DOM population above has actually finished
+  document.body.setAttribute('data-prerendered-ready', '1');
 }
 
 /* ---- lightbox ---- */

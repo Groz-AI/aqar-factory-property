@@ -49,7 +49,21 @@
    rather than in vercel.json's "redirects" because Vercel auto-appends
    the original query string to a redirect destination with no documented
    way to turn that off, which produced a broken double-slug URL.
+
+   REAL VISITORS, NOT JUST BOTS: separately from all of the above, this
+   file also checks Vercel Blob for a pre-rendered snapshot of the page
+   (written by api/prerender.js, triggered from the admin portal on every
+   save) and serves that directly when one exists — so a real visitor's
+   very first response already has the content, not just bots/AI. A cache
+   miss (brand new item, or the snapshot hasn't been generated yet) falls
+   through to today's client-rendered page exactly as before — never a
+   broken state. The one exception is api/prerender.js's own headless-
+   browser request, which sends a secret bypass header so it always
+   captures the true live page instead of re-snapshotting a stale copy
+   of itself.
    ============================================================ */
+
+import { get } from '@vercel/blob';
 
 export const config = {
   matcher: [
@@ -189,6 +203,31 @@ async function fetchRelatedUnits(devId, devName, excludeSlug, limit = 6) {
   }
 }
 
+// looks up a real-visitor pre-rendered snapshot written by api/prerender.js —
+// key format must match blobKey() there exactly
+async function fetchPrerendered(kindPath, lang, slugForUrl) {
+  try {
+    const blob = await get(`prerendered/${lang}/${kindPath}/${slugForUrl}.html`, { access: 'private' });
+    if (!blob) return null;
+    return await streamToText(blob.stream);
+  } catch (_) {
+    return null;
+  }
+}
+
+async function streamToText(stream) {
+  const reader = stream.getReader();
+  const decoder = new TextDecoder();
+  let text = '';
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    text += decoder.decode(value, { stream: true });
+  }
+  text += decoder.decode();
+  return text;
+}
+
 function pageHTML({ title, description, image, url, type, facts, bodyText, amenities, gallery, consultants, brochurePdf, related }) {
   const factsList = facts.length
     ? `<h2>Key facts</h2><ul>${facts.map(([k, v]) => `<li><b>${esc(k)}:</b> ${esc(v)}</li>`).join('')}</ul>` : '';
@@ -254,6 +293,14 @@ export default async function middleware(request) {
     return Response.redirect(new URL(newPath, url.origin), 301);
   }
 
+  // NEW clean-path form (/project/slug, /ar/unit/slug, …) — parsed once,
+  // used both by the pre-rendered-cache check below (real visitors) and
+  // by the bot-content generation further down
+  const m = page.match(/^\/(project|unit|blog)\/([^/]+)\/?$/);
+  if (!m) return;
+  const kindPath = m[1]; // 'project' | 'unit' | 'blog'
+  const slugFromUrl = decodeURIComponent(m[2]);
+
   const ua = request.headers.get('user-agent') || '';
   const isNamedBot = BOT_RE.test(ua);
   // every real browser attaches Sec-Fetch-Mode to every request automatically;
@@ -261,18 +308,36 @@ export default async function middleware(request) {
   // bot) generally doesn't. Missing it entirely — on a request that isn't
   // even a named bot — is our signal for "not a browser".
   const looksLikeNonBrowser = !isNamedBot && !request.headers.get('sec-fetch-mode');
-  if (!isNamedBot && !looksLikeNonBrowser) return; // real browser — serve the normal site unchanged
+  const isRealBrowser = !isNamedBot && !looksLikeNonBrowser;
+
+  if (isRealBrowser) {
+    const bypassSecret = process.env.PRERENDER_BYPASS_SECRET;
+    const isPrerenderRequest = bypassSecret && request.headers.get('x-prerender-bypass') === bypassSecret;
+    if (!isPrerenderRequest) {
+      const cached = await fetchPrerendered(kindPath, isAr ? 'ar' : 'en', slugFromUrl);
+      if (cached) {
+        return new Response(cached, {
+          headers: {
+            'content-type': 'text/html; charset=utf-8',
+            // short edge cache on top of the Blob CDN's own caching — an
+            // admin edit's regenerate call overwrites the blob directly,
+            // so this is just extra headroom, not the source of freshness
+            'cache-control': 'public, max-age=0, s-maxage=60, stale-while-revalidate=300'
+          }
+        });
+      }
+    }
+    return; // no cached snapshot yet (or this IS the snapshotter) — normal CSR shell, exactly as before
+  }
+
   // AI bots and unidentified non-browser clients both get full article text
   // (the latter is exactly the case we're adding this for — a chat app
   // fetching the link wants the same real content a named AI crawler gets);
   // named preview bots (WhatsApp/Facebook/…) get the lean/fast title+meta path
   const richMode = AI_BOT_RE.test(ua) || looksLikeNonBrowser;
 
-  // NEW clean-path form (/project/slug, /ar/unit/slug, …)
-  const m = page.match(/^\/(project|unit|blog)\/([^/]+)\/?$/);
-  if (!m) return;
-  const table = m[1] === 'unit' ? 'units' : m[1] === 'blog' ? 'blog_posts' : 'projects';
-  const id = decodeURIComponent(m[2]);
+  const table = kindPath === 'unit' ? 'units' : kindPath === 'blog' ? 'blog_posts' : 'projects';
+  const id = slugFromUrl;
 
   const row = await fetchRow(table, id, richMode);
   if (!row) return; // let the page's own "not found" handling take over
