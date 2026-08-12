@@ -213,6 +213,21 @@ async function fetchRelatedUnits(devId, devName, excludeSlug, limit = 6) {
   }
 }
 
+// units directly assigned to a project via the unit's own "Linked project"
+// picker in the admin — mirrors renderProjectUnits() in project.js
+async function fetchUnitsForProject(projectId, limit = 12) {
+  try {
+    const res = await fetch(
+      `${SUPA_URL}/rest/v1/units?select=slug,slug_ar,name,name_ar&project_id=eq.${encodeURIComponent(projectId)}&published=eq.true&limit=${limit}`,
+      { headers: { apikey: SUPA_ANON_KEY, Authorization: `Bearer ${SUPA_ANON_KEY}` } }
+    );
+    if (!res.ok) return [];
+    return await res.json();
+  } catch (_) {
+    return [];
+  }
+}
+
 // looks up a real-visitor pre-rendered snapshot written by api/prerender.js —
 // key format must match blobKey() there exactly
 async function fetchPrerendered(kindPath, lang, slugForUrl) {
@@ -238,7 +253,7 @@ async function streamToText(stream) {
   return text;
 }
 
-function pageHTML({ title, description, image, url, type, facts, bodyText, amenities, gallery, consultants, brochurePdf, related }) {
+function pageHTML({ title, description, image, url, type, facts, bodyText, amenities, gallery, consultants, brochurePdf, related, projectUnits }) {
   const factsList = facts.length
     ? `<h2>Key facts</h2><ul>${facts.map(([k, v]) => `<li><b>${esc(k)}:</b> ${esc(v)}</li>`).join('')}</ul>` : '';
   const amenitiesList = (amenities && amenities.length)
@@ -248,6 +263,9 @@ function pageHTML({ title, description, image, url, type, facts, bodyText, ameni
   const brochureLink = brochurePdf ? `<p><a href="${esc(brochurePdf)}">Brochure (PDF)</a></p>` : '';
   const galleryHtml = (gallery && gallery.length)
     ? `<h2>Gallery (${gallery.length} photos)</h2>` + gallery.map((g, i) => `<img src="${esc(g)}" alt="photo ${i + 1}">`).join('')
+    : '';
+  const projectUnitsHtml = (projectUnits && projectUnits.length)
+    ? `<h2>Units in this project</h2><ul>${projectUnits.map(r => `<li><a href="${esc(r.url)}">${esc(r.name)}</a></li>`).join('')}</ul>`
     : '';
   const relatedHtml = (related && related.length)
     ? `<h2>Related, from the same developer</h2><ul>${related.map(r => `<li><a href="${esc(r.url)}">${esc(r.name)}</a></li>`).join('')}</ul>`
@@ -276,6 +294,7 @@ ${amenitiesList}
 ${brochureLink}
 ${consultantsList}
 ${galleryHtml}
+${projectUnitsHtml}
 ${relatedHtml}
 <p><a href="${esc(url)}">${esc(url)}</a></p>
 </body></html>`;
@@ -360,7 +379,7 @@ export default async function middleware(request) {
   };
 
   let title, description, image, facts = [], bodyText = '';
-  let amenities = [], gallery = [], consultants = [], brochurePdf = '', related = [];
+  let amenities = [], gallery = [], consultants = [], brochurePdf = '', related = [], projectUnits = [];
   if (table === 'blog_posts') {
     title = pick('seo_title', 'seo_title_ar') || pick('title', 'title_ar');
     description = pick('seo_description', 'seo_description_ar') || pick('excerpt', 'excerpt_ar');
@@ -397,14 +416,16 @@ export default async function middleware(request) {
       gallery = (row.gallery || []).map(g => img(g, 800));
       consultants = (Array.isArray(row.consultants) ? row.consultants : []).map(c => c && c.name).filter(Boolean);
       brochurePdf = row.brochure_pdf || '';
-      const [relProjects, relUnits] = await Promise.all([
+      const [relProjects, relUnits, ownUnits] = await Promise.all([
         fetchRelated('projects', row.developer_id, row.developer, row.slug),
-        fetchRelatedUnits(row.developer_id, row.developer, null)
+        fetchRelatedUnits(row.developer_id, row.developer, null),
+        fetchUnitsForProject(row.id)
       ]);
       related = [
         ...relProjects.map(r => ({ name: (isAr && r.name_ar) || r.name, url: linkUrl(r.slug, r.slug_ar, 'projects') })),
         ...relUnits.map(r => ({ name: (isAr && r.name_ar) || r.name, url: linkUrl(r.slug, r.slug_ar, 'units') }))
       ];
+      projectUnits = ownUnits.map(r => ({ name: (isAr && r.name_ar) || r.name, url: linkUrl(r.slug, r.slug_ar, 'units') }));
     }
   } else {
     const name = pick('name', 'name_ar') || row.name;
@@ -449,7 +470,7 @@ export default async function middleware(request) {
   if (!bodyText) bodyText = description;
 
   const html = pageHTML({
-    title, description, image, facts, bodyText, amenities, gallery, consultants, brochurePdf, related,
+    title, description, image, facts, bodyText, amenities, gallery, consultants, brochurePdf, related, projectUnits,
     url: url.toString(),
     type: table === 'blog_posts' ? 'article' : 'website'
   });

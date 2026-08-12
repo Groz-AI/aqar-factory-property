@@ -210,6 +210,7 @@
 
     // ---------- project detail page ----------
     'About this development': 'عن هذا المشروع',
+    'Units in this project': 'الوحدات في هذا المشروع',
     'Amenities': 'المرافق',
     'Gallery': 'معرض الصور',
     'Starting from': 'يبدأ من',

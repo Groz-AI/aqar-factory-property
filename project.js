@@ -186,6 +186,7 @@ function populate() {
   galleryEl.innerHTML = (project.gallery || []).map((g, i) =>
     `<figure data-idx="${i}"><img src="${U(g, 800)}" alt="${project.name} photo ${i + 1}" loading="lazy" /></figure>`).join('');
 
+  renderProjectUnits();
   renderRelated();
   renderDeveloperPicks();
   cycleGalleries('#detailHero', '.detail-hero', 7000);
@@ -296,6 +297,24 @@ function sameDeveloper(a, b) {
   if (!a || !b) return false;
   if (a.developerId && b.developerId) return a.developerId === b.developerId;
   return !!a.developer && a.developer === b.developer;
+}
+
+// units directly assigned to THIS project via the unit's own "Linked
+// project" picker in the admin — distinct from renderDeveloperPicks()
+// below, which matches by developer, not by direct project assignment
+function renderProjectUnits() {
+  const section = document.getElementById('projectUnitsSection');
+  const grid = document.getElementById('projectUnits');
+  if (!section || !grid) return;
+
+  const units = ALL_UNITS.filter(u => u.projectId === project.dbId);
+  if (!units.length) { section.hidden = true; return; }
+
+  section.hidden = false;
+  grid.querySelectorAll('[data-gallery]').forEach(b => { if (b._tid) clearInterval(b._tid); });
+  grid.innerHTML = units.map(unitCardHTML).join('');
+  cycleGalleries('#projectUnits', '.pcard', 4000);
+  if (window.cardContact) window.cardContact.wire(grid);
 }
 
 function renderDeveloperPicks() {
