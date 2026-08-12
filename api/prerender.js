@@ -101,8 +101,14 @@ module.exports = async function handler(req, res) {
   const bypassSecret = process.env.PRERENDER_BYPASS_SECRET;
   if (!bypassSecret) return send(res, 500, { error: 'not_configured' });
 
-  const chromium = require('@sparticuz/chromium');
+  // chromium-min fetches a complete, correctly-packed Chromium binary from a
+  // remote URL at cold start instead of relying on Vercel's build-time file
+  // tracing to bundle every file the compressed binary needs — the plain
+  // @sparticuz/chromium package failed live with "libnss3.so: cannot open
+  // shared object file", a known class of incomplete-bundle issue on Vercel.
+  const chromium = require('@sparticuz/chromium-min');
   const puppeteer = require('puppeteer-core');
+  const CHROMIUM_PACK_URL = 'https://github.com/Sparticuz/chromium/releases/download/v131.0.1/chromium-v131.0.1-pack.tar';
 
   const targets = [
     { lang: 'en', slugForUrl: slug, path: `/${kindPath}/${encodeURIComponent(slug)}` },
@@ -114,7 +120,7 @@ module.exports = async function handler(req, res) {
   try {
     browser = await puppeteer.launch({
       args: chromium.args,
-      executablePath: await chromium.executablePath(),
+      executablePath: await chromium.executablePath(CHROMIUM_PACK_URL),
       headless: chromium.headless
     });
 
