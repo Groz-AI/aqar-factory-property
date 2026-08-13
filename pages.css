@@ -203,15 +203,17 @@
    of its own containing block (.detail-aside), so the aside needs to
    stretch to the full grid-row height (matching the tall .detail-main
    column) or the fact-card runs out of room to stick in almost immediately. */
-/* brand-colored fact-card — same pink gradient direction/stops as the
-   homepage .cta-banner, so this reads as the same brand accent rather
-   than an unrelated color choice. Every child below gets an explicit
+/* brand-colored fact-card — the same pink/crimson family as the homepage
+   .cta-banner, but confined to its two darkest stops (--sky/--sky-deep,
+   skipping the banner's pale #f2a8bc highlight) since this card is full of
+   small text (fact list, dev line) that needs reliable contrast everywhere,
+   not just at one end of the gradient. Every child below gets an explicit
    light-on-dark override since none of these inherit color automatically
    (they were all written against a white card, using var(--ink)/var(--ink-soft)
    directly rather than a token that could flip with the background). */
 .fact-card{
   position:sticky;top:96px;
-  background:radial-gradient(130% 150% at 100% 0%, #f2a8bc, #e8567e 45%, var(--sky-deep) 100%);
+  background:linear-gradient(155deg, var(--sky) 0%, var(--sky-deep) 100%);
   border:1px solid rgba(255,255,255,.14);border-radius:22px;padding:28px;
   box-shadow:0 24px 50px -24px rgba(158,14,59,.55);color:#fff;
 }
