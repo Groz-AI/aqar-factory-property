@@ -196,9 +196,11 @@
 .gallery-grid figure:first-child{grid-column:span 2;grid-row:span 2}
 .gallery-grid figure:nth-child(4){grid-column:span 2}
 
-/* sidebar */
-.detail-aside{position:sticky;top:96px;align-self:start}
-.fact-card{background:#fff;border:1px solid var(--line);border-radius:22px;padding:28px;box-shadow:var(--shadow-md)}
+/* sidebar — only the fact-card itself sticks (not the whole aside), so the
+   units carousel above it scrolls away normally with the page instead of
+   being dragged along as part of one rigid sticky block */
+.detail-aside{align-self:start}
+.fact-card{position:sticky;top:96px;background:#fff;border:1px solid var(--line);border-radius:22px;padding:28px;box-shadow:var(--shadow-md)}
 .fact-card .price{font-family:"Bricolage Grotesque",sans-serif;font-size:2rem;font-weight:700;letter-spacing:-.02em;line-height:1}
 .fact-card .price small{display:block;font-family:"Hanken Grotesk";font-size:.8rem;font-weight:500;color:var(--ink-soft);letter-spacing:0;margin-bottom:.3rem}
 .fact-list{margin:22px 0;border-top:1px solid var(--line)}
@@ -377,7 +379,7 @@
   .projects-grid{grid-template-columns:repeat(2,1fr)}
   .blog-grid{grid-template-columns:repeat(2,1fr)}
   .detail-layout{grid-template-columns:1fr;gap:36px}
-  .detail-aside{position:static}
+  .fact-card{position:static}
   .gallery-grid{grid-template-columns:repeat(2,1fr);grid-auto-rows:180px}
   .gallery-grid figure:first-child{grid-column:span 2;grid-row:auto}
   .gallery-grid figure:nth-child(4){grid-column:auto}
