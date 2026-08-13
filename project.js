@@ -301,20 +301,55 @@ function sameDeveloper(a, b) {
 
 // units directly assigned to THIS project via the unit's own "Linked
 // project" picker in the admin — distinct from renderDeveloperPicks()
-// below, which matches by developer, not by direct project assignment
+// below, which matches by developer, not by direct project assignment.
+// Shown as a single-column, auto-advancing carousel (one unit at a time,
+// left/right arrows) right under the hero — same interaction pattern as
+// the homepage testimonials carousel (script.js's renderTestimonials()).
 function renderProjectUnits() {
   const section = document.getElementById('projectUnitsSection');
-  const grid = document.getElementById('projectUnits');
-  if (!section || !grid) return;
+  const track = document.getElementById('projectUnits');
+  const nav = document.getElementById('projectUnitsNav');
+  if (!section || !track) return;
 
   const units = ALL_UNITS.filter(u => u.projectId === project.dbId);
   if (!units.length) { section.hidden = true; return; }
-
   section.hidden = false;
-  grid.querySelectorAll('[data-gallery]').forEach(b => { if (b._tid) clearInterval(b._tid); });
-  grid.innerHTML = units.map(unitCardHTML).join('');
-  cycleGalleries('#projectUnits', '.pcard', 4000);
-  if (window.cardContact) window.cardContact.wire(grid);
+
+  const total = units.length;
+  let i = 0;
+  const idxEl = document.getElementById('projectUnitsIndex');
+  const pagesEl = document.getElementById('projectUnitsPages');
+  if (pagesEl) pagesEl.textContent = String(total).padStart(2, '0');
+
+  const paint = (n) => {
+    track.querySelectorAll('[data-gallery]').forEach(b => { if (b._tid) clearInterval(b._tid); });
+    track.innerHTML = unitCardHTML(units[n]);
+    void track.offsetWidth; // reflow so the fade-in transition replays
+    track.classList.add('in');
+    if (idxEl) idxEl.textContent = String(n + 1).padStart(2, '0');
+    cycleGalleries('#projectUnits', '.pcard', 4000);
+    if (window.cardContact) window.cardContact.wire(track);
+  };
+
+  function show(n) {
+    const next = (n + total) % total;
+    if (next === i && track.children.length) return;
+    i = next;
+    track.classList.remove('in');
+    setTimeout(() => paint(i), 280);
+  }
+
+  paint(0);
+
+  if (total < 2) { if (nav) nav.hidden = true; return; }
+  if (nav) nav.hidden = false;
+
+  let timer = setInterval(() => show(i + 1), 5200);
+  const reset = () => { clearInterval(timer); timer = setInterval(() => show(i + 1), 5200); };
+  document.getElementById('projectUnitsNext')?.addEventListener('click', () => { show(i + 1); reset(); });
+  document.getElementById('projectUnitsPrev')?.addEventListener('click', () => { show(i - 1); reset(); });
+  section.addEventListener('mouseenter', () => clearInterval(timer));
+  section.addEventListener('mouseleave', reset);
 }
 
 function renderDeveloperPicks() {

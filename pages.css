@@ -148,6 +148,23 @@
 .detail-hero .d-loc{display:flex;align-items:center;gap:.5rem;margin-top:.8rem;font-size:1.05rem;opacity:.95}
 .detail-hero .d-loc svg{width:18px;height:18px}
 
+/* "Units in this project" — single-column carousel, right under the hero.
+   Reuses .pcard for the card itself and .testi-nav/.round-btn/.testi-count
+   (already defined in styles.css for the homepage testimonials carousel)
+   for the arrow controls, so this stays visually consistent for free. */
+.unit-carousel{padding:56px 0 8px}
+.unit-carousel .display-head{margin-bottom:1.8rem}
+.unit-carousel-track{
+  display:grid;grid-template-columns:1fr;max-width:520px;margin:0 auto;
+  opacity:0;transform:translateY(14px);transition:opacity .5s var(--ease),transform .5s var(--ease);
+}
+.unit-carousel-track.in{opacity:1;transform:none}
+.unit-carousel .testi-nav{margin-top:1.8rem}
+
+@media(max-width:640px){
+  .unit-carousel-track{max-width:100%}
+}
+
 /* "Part of <Project>" banner — shown on a unit's page when it's linked to a project */
 .project-link-banner{
   display:flex;align-items:center;gap:.6em;margin-top:20px;padding:.9em 1.3em;border-radius:16px;
