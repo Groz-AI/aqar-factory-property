@@ -198,8 +198,11 @@
 
 /* sidebar — only the fact-card itself sticks (not the whole aside), so the
    units carousel above it scrolls away normally with the page instead of
-   being dragged along as part of one rigid sticky block */
-.detail-aside{align-self:start}
+   being dragged along as part of one rigid sticky block. Deliberately NOT
+   align-self:start here: a sticky element can only stick within the height
+   of its own containing block (.detail-aside), so the aside needs to
+   stretch to the full grid-row height (matching the tall .detail-main
+   column) or the fact-card runs out of room to stick in almost immediately. */
 .fact-card{position:sticky;top:96px;background:#fff;border:1px solid var(--line);border-radius:22px;padding:28px;box-shadow:var(--shadow-md)}
 .fact-card .price{font-family:"Bricolage Grotesque",sans-serif;font-size:2rem;font-weight:700;letter-spacing:-.02em;line-height:1}
 .fact-card .price small{display:block;font-family:"Hanken Grotesk";font-size:.8rem;font-weight:500;color:var(--ink-soft);letter-spacing:0;margin-bottom:.3rem}
