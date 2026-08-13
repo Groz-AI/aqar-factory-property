@@ -96,23 +96,6 @@
   </div>
 </section>
 
-<!-- UNITS IN THIS PROJECT (single-column carousel, auto-advancing) -->
-<section class="unit-carousel" id="projectUnitsSection" hidden>
-  <div class="container">
-    <h2 class="display-head center" data-i18n>Units in this project</h2>
-    <div class="unit-carousel-track" id="projectUnits"></div>
-    <div class="testi-nav" id="projectUnitsNav" hidden>
-      <button class="round-btn" id="projectUnitsPrev" aria-label="Previous unit" data-i18n-aria>
-        <svg viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
-      <span class="testi-count"><span id="projectUnitsIndex">01</span><i>/</i><span id="projectUnitsPages">01</span></span>
-      <button class="round-btn" id="projectUnitsNext" aria-label="Next unit" data-i18n-aria>
-        <svg viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
-    </div>
-  </div>
-</section>
-
 <!-- BODY -->
 <div class="container">
   <div class="breadcrumb" style="padding-top:22px"><a href="index.html" data-i18n>Home</a><span>/</span><a href="projects.html" data-i18n>Projects</a><span>/</span><b id="crumbName">Project</b></div>
@@ -136,6 +119,20 @@
 
     <!-- SIDEBAR -->
     <aside class="detail-aside">
+      <!-- UNITS IN THIS PROJECT (single-column carousel, auto-advancing) -->
+      <div class="unit-carousel-aside" id="projectUnitsSection" hidden>
+        <h3 data-i18n>Units in this project</h3>
+        <div class="unit-carousel-track" id="projectUnits"></div>
+        <div class="testi-nav" id="projectUnitsNav" hidden>
+          <button class="round-btn" id="projectUnitsPrev" aria-label="Previous unit" data-i18n-aria>
+            <svg viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <span class="testi-count"><span id="projectUnitsIndex">01</span><i>/</i><span id="projectUnitsPages">01</span></span>
+          <button class="round-btn" id="projectUnitsNext" aria-label="Next unit" data-i18n-aria>
+            <svg viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+      </div>
       <div class="fact-card">
         <div class="price" id="price" hidden><small>Starting from</small></div>
         <dl class="fact-list" id="factList"></dl>
