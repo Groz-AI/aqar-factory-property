@@ -1645,10 +1645,16 @@
       // an empty selection on a reference field (city/project) means "unlinked" —
       // save it as null, not an empty string (uuid columns reject "")
       if (f.type === 'select' && (f.key === 'city_id' || f.key === 'project_id' || f.key === 'developer_id')) { out[f.key] = v === '' ? null : v; continue; }
+      // always re-run the slug through slugify()/slugifyAr() on save, not
+      // just while auto-populating from the name field — once someone
+      // types or pastes directly into the slug field it stops getting
+      // sanitized at all, which is exactly how a slug with a stray leading
+      // "/" (breaking every URL for that project) got saved undetected
+      if (f.key === 'slug') { out[f.key] = slugify(v); continue; }
       // slug_ar is unique-but-optional — an empty string would collide with
       // every other row that also left it blank (unlike NULL, which a unique
       // index never treats as a duplicate)
-      if (f.key === 'slug_ar') { out[f.key] = v.trim() || null; continue; }
+      if (f.key === 'slug_ar') { out[f.key] = slugifyAr(v) || null; continue; }
       if (f.type === 'tags') { out[f.key] = v.split(',').map(s => s.trim()).filter(Boolean); continue; }
       if (f.type === 'lines') { out[f.key] = v.split('\n').map(s => s.trim()).filter(Boolean); continue; }
       out[f.key] = v.trim ? v.trim() : v;

@@ -394,7 +394,10 @@ export default async function middleware(request) {
   const pick = (en, ar) => (isAr && row[ar]) ? row[ar] : row[en];
   const linkUrl = (slug, slugAr, otherTable) => {
     const p = otherTable === 'units' ? '/unit/' : otherTable === 'blog_posts' ? '/blog/' : '/project/';
-    const s = (isAr && slugAr) ? slugAr : slug;
+    // strip a stray leading/trailing slash defensively — see store.js's
+    // buildUrl() for the full explanation (a bad stored slug otherwise
+    // produces a double-slash URL that 404s for everyone)
+    const s = String((isAr && slugAr) ? slugAr : slug).replace(/^\/+|\/+$/g, '');
     return `https://www.aqar-factory.com${isAr ? '/ar' : ''}${p}${encodeURIComponent(s)}`;
   };
 

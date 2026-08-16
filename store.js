@@ -17,10 +17,14 @@
 
   // shared clean-URL builder for project/unit/blog detail links — prefers
   // the item's Arabic slug on /ar/ pages when the admin set one, otherwise
-  // reuses the same (English) slug on both languages
+  // reuses the same (English) slug on both languages. Strips any stray
+  // leading/trailing slash from the slug itself (admin.js now sanitizes on
+  // save so this shouldn't happen going forward, but a bad value here would
+  // otherwise produce a double-slash URL that 404s for everyone — defense
+  // in depth against older data or any other path a slug could arrive by).
   window.buildUrl = function (kind, item) {
     const ar = !!(window.i18n && window.i18n.lang === 'ar');
-    const slug = (ar && item.slugAr) ? item.slugAr : item.id;
+    const slug = String((ar && item.slugAr) ? item.slugAr : item.id).replace(/^\/+|\/+$/g, '');
     const base = kind === 'unit' ? '/unit/' : kind === 'blog' ? '/blog/' : '/project/';
     return (ar ? '/ar' : '') + base + encodeURIComponent(slug);
   };
