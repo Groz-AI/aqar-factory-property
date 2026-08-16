@@ -272,7 +272,7 @@ async function streamToText(stream) {
   return text;
 }
 
-function pageHTML({ title, description, image, url, type, facts, bodyText, amenities, gallery, consultants, brochurePdf, related, projectUnits }) {
+function pageHTML({ title, description, image, url, canonicalUrl, type, facts, bodyText, amenities, gallery, consultants, brochurePdf, related, projectUnits }) {
   const factsList = facts.length
     ? `<h2>Key facts</h2><ul>${facts.map(([k, v]) => `<li><b>${esc(k)}:</b> ${esc(v)}</li>`).join('')}</ul>` : '';
   const amenitiesList = (amenities && amenities.length)
@@ -294,6 +294,7 @@ function pageHTML({ title, description, image, url, type, facts, bodyText, ameni
 <meta charset="utf-8">
 <title>${esc(title)}</title>
 <meta name="description" content="${esc(description)}">
+<link rel="canonical" href="${esc(canonicalUrl)}">
 <meta property="og:type" content="${type}">
 <meta property="og:site_name" content="Aqar Factory">
 <meta property="og:title" content="${esc(title)}">
@@ -488,9 +489,15 @@ export default async function middleware(request) {
     : 'Aqar Factory blog — market insight, buying guides and stories from our team.';
   if (!bodyText) bodyText = description;
 
+  // the exact clean-path URL that was requested IS the canonical form (old
+  // ?id=/?slug= URLs already 301-redirected before reaching this code) —
+  // built explicitly rather than reusing the raw request URL so it's never
+  // polluted by an incidental query string
+  const canonicalUrl = `https://www.aqar-factory.com${isAr ? '/ar' : ''}/${kindPath}/${encodeURIComponent(slugFromUrl)}`;
+
   const html = pageHTML({
     title, description, image, facts, bodyText, amenities, gallery, consultants, brochurePdf, related, projectUnits,
-    url: url.toString(),
+    url: url.toString(), canonicalUrl,
     type: table === 'blog_posts' ? 'article' : 'website'
   });
 
