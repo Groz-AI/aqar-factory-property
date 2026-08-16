@@ -18,7 +18,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title data-i18n>Unit — Aqar Factory</title>
 <meta name="description" content="Aqar Factory unit detail — gallery, price, specs and location." data-i18n-content />
-<link rel="canonical" href="https://www.aqar-factory.com/unit.html" id="canonicalLink" />
+<!-- no static canonical here on purpose: this template is shared by every
+     unit, so any fixed href would be wrong for all of them until i18n.js's
+     injectSeoLinks() creates the real, per-unit one from the actual URL
+     once it's known (runs on every page load, before paint) -->
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Bricolage+Grotesque:opsz,wght@12..96,300..800&family=Hanken+Grotesk:wght@300..700&display=swap" rel="stylesheet" />

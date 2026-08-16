@@ -5,11 +5,14 @@
    client-rendered — the real per-item title, description AND all
    visible content (about text, price, amenities…) only get written
    in by project.js/unit.js/blog-post.js AFTER the page loads and
-   fetches from Supabase. Google's indexer runs that JS before
-   reading the page, so it sees everything correctly (verified
-   live). Two other kinds of bot do NOT run JavaScript at all, so
-   they only ever saw an almost-empty page (just header/footer
-   markup, no real content):
+   fetches from Supabase. Search engines and bots either can't run
+   that JS at all, or can but don't reliably wait for/re-render it in
+   time for what actually gets indexed — so relying on it was a real,
+   client-reported indexing problem (a hardcoded generic <title>/<meta
+   description>/<link rel=canonical> in the raw HTML, identical on
+   every project/unit page, was there for Google's first crawl pass
+   before JS ever ran — see the AI_BOT_RE comment below for the full
+   explanation). Four kinds of bot are handled here:
      1. Link-unfurl bots (WhatsApp, Facebook, Twitter/X, LinkedIn,
         Telegram, Slack, Discord…) — only need title/description/image.
      2. AI crawlers that self-identify with an official bot user
@@ -17,7 +20,9 @@
         Perplexity's PerplexityBot, Google-Extended, etc.) — these
         want the actual page TEXT, not just meta tags, so an AI
         assistant can answer questions about the project/unit/post.
-     3. Consumer chat apps' interactive "fetch this link for me"
+     3. The major search-engine indexers (Googlebot, Bingbot, Yandex) —
+        same full-content treatment as group 2, for the reason above.
+     4. Consumer chat apps' interactive "fetch this link for me"
         feature (e.g. asking Gemini/ChatGPT about a URL mid-conversation)
         often does NOT use one of the official crawler user agents
         above — it looks like a generic HTTP client. We can't match
@@ -34,7 +39,7 @@
 
    FIX: intercept requests whose User-Agent matches a known bot from
    either list above, OR that are missing the Sec-Fetch-Mode header
-   entirely (see group 3 above). Fetch the item straight from
+   entirely (see group 4 above). Fetch the item straight from
    Supabase here (runs on Vercel's edge, before any static file is
    served), and return an HTML document with the correct <title>,
    meta description, Open Graph/Twitter tags, AND the actual readable
@@ -90,14 +95,28 @@ export const config = {
 const SUPA_URL = 'https://dwufpgsqblwjgmzoseev.supabase.co';
 const SUPA_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR3dWZwZ3NxYmx3amdtem9zZWV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5ODgyNTMsImV4cCI6MjA5ODU2NDI1M30.dvO4voO8tRIo-99kHJ3o_x3YvSiaEnq8I0gOmgf1YOY';
 
-// group 1: link-unfurl bots (want title/description/image only) —
-// excludes Googlebot/Google-InspectionTool, which DOES render JS and
-// already gets everything correctly (verified live)
+// group 1: link-unfurl bots (want title/description/image only)
 const PREVIEW_BOT_RE = /facebookexternalhit|facebot|whatsapp|twitterbot|linkedinbot|telegrambot|slackbot|discordbot|redditbot|pinterest|skypeuripreview|vkshare|w3c_validator|embedly|quora link preview|showyoubot|outbrain|nuzzel|flipboard|tumblr|bitlybot|iframely|viber|line-poker|kakaotalk/i;
 
-// group 2: officially self-identifying AI crawlers/answer engines —
-// these get the same response PLUS real page text in the body
-const AI_BOT_RE = /gptbot|chatgpt-user|oai-searchbot|claudebot|claude-web|anthropic-ai|perplexitybot|perplexity-user|google-extended|applebot-extended|bytespider|ccbot|diffbot|amazonbot|youbot|cohere-ai|meta-externalagent|timpibot|imagesiftbot/i;
+// group 2: officially self-identifying AI crawlers/answer engines, AND the
+// major search-engine indexers (Google/Bing/Yandex) — these get the same
+// response PLUS real page text in the body.
+//
+// Google/Bing/etc. WERE deliberately excluded here on the assumption that
+// "it renders JS, so it'll see the real content eventually" — true, but
+// misleading in practice: Google indexes JS-heavy pages in two passes, and
+// the FIRST pass reads the raw, un-rendered HTML — which, before this fix,
+// had a hardcoded generic <title>/<meta description>/<link rel=canonical>
+// identical on every project/unit page (the canonical literally pointed at
+// the bare template URL, telling Google "this is a duplicate of a page with
+// no real content"). That can make Google skip ever coming back to render
+// the JS at all — a real, client-reported symptom: some old, rarely-edited
+// projects never got indexed while newer ones did, which tracks with
+// Google's crawl-budget-dependent, sometimes very delayed second pass
+// rather than any actual defect in those specific projects. Removing the
+// exclusion means Google's FIRST pass already sees the correct, real
+// content — no reliance on JS-render timing at all.
+const AI_BOT_RE = /gptbot|chatgpt-user|oai-searchbot|claudebot|claude-web|anthropic-ai|perplexitybot|perplexity-user|google-extended|applebot-extended|bytespider|ccbot|diffbot|amazonbot|youbot|cohere-ai|meta-externalagent|timpibot|imagesiftbot|googlebot|google-inspectiontool|googleother|adsbot-google|bingbot|bingpreview|yandexbot/i;
 
 const BOT_RE = new RegExp(PREVIEW_BOT_RE.source + '|' + AI_BOT_RE.source, 'i');
 
