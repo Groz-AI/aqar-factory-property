@@ -77,10 +77,17 @@ module.exports = async function handler(req, res) {
   }
   body = body || {};
 
-  const { action, kind, slug, slugAr, callerToken } = body;
+  const { action, kind, callerToken } = body;
   const kindPath = KIND_PATH[kind];
   if (!kindPath) return send(res, 400, { error: 'bad_kind' });
-  if (!slug) return send(res, 400, { error: 'missing_slug' });
+  if (!body.slug) return send(res, 400, { error: 'missing_slug' });
+  // strip a stray leading/trailing slash defensively — a bad slug would
+  // otherwise produce a broken double-slash path to snapshot AND a blob key
+  // that middleware.js's clean-slug lookup could never actually match (see
+  // store.js's buildUrl() for the fuller explanation of the root issue)
+  const stripSlashes = (s) => String(s || '').replace(/^\/+|\/+$/g, '');
+  const slug = stripSlashes(body.slug);
+  const slugAr = stripSlashes(body.slugAr);
 
   const authed = await verifyCaller(callerToken);
   if (!authed) return send(res, 401, { error: 'unauthorized' });
