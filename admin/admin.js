@@ -76,7 +76,7 @@
       const has = (slot) => slot && (slot.text || slot.image);
       return has(b.left) || has(b.right);
     }
-    if (b.type === 'button') return !!(b.label && b.url);
+    if (b.type === 'button') return b.whatsapp ? !!b.label : !!(b.label && b.url);
     return !!(b.text || b.image);
   }
 
@@ -1007,7 +1007,7 @@
       divider: () => ({ type: 'divider', text: '', image: '', color: '#e2e2e2', thickness: 2, width: 100 }),
       callout: () => ({ type: 'callout', text: '', image: '', color: '#fce6eb' }),
       columns: () => ({ type: 'columns', text: '', image: '', left: { type: 'paragraph', text: '' }, right: { type: 'paragraph', text: '' } }),
-      button: () => ({ type: 'button', text: '', image: '', label: '', url: '' })
+      button: () => ({ type: 'button', text: '', image: '', label: '', url: '', whatsapp: false, message: '' })
     };
 
     function resizeTableBlock(b, rows, cols) {
@@ -1233,8 +1233,14 @@
           </div>
           <hr class="block-divider-preview" style="border-color:${esc(b.color || '#e2e2e2')};border-top-width:${esc(b.thickness || 2)}px;width:${esc(b.width || 100)}%">`;
         } else if (b.type === 'button') {
-          body = `<input type="text" placeholder="${esc(t('Button label'))}" value="${esc(b.label || '')}" data-blabel="${i}">
-            <input type="text" placeholder="${esc(t('URL (https://…)'))}" value="${esc(b.url || '')}" data-burl="${i}" style="margin-top:8px">`;
+          const isWa = !!b.whatsapp;
+          body = `<label class="wa-toggle-row" style="display:flex;align-items:center;gap:8px;margin-bottom:8px;font-weight:600;cursor:pointer">
+              <input type="checkbox" data-bwa="${i}"${isWa ? ' checked' : ''}> ${esc(t('WhatsApp button'))}
+            </label>
+            <input type="text" placeholder="${esc(t('Button label'))}" value="${esc(b.label || '')}" data-blabel="${i}">
+            ${isWa
+              ? `<input type="text" placeholder="${esc(t('Prefilled message (optional)'))}" value="${esc(b.message || '')}" data-bmsg="${i}" style="margin-top:8px">`
+              : `<input type="text" placeholder="${esc(t('URL (https://…)'))}" value="${esc(b.url || '')}" data-burl="${i}" style="margin-top:8px">`}`;
         } else if (b.type === 'callout') {
           body = `<div class="callout-color-row"><label>${t('Background color')} <input type="color" class="callout-color" data-ccolor="${i}" value="${esc(b.color || '#fce6eb')}"></label></div>
             <div class="rte" contenteditable="true" data-btext="${i}"${alignStyle}>${b.text || ''}</div>`;
@@ -1413,6 +1419,11 @@
       }));
       $$('[data-blabel]', canvas).forEach(inp => inp.addEventListener('input', () => { arr()[+inp.dataset.blabel].label = inp.value; }));
       $$('[data-burl]', canvas).forEach(inp => inp.addEventListener('input', () => { arr()[+inp.dataset.burl].url = inp.value; }));
+      $$('[data-bwa]', canvas).forEach(inp => inp.addEventListener('change', () => {
+        arr()[+inp.dataset.bwa].whatsapp = inp.checked;
+        paintCanvas();
+      }));
+      $$('[data-bmsg]', canvas).forEach(inp => inp.addEventListener('input', () => { arr()[+inp.dataset.bmsg].message = inp.value; }));
     };
 
     file.addEventListener('change', async () => {

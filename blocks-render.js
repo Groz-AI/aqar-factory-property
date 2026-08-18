@@ -21,6 +21,37 @@
 
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
+  // same icon markup as whatsapp-widget.js/card-contact.js's waIconSVG
+  const WA_ICON_SVG = '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path fill="currentColor" d="M12.001 2c-5.523 0-10 4.477-10 10 0 1.762.457 3.417 1.257 4.855l-1.32 4.827 4.947-1.297A9.955 9.955 0 0 0 12.001 22c5.523 0 10-4.477 10-10s-4.477-10-10-10zm0 18.166a8.147 8.147 0 0 1-4.15-1.135l-.298-.177-3.05.8.813-2.976-.194-.307a8.147 8.147 0 0 1-1.293-4.371c0-4.517 3.65-8.166 8.166-8.166 4.517 0 8.166 3.65 8.166 8.166 0 4.517-3.65 8.166-8.166 8.166z"/></svg>';
+
+  // resolved lazily on first click and cached — store.getCompany() hits
+  // Supabase fresh every call with no caching of its own, so a page with
+  // several WhatsApp buttons in its rich content should only pay for one
+  // fetch, not one per click
+  let waNumberPromise = null;
+  function resolveWaNumber() {
+    if (!waNumberPromise) {
+      waNumberPromise = (async () => {
+        try {
+          const c = window.store && window.store.getCompany ? await window.store.getCompany() : null;
+          return c ? String(c.phoneSecondary || c.phone || '').replace(/\D/g, '') : '';
+        } catch (_) { return ''; }
+      })();
+    }
+    return waNumberPromise;
+  }
+
+  document.addEventListener('click', async (e) => {
+    const btn = e.target.closest('[data-wa-button]');
+    if (!btn) return;
+    e.preventDefault();
+    const number = await resolveWaNumber();
+    if (!number) return;
+    const message = btn.getAttribute('data-wa-message') || '';
+    const url = `https://wa.me/${number}` + (message ? `?text=${encodeURIComponent(message)}` : '');
+    window.open(url, '_blank', 'noopener');
+  });
+
   // ---------- curated icon set (Feather-style stroke SVGs, currentColor) ----------
   window.ICON_LIBRARY = {
     bed: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4v16"/><path d="M2 8h18a2 2 0 0 1 2 2v10"/><path d="M2 17h20"/><path d="M6 8V6a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v2"/></svg>',
@@ -136,7 +167,11 @@
       return `<div class="block-callout" style="background:${esc(bg)}"><span class="block-callout-icon">${window.ICON_LIBRARY.star}</span><div class="block-callout-body">${b.text}</div></div>`;
     }
     if (b.type === 'button') {
-      if (!b.url || !b.label) return '';
+      if (!b.label) return '';
+      if (b.whatsapp) {
+        return `<a class="block-button block-button-whatsapp" href="#" data-wa-button data-wa-message="${esc(b.message || '')}" rel="noopener">${WA_ICON_SVG}<span>${esc(b.label)}</span></a>`;
+      }
+      if (!b.url) return '';
       return `<a class="block-button" href="${esc(b.url)}" target="_blank" rel="noopener">${esc(b.label)}</a>`;
     }
     if (b.type === 'icon-row') {

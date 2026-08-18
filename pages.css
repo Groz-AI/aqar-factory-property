@@ -375,6 +375,10 @@
 [dir="rtl"] .block-button::after{content:'←'}
 .block-button:hover::after{transform:translateX(4px)}
 [dir="rtl"] .block-button:hover::after{transform:translateX(-4px)}
+.block-button-whatsapp{background:#25D366;box-shadow:0 10px 24px -10px rgba(37,211,102,.6);cursor:pointer}
+.block-button-whatsapp:hover{box-shadow:0 14px 28px -10px rgba(37,211,102,.65)}
+.block-button-whatsapp::after{content:none}
+.block-button-whatsapp svg{width:20px;height:20px;flex:none}
 
 @media(max-width:640px){.block-columns{grid-template-columns:1fr}}
 
