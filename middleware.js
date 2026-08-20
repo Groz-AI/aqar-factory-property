@@ -336,8 +336,15 @@ export default async function middleware(request) {
   // is applied, so there's no ordering issue doing it here instead.
   const oldKind = page === '/project.html' ? 'project' : page === '/unit.html' ? 'unit' : page === '/blog-post.html' ? 'blog' : null;
   if (oldKind) {
-    const oldId = url.searchParams.get('id') || url.searchParams.get('slug');
-    if (!oldId) return next(); // no id/slug at all — let the page's own "not found" handling take over
+    const rawOldId = url.searchParams.get('id') || url.searchParams.get('slug');
+    if (!rawOldId) return next(); // no id/slug at all — let the page's own "not found" handling take over
+    // a stray leading/trailing slash can be baked into an already-indexed old
+    // URL from before admin.js started sanitizing slugs on save (see store.js's
+    // buildUrl() for the fuller history) — without stripping it here too, the
+    // redirect target still carries the slash and never matches the since-
+    // corrected database row, so the page 404s forever even after the data fix
+    const oldId = rawOldId.replace(/^\/+|\/+$/g, '');
+    if (!oldId) return next();
     const newPath = `${isAr ? '/ar' : ''}/${oldKind}/${encodeURIComponent(oldId)}`;
     return Response.redirect(new URL(newPath, url.origin), 301);
   }
