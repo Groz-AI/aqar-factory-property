@@ -82,6 +82,9 @@ export const config = {
     // it to the new clean path (see the redirect logic below)
     '/project.html', '/unit.html', '/blog-post.html',
     '/ar/project.html', '/ar/unit.html', '/ar/blog-post.html',
+    // /index.html serves byte-identical content to /, so both getting
+    // indexed is a real duplicate — 301 the explicit filename to the root
+    '/index.html', '/ar/index.html',
     // new clean-path form — what every internal link now points to
     '/project/:slug*', '/unit/:slug*', '/blog/:slug*',
     '/ar/project/:slug*', '/ar/unit/:slug*', '/ar/blog/:slug*'
@@ -334,6 +337,13 @@ export default async function middleware(request) {
   // produced a broken double-slug URL (verified live before switching to
   // this approach); this middleware also runs before vercel.json's routing
   // is applied, so there's no ordering issue doing it here instead.
+  // /index.html and / are the same bytes — collapse to the root form so only
+  // one of the two can ever be indexed (Google was already flagging this pair
+  // as a duplicate and picking its own canonical)
+  if (page === '/index.html') {
+    return Response.redirect(new URL(isAr ? '/ar' : '/', url.origin), 301);
+  }
+
   const oldKind = page === '/project.html' ? 'project' : page === '/unit.html' ? 'unit' : page === '/blog-post.html' ? 'blog' : null;
   if (oldKind) {
     const rawOldId = url.searchParams.get('id') || url.searchParams.get('slug');
