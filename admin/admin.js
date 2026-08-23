@@ -48,18 +48,49 @@
   // name -> URL slug: lowercase, spaces/anything non-alphanumeric collapsed
   // to a single dash (drops accents/non-Latin characters rather than
   // percent-encoding them, so the slug stays a clean, readable ASCII string)
+  // NFKC first so accented/fullwidth text pasted from a document ("Ｖｉｌｌａ")
+  // folds to plain ASCII instead of being dropped character by character
   const slugify = (s) => String(s || '')
+    .normalize('NFKC')
     .trim().toLowerCase()
     .replace(/[^a-z0-9\s-]/g, '')
     .replace(/[\s-]+/g, '-')
     .replace(/^-+|-+$/g, '');
+
+  // The same Arabic word can arrive spelled several different ways in Unicode,
+  // and the slug rules below only recognise one of them — so without this fold
+  // the other spellings get silently mangled or dropped, which looks exactly
+  // like "I set an Arabic URL and it didn't apply":
+  //   • text copied out of a PDF or Word often arrives as Arabic *presentation
+  //     forms* (U+FE70–FEFF). Every one of those is outside the ء-ي range, so
+  //     the whole slug reduced to an empty string and the custom Arabic URL was
+  //     quietly cleared. NFKC maps them back to normal letters.
+  //   • ی and ک (Persian/Urdu yeh and keheh) look identical to ي and ك but are
+  //     different codepoints, and plenty of keyboards and websites emit them —
+  //     they were being deleted mid-word, e.g. "کمپوند" -> "موند".
+  //   • ٱ (alef wasla) and the extended Indic digits ۰-۹ were dropped the same way.
+  // Tatweel is decorative-only and has no business in a URL, so it goes; the
+  // zero-width and bidi marks are invisible and would otherwise survive into
+  // the slug or split a word in two.
+  const foldArabic = (s) => String(s || '')
+    .normalize('NFKC')
+    // written as \u escape sequences on purpose: these are invisible or
+    // near-identical glyphs, so a literal copy in the source would be
+    // impossible to review and easy for an editor to silently mangle
+    .replace(/[\u200B-\u200F\u202A-\u202E\u2066-\u2069\uFEFF\u0640]/g, '') // zero-width, bidi marks, tatweel
+    .replace(/[\u064B-\u0652]/g, '')                        // harakat (diacritics)
+    .replace(/[\u06CC\u0649\u06D2]/g, '\u064A')            // farsi yeh, alef maksura, yeh barree -> arabic yeh
+    .replace(/[\u06A9\u06AA]/g, '\u0643')                  // keheh -> arabic kaf
+    .replace(/[\u06BE\u06C0\u06C1\u06C2\u06D5]/g, '\u0647') // heh variants -> arabic heh
+    .replace(/[\u0671\u0672\u0673\u0675]/g, '\u0627')    // alef wasla & friends -> arabic alef
+    .replace(/[\u06F0-\u06F9]/g, (d) => String.fromCharCode(d.charCodeAt(0) - 0x06F0 + 0x0660)); // extended -> arabic-indic digits
 
   // Arabic-URL slug: same idea as slugify() above, but keeps Arabic letters
   // and digits instead of dropping them — everything else (Latin left as-is,
   // punctuation, diacritics) still collapses to dashes. Browsers/Google both
   // handle raw Unicode characters in a URL path/query fine (shown decoded,
   // transmitted percent-encoded), so no manual encoding is needed here.
-  const slugifyAr = (s) => String(s || '')
+  const slugifyAr = (s) => foldArabic(s)
     .trim()
     .replace(/[^ء-ي٠-٩a-zA-Z0-9\s-]/g, '')
     .replace(/[\s-]+/g, '-')
@@ -78,7 +109,7 @@
     .replace(/-{2,}/g, '-')
     .replace(/^-+/, '');
 
-  const liveSlugAr = (s) => String(s || '')
+  const liveSlugAr = (s) => foldArabic(s)
     .replace(/[^ء-ي٠-٩a-zA-Z0-9\s-]/g, '')
     .replace(/\s+/g, '-')
     .replace(/-{2,}/g, '-')
@@ -1723,6 +1754,21 @@
     if (pendingUploads > 0) { toast(t('An image is still uploading — please wait a moment'), 'err'); return; }
     const r = RESOURCES[view];
     const payload = collect(view);
+    // A slug box with text in it that sanitizes down to nothing would otherwise
+    // save as null and silently fall back to the English URL — the admin sees a
+    // successful save and no explanation. Say so instead of dropping it.
+    if (view === 'projects' || view === 'units') {
+      const typedAr = (($('#f_slug_ar') || {}).value || '').trim();
+      if (typedAr && !payload.slug_ar) {
+        toast(t('That Arabic URL has no characters usable in a link — please retype it using Arabic letters or numbers'), 'err');
+        return;
+      }
+      const typedEn = (($('#f_slug') || {}).value || '').trim();
+      if (typedEn && !payload.slug) {
+        toast(t('That URL has no characters usable in a link — please use letters or numbers'), 'err');
+        return;
+      }
+    }
     // required check
     for (const f of r.fields) {
       if (f.required && (payload[f.key] == null || payload[f.key] === '')) {
