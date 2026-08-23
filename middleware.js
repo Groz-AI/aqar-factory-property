@@ -367,6 +367,28 @@ export default async function middleware(request) {
   const kindPath = m[1]; // 'project' | 'unit' | 'blog'
   const slugFromUrl = decodeURIComponent(m[2]);
 
+  // A handful of URLs Google indexed years ago no longer match any row: the
+  // item was either renamed (its slug edited in the admin) or filed under the
+  // wrong kind (a /unit/ URL for what is actually a project). Left alone they
+  // 200 with the empty template — a "soft 404", the worst signal to give a
+  // crawler. Each entry below was verified against live Supabase data to
+  // resolve to EXACTLY ONE row, so the 301 can't send anyone to the wrong
+  // listing; genuinely-deleted slugs are deliberately absent and fall through
+  // to the real 404 further down.
+  const RENAMED = {
+    // wrong kind: these slugs belong to a project, not a unit
+    'unit/salt-marina-in-ras-el-hekma': '/project/salt-marina-in-ras-el-hekma',
+    'unit/river-park-residence-new-obour': '/project/river-park-residence-new-obour',
+    // renamed slugs
+    'project/citalia-compound-valero-new-obour': '/project/citalia-compound-valero-new-obour-city',
+    'project/aljar_british_district_york_phase': '/project/aljarbritishdistrictyorkphase',
+    'project/lagonza-residence-santorini-coastal-living-in-obour': '/project/lagonza-residence-compound-el-obour-city'
+  };
+  const renamedTo = RENAMED[`${kindPath}/${slugFromUrl}`];
+  if (renamedTo) {
+    return Response.redirect(new URL((isAr ? '/ar' : '') + renamedTo, url.origin), 301);
+  }
+
   const ua = request.headers.get('user-agent') || '';
   const isNamedBot = BOT_RE.test(ua);
   // every real browser attaches Sec-Fetch-Mode to every request automatically;
@@ -406,7 +428,21 @@ export default async function middleware(request) {
   const id = slugFromUrl;
 
   const row = await fetchRow(table, id, richMode);
-  if (!row) return next(); // let the page's own "not found" handling take over
+  if (!row) {
+    // No such published row. Falling through to the CSR template here would
+    // answer a crawler with HTTP 200 and an empty generic page — a soft 404,
+    // which Google keeps in its index and reports as an error rather than
+    // dropping cleanly. Answer with a real 404 instead: unambiguous, and it
+    // retires stale URLs (deleted/unpublished items, slugs renamed without a
+    // RENAMED entry above) by itself, with no per-URL maintenance.
+    return new Response(
+      `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Not found — Aqar Factory</title>` +
+      `<meta name="robots" content="noindex"></head><body><h1>Not found</h1>` +
+      `<p>This page is no longer available. <a href="https://www.aqar-factory.com${isAr ? '/ar' : ''}/">Go to Aqar Factory</a></p>` +
+      `</body></html>`,
+      { status: 404, headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'public, max-age=0, s-maxage=60' } }
+    );
+  }
 
   const pick = (en, ar) => (isAr && row[ar]) ? row[ar] : row[en];
   const linkUrl = (slug, slugAr, otherTable) => {
