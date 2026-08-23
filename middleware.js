@@ -453,6 +453,22 @@ export default async function middleware(request) {
   // retries the fetch itself) rather than claiming the page doesn't exist
   if (row === LOOKUP_FAILED) return next();
   if (!row) {
+    // Before giving up: an Arabic slug typed with spaces used to be stored
+    // verbatim, so the same page can be addressed as "…داون تاون" (spaces,
+    // which only ever works percent-encoded) or "…داون-تاون" (dashes, the form
+    // everyone actually expects and links to). Try the other form and 301 onto
+    // whichever one really exists, so a slug being tidied up in the admin can
+    // never strand the URL Google already indexed — in either direction.
+    const alt = /\s/.test(slugFromUrl) ? slugFromUrl.replace(/\s+/g, '-')
+              : slugFromUrl.includes('-') ? slugFromUrl.replace(/-+/g, ' ')
+              : null;
+    if (alt) {
+      const altRow = await fetchRow(table, alt, false);
+      if (altRow && altRow !== LOOKUP_FAILED) {
+        return Response.redirect(
+          new URL(`${isAr ? '/ar' : ''}/${kindPath}/${encodeURIComponent(alt)}`, url.origin), 301);
+      }
+    }
     // No such published row. Falling through to the CSR template here would
     // answer a crawler with HTTP 200 and an empty generic page — a soft 404,
     // which Google keeps in its index and reports as an error rather than

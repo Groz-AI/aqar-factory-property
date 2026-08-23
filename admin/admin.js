@@ -65,6 +65,50 @@
     .replace(/[\s-]+/g, '-')
     .replace(/^-+|-+$/g, '');
 
+  // "while you type" versions of the two functions above. Same rules, with one
+  // deliberate difference: they do NOT trim a trailing dash. The full versions
+  // do, and running those on every keystroke would delete the dash the moment
+  // you press space — making it impossible to ever type a second word. Keeping
+  // the trailing dash lets typing flow normally; blur (and save) then applies
+  // the full version, which tidies it away.
+  const liveSlug = (s) => String(s || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-{2,}/g, '-')
+    .replace(/^-+/, '');
+
+  const liveSlugAr = (s) => String(s || '')
+    .replace(/[^ء-ي٠-٩a-zA-Z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-{2,}/g, '-')
+    .replace(/^-+/, '');
+
+  // Rewrites a slug field in place as it's typed, so what the admin sees is
+  // exactly what gets stored. Before this, a space typed into the Arabic slug
+  // stayed visible in the box but was silently turned into a dash on save —
+  // the field and the database disagreed, and the URL the admin thought they
+  // had set wasn't the one the site served. Caret is repositioned by however
+  // much the text shrank, so editing mid-string doesn't jump to the end.
+  function wireLiveSlug(input, live, full) {
+    if (!input) return;
+    input.addEventListener('input', () => {
+      const before = input.value;
+      const after = live(before);
+      if (after === before) return;
+      const caret = input.selectionStart;
+      input.value = after;
+      const pos = Math.max(0, caret - (before.length - after.length));
+      try { input.setSelectionRange(pos, pos); } catch (_) { /* not all input types allow this */ }
+    });
+    // once focus leaves, apply the strict version (drops the trailing dash the
+    // live pass intentionally left behind) so the box matches what save writes
+    input.addEventListener('blur', () => {
+      const tidied = full(input.value);
+      if (tidied !== input.value) input.value = tidied;
+    });
+  }
+
   // is a block worth keeping on save? most types are keyed on text/image,
   // but several new block types carry their content in other properties
   function hasBlockContent(b) {
@@ -727,6 +771,7 @@
         let slugDirty = !!(row && row.slug);
         slugInput.addEventListener('input', () => { slugDirty = true; });
         nameInput.addEventListener('input', () => { if (!slugDirty) slugInput.value = slugify(nameInput.value); });
+        wireLiveSlug(slugInput, liveSlug, slugify);
       }
       // same auto-fill behavior for the Arabic slug, driven off the Arabic
       // name field so it stays a native Arabic-word URL, not a transliteration
@@ -735,6 +780,7 @@
         let slugArDirty = !!(row && row.slug_ar);
         slugArInput.addEventListener('input', () => { slugArDirty = true; });
         nameArInput.addEventListener('input', () => { if (!slugArDirty) slugArInput.value = slugifyAr(nameArInput.value); });
+        wireLiveSlug(slugArInput, liveSlugAr, slugifyAr);
       }
     }
 
