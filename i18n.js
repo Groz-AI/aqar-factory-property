@@ -938,7 +938,14 @@
     if (isAdminPath()) return;
     const origin = 'https://www.aqar-factory.com';
     const path = location.pathname;
-    const search = location.search;
+    // deliberately NOT location.search. The query string used to be part of a
+    // page's identity (detail pages were project.html?id=<slug>), but those
+    // now live at clean paths and middleware.js 301s the old form before this
+    // ever runs. What's left in the query string is only ever a listing filter
+    // (?city=/?cat=/?type=) or a tracking tag (?utm_source=…) — appending
+    // either made every such link declare ITSELF canonical, turning one page
+    // into an unbounded set of near-duplicate indexable URLs. Dropping it
+    // consolidates all of them onto the clean path, which is what we want.
     const ar = isArPath(path);
     const enPath = ar ? (path.replace(/^\/ar/, '') || '/') : path;
     // avoid an unnecessary redirect hop for the homepage: "/ar" + "/" would
@@ -957,10 +964,10 @@
       return el;
     }
 
-    upsertLink('link[rel="canonical"]', { rel: 'canonical', href: origin + currentPath + search });
-    upsertLink('link[rel="alternate"][hreflang="en"]', { rel: 'alternate', hreflang: 'en', href: origin + enPath + search });
-    upsertLink('link[rel="alternate"][hreflang="ar"]', { rel: 'alternate', hreflang: 'ar', href: origin + arPath + search });
-    upsertLink('link[rel="alternate"][hreflang="x-default"]', { rel: 'alternate', hreflang: 'x-default', href: origin + enPath + search });
+    upsertLink('link[rel="canonical"]', { rel: 'canonical', href: origin + currentPath });
+    upsertLink('link[rel="alternate"][hreflang="en"]', { rel: 'alternate', hreflang: 'en', href: origin + enPath });
+    upsertLink('link[rel="alternate"][hreflang="ar"]', { rel: 'alternate', hreflang: 'ar', href: origin + arPath });
+    upsertLink('link[rel="alternate"][hreflang="x-default"]', { rel: 'alternate', hreflang: 'x-default', href: origin + enPath });
   }
 
   // project/unit detail pages can have a DIFFERENT slug per language (see

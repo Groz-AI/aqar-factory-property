@@ -354,15 +354,28 @@ export default async function middleware(request) {
 
   const oldKind = page === '/project.html' ? 'project' : page === '/unit.html' ? 'unit' : page === '/blog-post.html' ? 'blog' : null;
   if (oldKind) {
+    // The bare template with no id at all (/project.html, or ?id= empty) is a
+    // real URL Google has crawled — and answering it with the unfilled
+    // template was a 200 carrying the generic "Project — Aqar Factory" title,
+    // i.e. the exact soft-404 the client's original SEO report screenshotted.
+    // Send it to the corresponding listing page instead: useful for a person
+    // who lands there, and it folds the stray template URL into a real page
+    // rather than leaving an empty duplicate in the index.
+    const LISTING = { project: '/projects.html', unit: '/units.html', blog: '/blog.html' };
     const rawOldId = url.searchParams.get('id') || url.searchParams.get('slug');
-    if (!rawOldId) return next(); // no id/slug at all — let the page's own "not found" handling take over
+    if (!rawOldId) {
+      return Response.redirect(new URL((isAr ? '/ar' : '') + LISTING[oldKind], url.origin), 301);
+    }
     // a stray leading/trailing slash can be baked into an already-indexed old
     // URL from before admin.js started sanitizing slugs on save (see store.js's
     // buildUrl() for the fuller history) — without stripping it here too, the
     // redirect target still carries the slash and never matches the since-
     // corrected database row, so the page 404s forever even after the data fix
     const oldId = rawOldId.replace(/^\/+|\/+$/g, '');
-    if (!oldId) return next();
+    // an id of nothing but slashes is the same empty-template case as above
+    if (!oldId) {
+      return Response.redirect(new URL((isAr ? '/ar' : '') + LISTING[oldKind], url.origin), 301);
+    }
     const newPath = `${isAr ? '/ar' : ''}/${oldKind}/${encodeURIComponent(oldId)}`;
     return Response.redirect(new URL(newPath, url.origin), 301);
   }
