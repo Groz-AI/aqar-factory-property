@@ -152,6 +152,14 @@ const LEAN_SELECT = {
 // using the Arabic slug isn't silently missed
 const HAS_SLUG_AR = { projects: true, units: true, blog_posts: false };
 
+// Returns the row, or null when the query succeeded and the item genuinely
+// isn't there, or LOOKUP_FAILED when we couldn't ask at all. Those last two
+// used to be indistinguishable, which is fine when both just fall through to
+// the client-rendered page — but the caller now answers "not there" with a
+// real 404, and a Supabase hiccup must never be allowed to 404 (and so
+// deindex) a page that actually exists.
+const LOOKUP_FAILED = Symbol('lookup_failed');
+
 async function fetchRow(table, slug, rich) {
   try {
     const select = rich ? '*' : LEAN_SELECT[table];
@@ -162,11 +170,11 @@ async function fetchRow(table, slug, rich) {
       `${SUPA_URL}/rest/v1/${table}?select=${select}&${filter}&published=eq.true&limit=1`,
       { headers: { apikey: SUPA_ANON_KEY, Authorization: `Bearer ${SUPA_ANON_KEY}` } }
     );
-    if (!res.ok) return null;
+    if (!res.ok) return LOOKUP_FAILED;
     const rows = await res.json();
     return rows[0] || null;
   } catch (_) {
-    return null;
+    return LOOKUP_FAILED;
   }
 }
 
@@ -428,6 +436,9 @@ export default async function middleware(request) {
   const id = slugFromUrl;
 
   const row = await fetchRow(table, id, richMode);
+  // couldn't reach Supabase — fall through to the client-rendered page (which
+  // retries the fetch itself) rather than claiming the page doesn't exist
+  if (row === LOOKUP_FAILED) return next();
   if (!row) {
     // No such published row. Falling through to the CSR template here would
     // answer a crawler with HTTP 200 and an empty generic page — a soft 404,
