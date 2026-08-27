@@ -103,9 +103,11 @@ module.exports = async function handler(req, res) {
   const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n${urls.join('\n')}\n</urlset>\n`;
 
   res.setHeader('Content-Type', 'application/xml; charset=utf-8');
-  // no caching at any layer — every request re-queries Supabase directly
-  // above, so an add/edit/delete/publish toggle in the admin must show up
-  // here immediately, not after a stale copy expires
-  res.setHeader('Cache-Control', 'no-store, must-revalidate');
+  // search engines re-fetch this on their own schedule, often repeatedly —
+  // serving a cached copy for a few minutes cuts that repeat-crawl egress
+  // to near zero while an admin edit still shows up within minutes, not
+  // instantly; the zero-cache version was querying all 3 tables in full on
+  // every single hit, crawler or not
+  res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=300, stale-while-revalidate=1800');
   res.status(200).send(xml);
 };

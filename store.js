@@ -118,33 +118,40 @@
     }
   }
 
+  // content_blocks is tiny (a handful of singleton rows) but gets asked for by
+  // several independent widgets on the SAME page — branding.js (header logo),
+  // card-contact.js, whatsapp-widget.js, and the page's own script all want
+  // the company profile, and each used to trigger its own fresh fetch. This
+  // cache is just a module-level promise: it resets naturally on every real
+  // page load (a fresh store.js instance runs each time), so nothing gets
+  // staler than before — it only stops the SAME page from re-fetching the
+  // SAME row four times over.
+  let contentPromise = null;
   async function getContent() {
     if (!sb) return F.content || {};
-    try {
-      const { data, error } = await sb.from('content_blocks').select('key,value');
-      if (error || !data || !data.length) return F.content || {};
-      const out = { ...(F.content || {}) };
-      data.forEach(row => { out[row.key] = row.value; });
-      return out;
-    } catch (_) {
-      return F.content || {};
+    if (!contentPromise) {
+      contentPromise = (async () => {
+        try {
+          const { data, error } = await sb.from('content_blocks').select('key,value');
+          if (error || !data || !data.length) return F.content || {};
+          const out = { ...(F.content || {}) };
+          data.forEach(row => { out[row.key] = row.value; });
+          return out;
+        } catch (_) {
+          return F.content || {};
+        }
+      })();
     }
+    return contentPromise;
   }
 
-  // fetch a single content_blocks singleton, merged over its fallback default
-  async function getBlock(key, fallback) {
-    fallback = fallback || {};
-    if (!sb) return fallback;
-    try {
-      const { data, error } = await sb.from('content_blocks').select('key,value').eq('key', key);
-      if (error || !data || !data.length) return fallback;
-      return Object.assign({}, fallback, data[0].value || {});
-    } catch (_) {
-      return fallback;
-    }
+  // derived from getContent()'s cached fetch rather than its own query — every
+  // caller wanting just the company profile now shares that one fetch instead
+  // of adding another
+  async function getCompany() {
+    const content = await getContent();
+    return Object.assign({}, (F.content && F.content.company) || {}, content.company || {});
   }
-
-  const getCompany = () => getBlock('company', (F.content && F.content.company) || {});
 
   // project categories + unit types are plain text on each project/unit row
   // (matched by name, not a foreign key), so a custom admin-added value has
