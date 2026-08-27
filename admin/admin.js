@@ -1621,6 +1621,15 @@
     return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
   }
 
+  // Files live in Cloudflare R2, not Supabase Storage — Supabase's free-tier
+  // egress quota was blown through by real-visitor image traffic (confirmed
+  // in the account's own usage dashboard: 565% over on cached egress while
+  // the database itself was at 7% of its limit), which restricted the whole
+  // Supabase project. R2 charges no egress fees, so the same traffic costs
+  // nothing there. Upload goes browser -> R2 directly via a short-lived
+  // presigned URL minted by api/media-upload.js — the file bytes never pass
+  // through a Vercel function, which both avoids its body-size limit and
+  // keeps large uploads fast.
   async function uploadFile(f, kind) {
     kind = kind || 'image';
     if (!f) return null;
@@ -1630,25 +1639,35 @@
     const maxMB = kind === 'pdf' ? 50 : 12;
     if (f.size > maxMB * 1024 * 1024) { toast(`${t('File is larger than')} ${maxMB} MB — ${t('please pick a smaller one')}`, 'err'); return null; }
     try {
-      const ext = (f.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
-      const path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-      const { error } = await withTimeout(
-        sb.storage.from('media').upload(path, f, { cacheControl: '3600', upsert: false, contentType: f.type || undefined }),
-        120000,
-        t('Upload timed out — the file may be too large for your connection, or the storage bucket may have a lower size limit than this form allows.')
+      const { data: { session } } = await sb.auth.getSession();
+      const contentType = f.type || 'application/octet-stream';
+      const presignRes = await withTimeout(
+        fetch('/api/media-upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'presign', callerToken: session && session.access_token, filename: f.name, contentType })
+        }),
+        20000,
+        t('Could not prepare the upload — please try again.')
       );
-      if (error) {
-        console.error('Upload failed:', error);
-        const m = String(error.message || error.error || '').toLowerCase();
-        let msg = error.message || t('Upload failed');
-        if (m.includes('bucket not found')) msg = t('Storage bucket "media" is missing. In Supabase → Storage, create a public bucket named "media" (or run supabase/fix-storage-and-admin.sql).');
-        else if (m.includes('row-level security') || m.includes('not authorized') || m.includes('violates') || m.includes('permission')) msg = t('Upload blocked — your account is not an admin yet. Add your user to the admins table (see supabase/fix-storage-and-admin.sql).');
-        toast(msg, 'err');
+      if (!presignRes.ok) {
+        const err = await presignRes.json().catch(() => ({}));
+        toast(err.error === 'not_configured' ? t('File storage is not configured yet — contact support.') : (err.message || t('Upload failed')), 'err');
         return null;
       }
-      const { data } = sb.storage.from('media').getPublicUrl(path);
-      if (!data || !data.publicUrl) { toast(t('Uploaded, but could not resolve the public URL'), 'err'); return null; }
-      return data.publicUrl;
+      const { uploadUrl, publicUrl } = await presignRes.json();
+
+      const putRes = await withTimeout(
+        fetch(uploadUrl, { method: 'PUT', headers: { 'Content-Type': contentType }, body: f }),
+        120000,
+        t('Upload timed out — the file may be too large for your connection.')
+      );
+      if (!putRes.ok) {
+        console.error('R2 upload failed:', putRes.status, await putRes.text().catch(() => ''));
+        toast(t('Upload failed'), 'err');
+        return null;
+      }
+      return publicUrl;
     } catch (e) {
       console.error('Upload exception:', e);
       toast(t('Upload failed:') + ' ' + (e.message || e), 'err');
@@ -1683,8 +1702,19 @@
     els.search.value = '';
     els.grid.innerHTML = `<div class="empty-row"><span class="spinner" style="border-color:rgba(0,0,0,.15);border-top-color:var(--sky)"></span></div>`;
 
-    const { data, error } = await sb.storage.from('media').list('', { limit: 300, sortBy: { column: 'created_at', order: 'desc' } });
-    if (error) { els.grid.innerHTML = `<div class="empty-row">${t('Couldn’t load files:')} ${esc(error.message)}</div>`; return; }
+    const { data: { session } } = await sb.auth.getSession();
+    let data = [];
+    try {
+      const r = await fetch('/api/media-upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'list', callerToken: session && session.access_token })
+      });
+      if (!r.ok) throw new Error((await r.json().catch(() => ({}))).message || 'list_failed');
+      data = (await r.json()).files || [];
+    } catch (e) {
+      els.grid.innerHTML = `<div class="empty-row">${t('Couldn’t load files:')} ${esc(e.message)}</div>`; return;
+    }
 
     const imgExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'avif'];
     const files = (data || []).filter(f => f.name && !f.name.startsWith('.')).filter(f => {
@@ -1695,7 +1725,7 @@
     const paintList = (list) => {
       if (!list.length) { els.grid.innerHTML = `<div class="empty-row">${(kind === 'pdf' ? t('No PDFs uploaded yet — upload one first, then it\'ll show up here to reuse.') : t('No images uploaded yet — upload one first, then it\'ll show up here to reuse.'))}</div>`; return; }
       els.grid.innerHTML = list.map(f => {
-        const url = sb.storage.from('media').getPublicUrl(f.name).data.publicUrl;
+        const url = f.publicUrl;
         if (kind === 'pdf') {
           return `<button type="button" class="mp-item mp-pdf" data-url="${esc(url)}" title="${esc(f.name)}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 2h9l5 5v15H6z"/><path d="M15 2v5h5"/></svg>
