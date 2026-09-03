@@ -468,6 +468,7 @@ export default async function middleware(request) {
     // wrong kind: these slugs belong to a project, not a unit
     'unit/salt-marina-in-ras-el-hekma': '/project/salt-marina-in-ras-el-hekma',
     'unit/river-park-residence-new-obour': '/project/river-park-residence-new-obour',
+    'unit/mirissa-new-obour-compound': '/project/mirissa-new-obour-compound',
     // renamed slugs — kept as a hardcoded backstop for URLs that went stale
     // BEFORE slug_redirects existed (see fetchRenamedRowId() below, which
     // now records and follows every rename automatically going forward, so
@@ -481,7 +482,12 @@ export default async function middleware(request) {
     'project/lagonza-residence-santorini-coastal-living-in-obour': '/project/lagonza-residence-compound-el-obour-city',
     // found via a live GSC "Discovered - not indexed" export
     'project/كمبوند-الجار-الشروق-مرحلة-يورك-البريطانية-Aljar-York-Phase': '/project/aljar-british-district-el-shorouk-compound-york',
-    'project/مول-اربكو-ساوث-90th-Street-أبو-الهول-التجمع-الخامس-محلات-ومكاتب-بالتقسيط-علي-الشارع-التسعين-Arabco-South-90th-Street-Mall-New-Landmark': '/project/jeel-plaza-arabco-new-cairo-mall'
+    'project/مول-اربكو-ساوث-90th-Street-أبو-الهول-التجمع-الخامس-محلات-ومكاتب-بالتقسيط-علي-الشارع-التسعين-Arabco-South-90th-Street-Mall-New-Landmark': '/project/jeel-plaza-arabco-new-cairo-mall',
+    // renamed before slug_redirects existed; predates the tracking system
+    // (confirmed via a direct query — this row has no slug_redirects entry,
+    // unlike renames that happened after today's deploy, which the table
+    // already caught automatically on their own)
+    'project/apartments-for-sale-jazeel-residence-new-obour': '/project/jazeel-residence-compound-new-obour-city'
   };
   const renamedTo = RENAMED[`${kindPath}/${slugFromUrl}`];
   if (renamedTo) {
