@@ -301,7 +301,7 @@ async function streamToText(stream) {
   return text;
 }
 
-function pageHTML({ title, description, image, url, canonicalUrl, type, facts, bodyText, amenities, gallery, consultants, brochurePdf, related, projectUnits }) {
+function pageHTML({ title, description, image, url, canonicalUrl, hreflangEn, hreflangAr, type, facts, bodyText, amenities, gallery, consultants, brochurePdf, related, projectUnits }) {
   const factsList = facts.length
     ? `<h2>Key facts</h2><ul>${facts.map(([k, v]) => `<li><b>${esc(k)}:</b> ${esc(v)}</li>`).join('')}</ul>` : '';
   const amenitiesList = (amenities && amenities.length)
@@ -324,6 +324,9 @@ function pageHTML({ title, description, image, url, canonicalUrl, type, facts, b
 <title>${esc(title)}</title>
 <meta name="description" content="${esc(description)}">
 <link rel="canonical" href="${esc(canonicalUrl)}">
+<link rel="alternate" hreflang="en" href="${esc(hreflangEn)}">
+<link rel="alternate" hreflang="ar" href="${esc(hreflangAr)}">
+<link rel="alternate" hreflang="x-default" href="${esc(hreflangEn)}">
 <meta property="og:type" content="${type}">
 <meta property="og:site_name" content="Aqar Factory">
 <meta property="og:title" content="${esc(title)}">
@@ -633,9 +636,24 @@ export default async function middleware(request) {
   // polluted by an incidental query string
   const canonicalUrl = `https://www.aqar-factory.com${isAr ? '/ar' : ''}/${kindPath}/${encodeURIComponent(slugFromUrl)}`;
 
+  // hreflang alternates — mirrors i18n.js's injectSeoLinks()/setCrossLangSlug(),
+  // which only ever runs client-side after the page loads. Googlebot's own
+  // rendering is Chromium-based and sends Sec-Fetch-Mode like a real browser,
+  // so without this it was reaching this exact bot-served response (built
+  // for the raw first crawl pass specifically to avoid depending on any
+  // client-side JS) and STILL seeing zero hreflang tags — the canonical was
+  // fixed here already, this relationship signal was not. Without it Google
+  // has no way to know the /ar/ and non-/ar/ URLs are the same content in
+  // two languages rather than unrelated (or duplicate) pages, which plausibly
+  // contributes to it picking its own canonical over ours for some of them.
+  const rawSlug = String(row.slug || '').replace(/^\/+|\/+$/g, '');
+  const rawSlugAr = (HAS_SLUG_AR[table] && row.slug_ar) ? String(row.slug_ar).replace(/^\/+|\/+$/g, '') : rawSlug;
+  const hreflangEn = `https://www.aqar-factory.com/${kindPath}/${encodeURIComponent(rawSlug)}`;
+  const hreflangAr = `https://www.aqar-factory.com/ar/${kindPath}/${encodeURIComponent(rawSlugAr)}`;
+
   const html = pageHTML({
     title, description, image, facts, bodyText, amenities, gallery, consultants, brochurePdf, related, projectUnits,
-    url: url.toString(), canonicalUrl,
+    url: url.toString(), canonicalUrl, hreflangEn, hreflangAr,
     type: table === 'blog_posts' ? 'article' : 'website'
   });
 
