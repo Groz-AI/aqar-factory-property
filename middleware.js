@@ -587,6 +587,24 @@ export default async function middleware(request) {
     );
   }
 
+  // fetchRow() matches slug OR slug_ar on purpose — a project with NO custom
+  // Arabic slug must still resolve under /ar/ via its one shared slug. But
+  // that same OR-match means a project that DOES have a distinct slug_ar was
+  // ALSO reachable via its English slug under /ar/, and via its Arabic slug
+  // under the plain English path — two accidental duplicates of the correct
+  // page, each self-declaring its own (wrong) canonical. Found live via a
+  // real duplicate-canonical report: both variants returned 200 with
+  // identical content. Redirect either accidental combination onto whichever
+  // URL is actually correct for the requested language before anything else
+  // gets built, so nothing ever serves this content under two canonicals.
+  if (HAS_SLUG_AR[table]) {
+    const properSlug = String((isAr && row.slug_ar) ? row.slug_ar : row.slug).replace(/^\/+|\/+$/g, '');
+    if (properSlug && properSlug !== slugFromUrl) {
+      return Response.redirect(
+        new URL(`${isAr ? '/ar' : ''}/${kindPath}/${encodeURIComponent(properSlug)}`, url.origin), 301);
+    }
+  }
+
   const pick = (en, ar) => (isAr && row[ar]) ? row[ar] : row[en];
   const linkUrl = (slug, slugAr, otherTable) => {
     const p = otherTable === 'units' ? '/unit/' : otherTable === 'blog_posts' ? '/blog/' : '/project/';
