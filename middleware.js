@@ -479,6 +479,11 @@ export default async function middleware(request) {
     // bug recurs, and the reason slug_redirects exists now instead of
     // another one-off entry
     'project/aljar_british_district_york_phase': '/project/aljar-british-district-el-shorouk-compound-york',
+    // a third slug variant for the same project, found via a "different
+    // canonical" export — Google had this crawled and indexed directly
+    // (not via a redirect), so it isn't simply the underscored form above
+    'project/aljarbritishdistrictyorkphase': '/project/aljar-british-district-el-shorouk-compound-york',
+    'project/r_five_new_capital': '/project/rfivenewcapital',
     'project/lagonza-residence-santorini-coastal-living-in-obour': '/project/lagonza-residence-compound-el-obour-city',
     // found via a live GSC "Discovered - not indexed" export
     'project/كمبوند-الجار-الشروق-مرحلة-يورك-البريطانية-Aljar-York-Phase': '/project/aljar-british-district-el-shorouk-compound-york',
