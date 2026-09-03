@@ -649,6 +649,40 @@ begin
 end $$;
 
 -- ============================================================
+-- SLUG REDIRECTS — records a project/unit/post's PREVIOUS slug every time
+-- an admin renames one, so a URL Google already indexed keeps resolving
+-- instead of 404ing the moment the slug changes. Written by admin.js's
+-- recordSlugRename() on every save where the slug or slug_ar actually
+-- changed; read by middleware.js's fetchRenamedRowId() when a clean-path
+-- request matches no current row, before it falls back to a real 404.
+--
+-- Looked up by (table_name, old_slug) and resolved by row_id rather than
+-- storing "old slug -> new slug" directly, so a row renamed twice still
+-- redirects correctly through BOTH old URLs to whatever slug it answers
+-- to right now — no stale intermediate redirect to chase.
+-- ============================================================
+create table if not exists public.slug_redirects (
+  id         uuid primary key default gen_random_uuid(),
+  table_name text not null,   -- 'projects' | 'units' | 'blog_posts'
+  old_slug   text not null,   -- a slug (en OR ar) this row used to answer to
+  row_id     uuid not null,
+  created_at timestamptz default now(),
+  unique (table_name, old_slug)
+);
+
+alter table public.slug_redirects enable row level security;
+
+-- middleware.js reads this with the public anon key (same as every other
+-- public-facing table it queries), so it must be openly readable
+drop policy if exists "public read slug redirects" on public.slug_redirects;
+create policy "public read slug redirects" on public.slug_redirects
+  for select using (true);
+
+drop policy if exists "admin write slug redirects" on public.slug_redirects;
+create policy "admin write slug redirects" on public.slug_redirects
+  for insert with check (public.is_admin());
+
+-- ============================================================
 -- MAKE YOURSELF AN ADMIN
 -- After creating a user in Authentication → Users, run:
 --

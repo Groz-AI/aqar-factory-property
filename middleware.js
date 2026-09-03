@@ -193,6 +193,24 @@ async function fetchById(table, id, select) {
   }
 }
 
+// admin.js records a project/unit/post's PREVIOUS slug here every time one
+// is renamed (see its recordSlugRename()) — this is how an already-indexed
+// URL keeps resolving after the admin edits it, without needing a manual
+// hardcoded redirect added for every rename
+async function fetchRenamedRowId(table, oldSlug) {
+  try {
+    const res = await fetch(
+      `${SUPA_URL}/rest/v1/slug_redirects?select=row_id&table_name=eq.${table}&old_slug=eq.${encodeURIComponent(oldSlug)}&limit=1`,
+      { headers: { apikey: SUPA_ANON_KEY, Authorization: `Bearer ${SUPA_ANON_KEY}` } }
+    );
+    if (!res.ok) return null;
+    const rows = await res.json();
+    return rows[0] ? rows[0].row_id : null;
+  } catch (_) {
+    return null;
+  }
+}
+
 // "more from the same developer" — mirrors renderDeveloperPicks() in
 // project.js/unit.js, so richMode fetchers see the same recommendations a
 // real visitor would scroll down to
@@ -400,10 +418,20 @@ export default async function middleware(request) {
     // wrong kind: these slugs belong to a project, not a unit
     'unit/salt-marina-in-ras-el-hekma': '/project/salt-marina-in-ras-el-hekma',
     'unit/river-park-residence-new-obour': '/project/river-park-residence-new-obour',
-    // renamed slugs
+    // renamed slugs — kept as a hardcoded backstop for URLs that went stale
+    // BEFORE slug_redirects existed (see fetchRenamedRowId() below, which
+    // now records and follows every rename automatically going forward, so
+    // this map shouldn't need new entries added by hand again)
     'project/citalia-compound-valero-new-obour': '/project/citalia-compound-valero-new-obour-city',
-    'project/aljar_british_district_york_phase': '/project/aljarbritishdistrictyorkphase',
-    'project/lagonza-residence-santorini-coastal-living-in-obour': '/project/lagonza-residence-compound-el-obour-city'
+    // aljarbritishdistrictyorkphase was itself already a fixed-forward
+    // target that has since been renamed AGAIN — proof this exact class of
+    // bug recurs, and the reason slug_redirects exists now instead of
+    // another one-off entry
+    'project/aljar_british_district_york_phase': '/project/aljar-british-district-el-shorouk-compound-york',
+    'project/lagonza-residence-santorini-coastal-living-in-obour': '/project/lagonza-residence-compound-el-obour-city',
+    // found via a live GSC "Discovered - not indexed" export
+    'project/كمبوند-الجار-الشروق-مرحلة-يورك-البريطانية-Aljar-York-Phase': '/project/aljar-british-district-el-shorouk-compound-york',
+    'project/مول-اربكو-ساوث-90th-Street-أبو-الهول-التجمع-الخامس-محلات-ومكاتب-بالتقسيط-علي-الشارع-التسعين-Arabco-South-90th-Street-Mall-New-Landmark': '/project/jeel-plaza-arabco-new-cairo-mall'
   };
   const renamedTo = RENAMED[`${kindPath}/${slugFromUrl}`];
   if (renamedTo) {
@@ -469,6 +497,20 @@ export default async function middleware(request) {
           new URL(`${isAr ? '/ar' : ''}/${kindPath}/${encodeURIComponent(alt)}`, url.origin), 301);
       }
     }
+    // The row this slug used to point at may have been renamed since Google
+    // indexed it — look up its stable id and redirect to whatever slug it
+    // answers to NOW, so a project renamed twice still resolves through
+    // both of its old URLs, not just the first one anyone happened to fix.
+    const renamedRowId = await fetchRenamedRowId(table, slugFromUrl);
+    if (renamedRowId) {
+      const currentRow = await fetchById(table, renamedRowId, 'slug,slug_ar');
+      const newSlug = currentRow && ((isAr && currentRow.slug_ar) ? currentRow.slug_ar : currentRow.slug);
+      if (newSlug) {
+        return Response.redirect(
+          new URL(`${isAr ? '/ar' : ''}/${kindPath}/${encodeURIComponent(newSlug)}`, url.origin), 301);
+      }
+    }
+
     // No such published row. Falling through to the CSR template here would
     // answer a crawler with HTTP 200 and an empty generic page — a soft 404,
     // which Google keeps in its index and reports as an error rather than

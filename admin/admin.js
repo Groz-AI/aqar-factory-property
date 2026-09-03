@@ -715,7 +715,11 @@
 
   async function openForm(view, row) {
     const r = RESOURCES[view];
-    editing = { view, id: row ? row.id : null };
+    // snapshot the slug(s) as they stood before this edit — saveForm() diffs
+    // against these to detect a rename and record it in slug_redirects, so
+    // an already-indexed old URL keeps resolving instead of 404ing the
+    // moment an admin edits a project/unit/post's URL
+    editing = { view, id: row ? row.id : null, origSlug: row ? row.slug : null, origSlugAr: row ? row.slug_ar : null };
     uploads = {};
     $('#drawerTitle').textContent = (row ? t('Edit') : t('New')) + ' ' + r.singular.toLowerCase();
     const body = $('#drawerBody');
@@ -1824,6 +1828,8 @@
     // to null — reading editing.id after that point is exactly the
     // pre-existing bug this fixes (see commit message for the full story)
     const wasEditing = !!editing.id;
+    const editingId = editing.id;
+    const origSlug = editing.origSlug, origSlugAr = editing.origSlugAr;
 
     let res;
     if (editing.id) res = await sb.from(r.table).update(payload).eq('id', editing.id);
@@ -1836,8 +1842,27 @@
     toast(wasEditing ? t('Saved') : `${r.singular} ${t('created')}`);
     logAction(wasEditing ? 'update' : 'create', view, payload.name || payload.title || payload.quote || '');
     triggerPrerender(view, payload.slug, payload.slug_ar, payload.published);
+    if (wasEditing && ['projects', 'units', 'blog_posts'].includes(r.table)) {
+      recordSlugRename(r.table, editingId, origSlug, origSlugAr, payload.slug, payload.slug_ar);
+    }
     await refreshCounts();
     renderList(view);
+  }
+
+  // A slug (en or ar) that's already been indexed by Google keeps working
+  // even after an admin later renames it — see the wa-button-adjacent
+  // "renamed project" incidents this recorded from. Fire-and-forget, same
+  // shape as logAction(): a failure here must never block the save that's
+  // already succeeded. slug_redirects has no unique-per-table-per-slug
+  // constraint conflict handling beyond upsert, since the same old slug
+  // should only ever point at one row.
+  async function recordSlugRename(table, rowId, oldSlug, oldSlugAr, newSlug, newSlugAr) {
+    if (!sb || !rowId) return;
+    const rows = [];
+    if (oldSlug && oldSlug !== newSlug) rows.push({ table_name: table, old_slug: oldSlug, row_id: rowId });
+    if (oldSlugAr && oldSlugAr !== newSlugAr) rows.push({ table_name: table, old_slug: oldSlugAr, row_id: rowId });
+    if (!rows.length) return;
+    try { await sb.from('slug_redirects').upsert(rows, { onConflict: 'table_name,old_slug' }); } catch (_) { /* non-critical */ }
   }
 
   // deleting a City doesn't fail if projects link to it (the FK is
