@@ -87,7 +87,12 @@ export const config = {
     '/index.html', '/ar/index.html',
     // new clean-path form — what every internal link now points to
     '/project/:slug*', '/unit/:slug*', '/blog/:slug*',
-    '/ar/project/:slug*', '/ar/unit/:slug*', '/ar/blog/:slug*'
+    '/ar/project/:slug*', '/ar/unit/:slug*', '/ar/blog/:slug*',
+    // static pages — matched so bots can get server-injected hreflang (see
+    // the STATIC_HREFLANG_PAGES block below); real browsers pass straight
+    // through untouched, same as everywhere else in this file
+    '/', '/ar', '/projects.html', '/ar/projects.html', '/units.html', '/ar/units.html',
+    '/blog.html', '/ar/blog.html', '/about.html', '/ar/about.html', '/contact.html', '/ar/contact.html'
   ],
   // @vercel/blob's get() pulls in Node-specific modules (net/tls/stream/etc.)
   // that aren't supported on the default Edge runtime — verified via a real
@@ -354,6 +359,48 @@ ${relatedHtml}
 
 export default async function middleware(request) {
   const url = new URL(request.url);
+
+  // Home + the 5 static listing/info pages get zero hreflang on Google's raw
+  // first pass, same root cause as the fix already shipped for project/unit/
+  // blog detail pages: i18n.js's injectSeoLinks() only ever runs client-side,
+  // and Googlebot's renderer sends Sec-Fetch-Mode like a real browser so it
+  // was reaching these pages as a "real visitor" and getting nothing but the
+  // bare static file. Bots get the same static HTML with hreflang injected;
+  // real browsers pass straight through, untouched, exactly as before.
+  // Uses its own isAr check (not the one below) because "/ar" with no
+  // trailing slash — the real, trailingSlash:false form of the Arabic
+  // homepage — doesn't match startsWith('/ar/').
+  const STATIC_HREFLANG_PAGES = new Set(['/', '/projects.html', '/units.html', '/blog.html', '/about.html', '/contact.html']);
+  const staticIsAr = url.pathname === '/ar' || url.pathname.startsWith('/ar/');
+  const staticEnPath = staticIsAr ? (url.pathname === '/ar' ? '/' : url.pathname.slice(3)) : url.pathname;
+  // the header below is this function's OWN internal re-fetch of the static
+  // file, not a real request — without checking for it first, that re-fetch
+  // would come back through this same matcher and recurse forever
+  if (request.headers.get('x-mw-static-fetch') !== '1' && STATIC_HREFLANG_PAGES.has(staticEnPath)) {
+    const uaStatic = request.headers.get('user-agent') || '';
+    const isNamedBotStatic = BOT_RE.test(uaStatic);
+    const looksLikeNonBrowserStatic = !isNamedBotStatic && !request.headers.get('sec-fetch-mode');
+    if (isNamedBotStatic || looksLikeNonBrowserStatic) {
+      const arPath = staticEnPath === '/' ? '/ar' : '/ar' + staticEnPath;
+      const enUrl = `https://www.aqar-factory.com${staticEnPath}`;
+      const arUrl = `https://www.aqar-factory.com${arPath}`;
+      try {
+        const staticRes = await fetch(url.toString(), { headers: { 'x-mw-static-fetch': '1' } });
+        if (staticRes.ok) {
+          const html = await staticRes.text();
+          const tags = `<link rel="alternate" hreflang="en" href="${esc(enUrl)}">\n<link rel="alternate" hreflang="ar" href="${esc(arUrl)}">\n<link rel="alternate" hreflang="x-default" href="${esc(enUrl)}">\n</head>`;
+          return new Response(html.replace('</head>', tags), {
+            headers: {
+              'content-type': 'text/html; charset=utf-8',
+              'cache-control': 'public, max-age=0, s-maxage=300, stale-while-revalidate=1800'
+            }
+          });
+        }
+      } catch (_) { /* fall through to next() below on any fetch failure */ }
+    }
+    return next();
+  }
+
   const isAr = url.pathname.startsWith('/ar/');
   const page = isAr ? url.pathname.slice(3) : url.pathname;
 
