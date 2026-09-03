@@ -468,6 +468,12 @@ export default async function middleware(request) {
     // wrong kind: these slugs belong to a project, not a unit
     'unit/salt-marina-in-ras-el-hekma': '/project/salt-marina-in-ras-el-hekma',
     'unit/river-park-residence-new-obour': '/project/river-park-residence-new-obour',
+    // resolves a previously-ambiguous stale slug (matched 2 live units) —
+    // this one is a near-exact substring of the 133m unit's current slug
+    // ("...apartment-latin-district-new-alamein" vs "...apartment-for-sale-
+    // in-latin-district-new-alamein-133m"), unlike the 121m unit's slug,
+    // which drops "new-alamein" entirely
+    'unit/ready-to-move-2br-apartment-latin-district-new-alamein': '/unit/ready-to-move-2br-apartment-for-sale-in-latin-district-new-alamein-133m',
     'unit/mirissa-new-obour-compound': '/project/mirissa-new-obour-compound',
     // renamed slugs — kept as a hardcoded backstop for URLs that went stale
     // BEFORE slug_redirects existed (see fetchRenamedRowId() below, which
