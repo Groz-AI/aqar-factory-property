@@ -91,11 +91,14 @@ function populate() {
   if (metaDesc && desc) metaDesc.setAttribute('content', desc.length > 160 ? desc.slice(0, 157) + '…' : desc);
   // canonical/hreflang are handled generically (and language-aware) by
   // i18n.js's injectSeoLinks() — it self-references the current URL, which
-  // already includes this page's slug, so no per-page override is needed
-  // here UNLESS the project has a separate Arabic slug, in which case the
-  // *other* language's hreflang link must point at ITS slug, not this one.
+  // is only correct when the visitor is already on this project's own
+  // preferred slug for the current language. A project with a distinct
+  // Arabic slug is ALSO reachable through the other language's slug (see
+  // setCrossLangSlug()'s own comment for the full story), so ownSlug is
+  // passed here too, not just the other language's — it silently corrects
+  // the address bar and every tag if the visitor landed on the wrong one.
   if (window.i18n && window.i18n.setCrossLangSlug && (project.slugAr && project.slugAr !== project.id)) {
-    window.i18n.setCrossLangSlug(isAr() ? project.id : project.slugAr);
+    window.i18n.setCrossLangSlug(isAr() ? project.slugAr : project.id, isAr() ? project.id : project.slugAr);
   }
 
   injectJsonLd({

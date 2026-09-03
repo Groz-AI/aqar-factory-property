@@ -979,7 +979,7 @@
   // the OTHER language's raw slug — this swaps out just the last path
   // segment (own-language canonical/hreflang and x-default, already
   // correct, are untouched).
-  function setCrossLangSlug(otherSlug) {
+  function setCrossLangSlug(ownSlug, otherSlug) {
     if (isAdminPath()) return;
     const origin = 'https://www.aqar-factory.com';
     const path = location.pathname;
@@ -987,25 +987,35 @@
     // path with /ar stripped and the trailing slug segment dropped, e.g.
     // "/ar/project/Wadi-Yemm-..." -> "/project"
     const basePath = (ar ? path.replace(/^\/ar/, '') : path).replace(/\/[^/]+\/?$/, '');
-    const seg = encodeURIComponent(otherSlug);
-    if (ar) {
-      // on the Arabic page: fix both "en" AND "x-default" (which mirrors
-      // "en" by convention — injectSeoLinks() sets them identically) to the
-      // real English slug. Leaving x-default on the old self-referencing
-      // value here previously produced an invalid URL that doesn't
-      // correspond to any real page — a broken signal that can confuse
-      // which URL Google treats as canonical.
-      const enHref = origin + basePath + '/' + seg;
-      const enEl = document.querySelector('link[rel="alternate"][hreflang="en"]');
-      if (enEl) enEl.setAttribute('href', enHref);
-      const xdEl = document.querySelector('link[rel="alternate"][hreflang="x-default"]');
-      if (xdEl) xdEl.setAttribute('href', enHref);
-    } else {
-      // on the English page: only "ar" needs fixing — x-default already
-      // correctly points at this page's own (English) URL
-      const arEl = document.querySelector('link[rel="alternate"][hreflang="ar"]');
-      if (arEl) arEl.setAttribute('href', origin + '/ar' + basePath + '/' + seg);
+    const currentSeg = decodeURIComponent((path.match(/\/([^/]+)\/?$/) || [])[1] || '');
+
+    // A project/unit with a distinct Arabic slug is ALSO reachable through
+    // its English slug under /ar/ (and vice versa) — middleware.js 301s bots
+    // off of that combination now, but a real browser's own client-side
+    // lookup matches either slug without ever correcting anything, so a
+    // visitor (or an old link/bookmark) can land here with the wrong slug
+    // still sitting in the address bar. Silently fix it via replaceState (no
+    // reload, no flicker) before rebuilding every tag below from the
+    // corrected URL, so the address bar and every SEO signal on the page
+    // agree on the one true URL instead of the one that was requested.
+    if (ownSlug && ownSlug !== currentSeg) {
+      history.replaceState(null, '', (ar ? '/ar' : '') + basePath + '/' + encodeURIComponent(ownSlug) + location.search);
     }
+
+    const ownSeg = encodeURIComponent(ownSlug || currentSeg);
+    const otherSeg = encodeURIComponent(otherSlug);
+    const ownHref = origin + (ar ? '/ar' : '') + basePath + '/' + ownSeg;
+    // x-default mirrors "en" by convention (injectSeoLinks() sets them
+    // identically for the no-divergence case) — an invalid self-referencing
+    // value here previously confused which URL Google treats as canonical
+    const enHref = ar ? origin + basePath + '/' + otherSeg : ownHref;
+    const arHref = ar ? ownHref : origin + '/ar' + basePath + '/' + otherSeg;
+
+    const setTag = (sel, href) => { const el = document.querySelector(sel); if (el) el.setAttribute('href', href); };
+    setTag('link[rel="canonical"]', ownHref);
+    setTag('link[rel="alternate"][hreflang="en"]', enHref);
+    setTag('link[rel="alternate"][hreflang="ar"]', arHref);
+    setTag('link[rel="alternate"][hreflang="x-default"]', enHref);
   }
 
   function initSwitchers() {

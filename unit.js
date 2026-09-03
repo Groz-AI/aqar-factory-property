@@ -85,9 +85,10 @@ function populate() {
   if (metaDesc && desc) metaDesc.setAttribute('content', desc.length > 160 ? desc.slice(0, 157) + '…' : desc);
   // canonical/hreflang are handled generically (and language-aware) by
   // i18n.js's injectSeoLinks() — see the note in project.js's populate().
-  // Same slug_ar override as project.js when this unit has its own Arabic slug.
+  // Same slug_ar override as project.js when this unit has its own Arabic
+  // slug, including the address-bar self-correction — see setCrossLangSlug().
   if (window.i18n && window.i18n.setCrossLangSlug && (unit.slugAr && unit.slugAr !== unit.id)) {
-    window.i18n.setCrossLangSlug(isAr() ? unit.id : unit.slugAr);
+    window.i18n.setCrossLangSlug(isAr() ? unit.slugAr : unit.id, isAr() ? unit.id : unit.slugAr);
   }
 
   injectJsonLd({
