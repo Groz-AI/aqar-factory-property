@@ -503,7 +503,21 @@ export default async function middleware(request) {
     // both a typo (كمبورد vs كمبوند) and the wrong area name (الشروق/Shorouk
     // vs العبور/Obour); project's current EN slug is
     // mazaya-developments-new-obour-compound
-    'project/كمبورد-تاون-تن-الشروق-الجديدة-Town-Ten-New-Obour-Compound': '/project/كمبوند-تاون-تن-العبور-الجديدة-Town-Ten-New-Obour-Compound'
+    'project/كمبورد-تاون-تن-الشروق-الجديدة-Town-Ten-New-Obour-Compound': '/project/كمبوند-تاون-تن-العبور-الجديدة-Town-Ten-New-Obour-Compound',
+    // found via a live GSC "Crawled - currently not indexed" export — all
+    // 6 below are genuinely stale slugs (renamed rows, predating
+    // slug_redirects), confirmed 404 live before this fix
+    // old AR slug had a tatweel character (ـ) in "لـ" that the current
+    // slug (after Arabic Unicode folding) no longer has
+    'project/كمبوند-دي-جويا-4-العاصمة-الإدارية-شقق-وفيلات-للبيع-بمقدم-120-ألف-وتقسيط-لـ-12-سنة-De-Joya-4-New-Capital-Apartments-from-120K-DP': '/project/كمبوند-دي-جويا-4-العاصمة-الإدارية-شقق-وفيلات-للبيع-بمقدم-120-ألف-وتقسيط-ل-12-سنة-De-Joya-4-New-Capital-Apartments-from-120K-DP',
+    'unit/1br-cabana-silver-bay-silversands': '/unit/كبانا-غرفة-للبيع-صف-أول-على-اللاجون-في-سيلفر-ساندس-الساحل-الشمالي-1BR-Cabana-for-Sale-in-Silver-Bay-Silversands',
+    'unit/the-c-north-coast': '/unit/شاليه-غرفتين-95م-للبيع-قرب-الاستلام-في-ذا-سي-نورث-رأس-الحكمة-2-Bedroom-Chalet-95m-for-Sale-in-The-C-North-Ras-El-Hekma',
+    'unit/126m-apartment-for-sale-in-mayan-el-shorouk': '/unit/3-bedroom-fully-finished-apartment-for-sale-in-mayan-el-shorouk-126m',
+    'project/mayan-el-shorouk-compound-apartments-for-sale': '/project/mayan-el-shorouk-city-compound-apartments',
+    'unit/mirissa-new-obour-apartment-117m': '/unit/شقة-غرفتين-117م-للبيع-استلام-سنتين-في-كمبوند-ميريسا-العبور-الجديدة-2-Bedroom-Apartment-117m-for-Sale-in-Mirissa-New-Obour',
+    // this unit has no distinct AR slug, so the AR-path target is just its
+    // (unchanged) EN slug
+    'unit/apartment-for-sale-jazeel-obour-4b005': '/unit/jazeel-residence-obour-2nd-floor-apartment-4-b-205'
   };
   const renamedTo = RENAMED[`${kindPath}/${slugFromUrl}`];
   if (renamedTo) {
