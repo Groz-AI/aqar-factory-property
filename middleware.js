@@ -498,7 +498,12 @@ export default async function middleware(request) {
     // (confirmed via a direct query — this row has no slug_redirects entry,
     // unlike renames that happened after today's deploy, which the table
     // already caught automatically on their own)
-    'project/apartments-for-sale-jazeel-residence-new-obour': '/project/jazeel-residence-compound-new-obour-city'
+    'project/apartments-for-sale-jazeel-residence-new-obour': '/project/jazeel-residence-compound-new-obour-city',
+    // found via a live GSC "different canonical" export — old AR slug had
+    // both a typo (كمبورد vs كمبوند) and the wrong area name (الشروق/Shorouk
+    // vs العبور/Obour); project's current EN slug is
+    // mazaya-developments-new-obour-compound
+    'project/كمبورد-تاون-تن-الشروق-الجديدة-Town-Ten-New-Obour-Compound': '/project/كمبوند-تاون-تن-العبور-الجديدة-Town-Ten-New-Obour-Compound'
   };
   const renamedTo = RENAMED[`${kindPath}/${slugFromUrl}`];
   if (renamedTo) {
