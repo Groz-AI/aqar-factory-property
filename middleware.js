@@ -306,7 +306,7 @@ async function streamToText(stream) {
   return text;
 }
 
-function pageHTML({ title, description, image, url, canonicalUrl, hreflangEn, hreflangAr, type, facts, bodyText, amenities, gallery, consultants, brochurePdf, related, projectUnits }) {
+function pageHTML({ title, description, image, url, canonicalUrl, hreflangEn, hreflangAr, type, facts, bodyText, amenities, gallery, consultants, brochurePdf, related, projectUnits, isAr }) {
   const factsList = facts.length
     ? `<h2>Key facts</h2><ul>${facts.map(([k, v]) => `<li><b>${esc(k)}:</b> ${esc(v)}</li>`).join('')}</ul>` : '';
   const amenitiesList = (amenities && amenities.length)
@@ -324,7 +324,7 @@ function pageHTML({ title, description, image, url, canonicalUrl, hreflangEn, hr
     ? `<h2>Related, from the same developer</h2><ul>${related.map(r => `<li><a href="${esc(r.url)}">${esc(r.name)}</a></li>`).join('')}</ul>`
     : '';
   return `<!DOCTYPE html>
-<html><head>
+<html lang="${isAr ? 'ar' : 'en'}" dir="${isAr ? 'rtl' : 'ltr'}"><head>
 <meta charset="utf-8">
 <title>${esc(title)}</title>
 <meta name="description" content="${esc(description)}">
@@ -387,7 +387,12 @@ export default async function middleware(request) {
       try {
         const staticRes = await fetch(url.toString(), { headers: { 'x-mw-static-fetch': '1' } });
         if (staticRes.ok) {
-          const html = await staticRes.text();
+          let html = await staticRes.text();
+          // every static page's source hardcodes <html lang="en">, corrected
+          // to the real language only by i18n.js client-side — which never
+          // runs for a bot reading this raw response, same root cause as the
+          // missing hreflang tags above
+          if (staticIsAr) html = html.replace('<html lang="en">', '<html lang="ar" dir="rtl">');
           const tags = `<link rel="alternate" hreflang="en" href="${esc(enUrl)}">\n<link rel="alternate" hreflang="ar" href="${esc(arUrl)}">\n<link rel="alternate" hreflang="x-default" href="${esc(enUrl)}">\n</head>`;
           return new Response(html.replace('</head>', tags), {
             headers: {
@@ -604,7 +609,7 @@ export default async function middleware(request) {
     // retires stale URLs (deleted/unpublished items, slugs renamed without a
     // RENAMED entry above) by itself, with no per-URL maintenance.
     return new Response(
-      `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Not found — Aqar Factory</title>` +
+      `<!DOCTYPE html><html lang="${isAr ? 'ar' : 'en'}" dir="${isAr ? 'rtl' : 'ltr'}"><head><meta charset="utf-8"><title>Not found — Aqar Factory</title>` +
       `<meta name="robots" content="noindex"></head><body><h1>Not found</h1>` +
       `<p>This page is no longer available. <a href="https://www.aqar-factory.com${isAr ? '/ar' : ''}/">Go to Aqar Factory</a></p>` +
       `</body></html>`,
@@ -754,7 +759,7 @@ export default async function middleware(request) {
 
   const html = pageHTML({
     title, description, image, facts, bodyText, amenities, gallery, consultants, brochurePdf, related, projectUnits,
-    url: url.toString(), canonicalUrl, hreflangEn, hreflangAr,
+    url: url.toString(), canonicalUrl, hreflangEn, hreflangAr, isAr,
     type: table === 'blog_posts' ? 'article' : 'website'
   });
 
