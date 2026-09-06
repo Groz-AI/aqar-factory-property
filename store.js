@@ -118,6 +118,28 @@
     }
   }
 
+  // fetches a single row by its (English or Arabic) slug instead of
+  // downloading the whole table just to find one match client-side — a
+  // detail page's primary content only ever needs the one row. Two narrow
+  // .eq() queries run in parallel (rather than one .or() filter) so this
+  // also works unmodified against local-backend.js's mock query builder,
+  // which doesn't implement .or()/.maybeSingle(). Falls back to a plain
+  // array search over the bundled fallback data (already in public shape,
+  // same as fetchTable's fallback branch above) when no backend is configured.
+  async function fetchOne(table, slug, fallback, map) {
+    if (!sb) return (fallback || []).find(r => r.id === slug || r.slugAr === slug) || null;
+    try {
+      const [bySlug, bySlugAr] = await Promise.all([
+        sb.from(table).select('*').eq('published', true).eq('slug', slug).limit(1),
+        sb.from(table).select('*').eq('published', true).eq('slug_ar', slug).limit(1)
+      ]);
+      const row = (bySlug.data && bySlug.data[0]) || (bySlugAr.data && bySlugAr.data[0]);
+      return row ? map(row) : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
   // content_blocks is tiny (a handful of singleton rows) but gets asked for by
   // several independent widgets on the SAME page — branding.js (header logo),
   // card-contact.js, whatsapp-widget.js, and the page's own script all want
@@ -226,6 +248,8 @@
     getDevelopers:   () => fetchTable('developers', F.developers || []),
     getBlogPosts:    () => fetchTable('blog_posts', F.blogPosts || [], mapBlogPost),
     getUnits:        () => fetchTable('units', F.units || [], mapUnit),
+    getProjectBySlug: (slug) => fetchOne('projects', slug, F.projects || [], mapProject),
+    getUnitBySlug:    (slug) => fetchOne('units', slug, F.units || [], mapUnit),
     getCategories,
     getContent,
     getCompany,

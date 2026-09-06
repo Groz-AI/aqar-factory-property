@@ -189,13 +189,21 @@ function populate() {
   galleryEl.innerHTML = (project.gallery || []).map((g, i) =>
     `<figure data-idx="${i}"><img src="${U(g, 800)}" alt="${project.name} photo ${i + 1}" loading="lazy" /></figure>`).join('');
 
+  cycleGalleries('#detailHero', '.detail-hero', 7000);
+  window.scrollTo(0, 0);
+}
+
+// the three sections below need the full projects/units lists (to find
+// "related", "same developer", "assigned to this project"), which are
+// fetched in the background AFTER populate() already showed the project
+// itself — see the boot IIFE. Kept separate so the primary content never
+// waits on a full-table fetch just to paint.
+function populateRelatedSections() {
   renderProjectUnits();
   renderRelated();
   renderDeveloperPicks();
-  cycleGalleries('#detailHero', '.detail-hero', 7000);
-  window.scrollTo(0, 0);
   // signals to the headless-render prerender step (api/prerender.js) that
-  // the async Supabase fetch + DOM population above has actually finished
+  // the async Supabase fetches + DOM population above have actually finished
   document.body.setAttribute('data-prerendered-ready', '1');
 }
 
@@ -406,25 +414,46 @@ function showNotFound() {
 
 let COMPANY = {};
 
-/* ---- boot ---- */
+/* ---- boot ----
+   fetch just the one project by slug first (fast, indexed) so the page can
+   paint real content immediately, instead of waiting on every published
+   project + unit in the database just to find one row by scanning in JS.
+   The full lists are only needed for the "related"/"same developer"/
+   "assigned units" sections further down the page, so those load in the
+   background afterward. */
 (async function () {
   try {
-    const [projects, units, , company] = await Promise.all([
-      window.store.getProjects(),
-      window.store.getUnits ? window.store.getUnits() : [],
-      window.store.getCategories ? window.store.getCategories() : null,
+    const [proj, company] = await Promise.all([
+      window.store.getProjectBySlug ? window.store.getProjectBySlug(id) : null,
       window.store.getCompany ? window.store.getCompany() : {}
     ]);
-    ALL = projects;
-    ALL_UNITS = units || [];
+    project = proj;
     COMPANY = company || {};
-  } catch (e) { ALL = window.PROJECTS || []; }
-  if (!ALL || !ALL.length) ALL = window.PROJECTS || [];
+  } catch (e) { project = null; }
+
   // an unmatched ?id= (deleted/renamed/mistyped) must NOT silently render a
   // different, unrelated project under the wrong URL — that's exactly the
   // kind of "wrong content at this URL" signal that confuses Google's
   // indexing, on top of just being wrong for real visitors
-  project = ALL.find(p => p.id === id || (p.slugAr && p.slugAr === id));
-  if (project) populate();
-  else showNotFound();
+  if (!project) {
+    // last-resort fallback for the no-backend-configured demo data path,
+    // which getProjectBySlug already checks — but if store.js itself is an
+    // older/missing build without getProjectBySlug, fall back to the same
+    // full-list search this page used before
+    const list = window.PROJECTS || [];
+    project = list.find(p => p.id === id || (p.slugAr && p.slugAr === id)) || null;
+  }
+  if (!project) { showNotFound(); return; }
+  populate();
+
+  try {
+    const [projects, units] = await Promise.all([
+      window.store.getProjects(),
+      window.store.getUnits ? window.store.getUnits() : []
+    ]);
+    ALL = projects;
+    ALL_UNITS = units || [];
+  } catch (e) { ALL = window.PROJECTS || []; }
+  if (!ALL || !ALL.length) ALL = window.PROJECTS || [];
+  populateRelatedSections();
 })();

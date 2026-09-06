@@ -146,7 +146,22 @@ function populate() {
     .filter(([, v]) => v)
     .map(([k, v]) => `<div><dt>${t(k)}</dt><dd>${v}</dd></div>`).join('');
 
-  // "Part of <Project>" banner — only when this unit is linked to a project
+  const galleryEl = document.getElementById('gallery');
+  galleryEl.innerHTML = (unit.gallery || []).map((g, i) =>
+    `<figure data-idx="${i}"><img src="${U(g, 800)}" alt="${unit.name} photo ${i + 1}" loading="lazy" /></figure>`).join('');
+
+  cycleGalleries('#detailHero', '.detail-hero', 7000);
+  window.scrollTo(0, 0);
+}
+
+// the "Part of <Project>" banner, "related units" and "same developer"
+// sections all need the full projects/units lists (to resolve the linked
+// project and find other rows matching it), which are fetched in the
+// background AFTER populate() already showed the unit itself — see the
+// boot IIFE. Kept separate so the primary content never waits on a
+// full-table fetch just to paint. The banner stays hidden (its static
+// HTML default) until this runs.
+function populateRelatedSections() {
   const banner = document.getElementById('projectBanner');
   linkedProject = unit.projectId ? ALL_PROJECTS.find(p => p.dbId === unit.projectId) : null;
   if (linkedProject) {
@@ -157,16 +172,10 @@ function populate() {
     banner.hidden = true;
   }
 
-  const galleryEl = document.getElementById('gallery');
-  galleryEl.innerHTML = (unit.gallery || []).map((g, i) =>
-    `<figure data-idx="${i}"><img src="${U(g, 800)}" alt="${unit.name} photo ${i + 1}" loading="lazy" /></figure>`).join('');
-
   renderRelated();
   renderDeveloperPicks();
-  cycleGalleries('#detailHero', '.detail-hero', 7000);
-  window.scrollTo(0, 0);
   // signals to the headless-render prerender step (api/prerender.js) that
-  // the async Supabase fetch + DOM population above has actually finished
+  // the async Supabase fetches + DOM population above have actually finished
   document.body.setAttribute('data-prerendered-ready', '1');
 }
 
@@ -289,26 +298,28 @@ window.addEventListener('scroll', onHeaderScroll, { passive: true });
 
 let COMPANY = {};
 
-/* ---- boot ---- */
+/* ---- boot ----
+   fetch just the one unit by slug first (fast, indexed) so the page can
+   paint real content immediately, instead of waiting on every published
+   project + unit in the database just to find one row by scanning in JS.
+   The full lists are only needed for the project-banner/"related"/"same
+   developer" sections further down the page, so those load in the
+   background afterward. */
 (async function () {
   try {
-    const [units, projects, , company] = await Promise.all([
-      window.store.getUnits ? window.store.getUnits() : [],
-      window.store.getProjects ? window.store.getProjects() : [],
-      window.store.getCategories ? window.store.getCategories() : null,
+    const [u, company] = await Promise.all([
+      window.store.getUnitBySlug ? window.store.getUnitBySlug(id) : null,
       window.store.getCompany ? window.store.getCompany() : {}
     ]);
-    ALL = units || [];
-    ALL_PROJECTS = projects || [];
+    unit = u;
     COMPANY = company || {};
-  } catch (e) { ALL = []; ALL_PROJECTS = []; }
+  } catch (e) { unit = null; }
+
   // an unmatched ?id= (deleted/renamed/mistyped) must NOT silently render a
   // different, unrelated unit under the wrong URL — that's exactly the kind
   // of "wrong content at this URL" signal that confuses Google's indexing,
   // on top of just being wrong for real visitors
-  unit = ALL.find(u => u.id === id || (u.slugAr && u.slugAr === id));
-  if (unit) populate();
-  else {
+  if (!unit) {
     document.title = `${t('Unit not found')} — Aqar Factory`;
     const meta = document.createElement('meta');
     meta.name = 'robots';
@@ -319,5 +330,17 @@ let COMPANY = {};
     if (layout) layout.style.display = 'none';
     const related = document.querySelector('.related');
     if (related) related.style.display = 'none';
+    return;
   }
+  populate();
+
+  try {
+    const [units, projects] = await Promise.all([
+      window.store.getUnits ? window.store.getUnits() : [],
+      window.store.getProjects ? window.store.getProjects() : []
+    ]);
+    ALL = units || [];
+    ALL_PROJECTS = projects || [];
+  } catch (e) { ALL = []; ALL_PROJECTS = []; }
+  populateRelatedSections();
 })();
