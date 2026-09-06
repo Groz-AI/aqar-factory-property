@@ -184,25 +184,18 @@ function renderCities(cities, projectList) {
   if (!wrap || !cities.length) return;
   const counts = {};
   (projectList || []).forEach(pr => { if (pr.cityId) counts[pr.cityId] = (counts[pr.cityId] || 0) + 1; });
+  // real <a href> — not a JS-only onClick — so a crawler following links
+  // (rather than executing JS) can actually reach the city-filtered listing
   wrap.innerHTML = cities.map(c => {
     const size = c.size === 'big' ? ' big' : c.size === 'wide' ? ' wide' : '';
     const w = size ? 900 : 700;
     const n = counts[c.id] || 0;
     const label = n === 1 ? t('1 Project') : `${n.toLocaleString()} ${t('Projects')}`;
-    return `<article class="city-card${size} reveal" data-city-id="${c.id}" tabindex="0" role="button" aria-label="${t('View projects in')} ${c.name}" style="--img:url('${IMG(c.image, w)}')">
+    return `<a class="city-card${size} reveal" href="projects.html?city=${encodeURIComponent(c.name)}" aria-label="${t('View projects in')} ${c.name}" style="--img:url('${IMG(c.image, w)}')">
       <div class="city-meta"><h3>${c.name}</h3><p>${c.country || ''}</p></div>
       <span class="city-count">${label}</span>
-    </article>`;
+    </a>`;
   }).join('');
-
-  wrap.querySelectorAll('.city-card').forEach(card => {
-    const cid = card.dataset.cityId;
-    const city = cities.find(c => c.id === cid);
-    if (!city) return;
-    const go = () => { window.location.href = 'projects.html?city=' + encodeURIComponent(city.name); };
-    card.addEventListener('click', go);
-    card.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } });
-  });
 }
 
 /* ============================================================
