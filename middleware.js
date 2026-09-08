@@ -522,7 +522,16 @@ export default async function middleware(request) {
     'unit/mirissa-new-obour-apartment-117m': '/unit/شقة-غرفتين-117م-للبيع-استلام-سنتين-في-كمبوند-ميريسا-العبور-الجديدة-2-Bedroom-Apartment-117m-for-Sale-in-Mirissa-New-Obour',
     // this unit has no distinct AR slug, so the AR-path target is just its
     // (unchanged) EN slug
-    'unit/apartment-for-sale-jazeel-obour-4b005': '/unit/jazeel-residence-obour-2nd-floor-apartment-4-b-205'
+    'unit/apartment-for-sale-jazeel-obour-4b005': '/unit/jazeel-residence-obour-2nd-floor-apartment-4-b-205',
+    // this was a genuine DUPLICATE row (not a rename) — the admin created
+    // this unit twice with a data-entry mistake (area typed as 118m² instead
+    // of the correct 148m²), then created a fresh, correct row instead of
+    // fixing the mistake in place. The old, wrong row was deleted from the
+    // admin, so slug_redirects never saw it (that only tracks slug edits on
+    // a row that still exists, not a delete) — redirecting straight to the
+    // surviving, correct unit
+    'unit/the-river-park-residence-new-obour': '/unit/3-bedroom-apartment-for-sale-in-river-park-residence-new-obour-148m',
+    'unit/شقة-3-غرف-148م-للبيع-في-كمبوند-ريفر-بارك-العبور-الجديدة': '/unit/شقة-3-غرف-148م-للبيع-في-كمبوند-ريفر-بارك-العبور-الجديدة-بالتقسيط-3-Bedroom-Apartment-148m-for-Sale-in-River-Park-Residence'
   };
   const renamedTo = RENAMED[`${kindPath}/${slugFromUrl}`];
   if (renamedTo) {
