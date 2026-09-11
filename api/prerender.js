@@ -120,9 +120,23 @@ module.exports = async function handler(req, res) {
   // tracing to bundle every file the compressed binary needs — the plain
   // @sparticuz/chromium package failed live with "libnss3.so: cannot open
   // shared object file", a known class of incomplete-bundle issue on Vercel.
+  //
+  // That same "libnss3.so" error resurfaced on the previously-pinned
+  // 131.0.1 build: this is a well-documented, recurring class of failure
+  // (see Sparticuz/chromium#254) caused by AWS/Vercel periodically updating
+  // the underlying Lambda base image in a way that breaks whatever NSS
+  // libraries an older chromium build was packed against — not something
+  // this project's own code can control, only keep pace with by staying on
+  // a current chromium-min release. Bumped to the latest as of writing
+  // (152.0.0; keep package.json's version and this URL in lockstep on any
+  // future bump — they must match exactly, unlike puppeteer-core's `^`
+  // range, since chromium-min's own version IS the pack filename below).
+  // Newer chromium-min releases also split the pack by CPU architecture
+  // (previously one arch-less file) — Vercel's default function
+  // architecture is x64, hence "-pack.x64.tar" here.
   const chromium = require('@sparticuz/chromium-min');
   const puppeteer = require('puppeteer-core');
-  const CHROMIUM_PACK_URL = 'https://github.com/Sparticuz/chromium/releases/download/v131.0.1/chromium-v131.0.1-pack.tar';
+  const CHROMIUM_PACK_URL = 'https://github.com/Sparticuz/chromium/releases/download/v152.0.0/chromium-v152.0.0-pack.x64.tar';
 
   const targets = [
     { lang: 'en', slugForUrl: slug, path: `/${kindPath}/${encodeURIComponent(slug)}` },
