@@ -131,6 +131,13 @@ module.exports = async function handler(req, res) {
   // (152.0.0; keep package.json's version and this URL in lockstep on any
   // future bump — they must match exactly, unlike puppeteer-core's `^`
   // range, since chromium-min's own version IS the pack filename below).
+  //
+  // puppeteer-core is capped below 25.0.0 deliberately: v25 switched to
+  // "type":"module" with no usable CJS entry point, which crashes this
+  // file's require('puppeteer-core') at cold start with a raw platform
+  // 500 (no error detail — Vercel never gets far enough into this
+  // handler's own try/catch to report one). v24.x is the newest release
+  // still published as CommonJS.
   // Newer chromium-min releases also split the pack by CPU architecture
   // (previously one arch-less file) — Vercel's default function
   // architecture is x64, hence "-pack.x64.tar" here.
