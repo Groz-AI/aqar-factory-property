@@ -133,15 +133,19 @@ module.exports = async function handler(req, res) {
   // range, since chromium-min's own version IS the pack filename below).
   //
   // puppeteer-core is capped below 25.0.0 deliberately: v25 switched to
-  // "type":"module" with no usable CJS entry point, which crashes this
-  // file's require('puppeteer-core') at cold start with a raw platform
-  // 500 (no error detail — Vercel never gets far enough into this
-  // handler's own try/catch to report one). v24.x is the newest release
-  // still published as CommonJS.
+  // "type":"module" with no usable CJS entry point. Confirmed via actual
+  // Vercel runtime logs (`vercel logs`, not just local testing) that the
+  // REAL crash here is @sparticuz/chromium-min itself, not puppeteer-core:
+  // 152.0.0's build/index.js is "type":"module" too (Node throws
+  // ERR_REQUIRE_ESM on require(), as a raw platform 500 with no detail —
+  // this handler's own try/catch never even gets entered). Node's own
+  // error message says exactly what to do instead: a dynamic import(),
+  // which works for both CJS and ESM targets, so this survives chromium-min
+  // going full-ESM on some future version too, not just this one.
   // Newer chromium-min releases also split the pack by CPU architecture
   // (previously one arch-less file) — Vercel's default function
   // architecture is x64, hence "-pack.x64.tar" here.
-  const chromium = require('@sparticuz/chromium-min');
+  const chromium = (await import('@sparticuz/chromium-min')).default;
   const puppeteer = require('puppeteer-core');
   const CHROMIUM_PACK_URL = 'https://github.com/Sparticuz/chromium/releases/download/v152.0.0/chromium-v152.0.0-pack.x64.tar';
 
@@ -154,9 +158,12 @@ module.exports = async function handler(req, res) {
   const results = {};
   try {
     browser = await puppeteer.launch({
+      // chromium-min 152.x removed the standalone `headless` property (was
+      // always undefined here as of the version bump above, confirmed via
+      // a local test) — headless mode is now baked into `args` itself as
+      // a --headless='shell' flag, so there's nothing to pass separately
       args: chromium.args,
-      executablePath: await chromium.executablePath(CHROMIUM_PACK_URL),
-      headless: chromium.headless
+      executablePath: await chromium.executablePath(CHROMIUM_PACK_URL)
     });
 
     for (const t of targets) {
