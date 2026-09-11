@@ -290,6 +290,65 @@ async function fetchUnitsForProject(projectId, limit = 12) {
   }
 }
 
+// the listing pages (projects.html/units.html/blog.html) render every card
+// entirely client-side, same as detail pages used to — but unlike detail
+// pages, bots here never got ANY real content at all (STATIC_HREFLANG_PAGES
+// below only ever injected <head> hreflang tags, never touched the body).
+// That matters more here than it did for a single detail page: Google's
+// first crawl pass reads raw HTML for links to discover, and only runs
+// JavaScript in a later, separate pass — an empty listing page means every
+// project/unit/post it links to is discovered a full pass later than it
+// needs to be. Mirrors fetchRelated()'s query shape above.
+async function fetchListingRows(table, extraSelect, limit = 60) {
+  try {
+    const res = await fetch(
+      `${SUPA_URL}/rest/v1/${table}?select=${extraSelect}&published=eq.true&order=sort_order.asc&limit=${limit}`,
+      { headers: { apikey: SUPA_ANON_KEY, Authorization: `Bearer ${SUPA_ANON_KEY}` } }
+    );
+    if (!res.ok) return [];
+    return await res.json();
+  } catch (_) {
+    return [];
+  }
+}
+
+// one entry per listing page: which table backs it, the id of the (empty,
+// client-filled) container div in the static HTML to inject real <a> links
+// into, and how to turn one DB row into a {slug, name, sub} triple for the
+// current language — sub is just a one-line bit of real substance (price/
+// location/excerpt) so this doesn't read as a bare, spammy link list
+const LISTING_INJECT = {
+  '/projects.html': {
+    table: 'projects', containerId: 'projectsGrid', kindPath: 'project',
+    select: 'slug,slug_ar,name,name_ar,tagline,location',
+    row: (r, ar) => ({
+      slug: (ar && r.slug_ar) || r.slug,
+      name: (ar && r.name_ar) || r.name,
+      sub: r.tagline || r.location || ''
+    })
+  },
+  '/units.html': {
+    table: 'units', containerId: 'unitsGrid', kindPath: 'unit',
+    select: 'slug,slug_ar,name,name_ar,location,price',
+    row: (r, ar) => ({
+      slug: (ar && r.slug_ar) || r.slug,
+      name: (ar && r.name_ar) || r.name,
+      sub: [r.location, r.price].filter(Boolean).join(' — ')
+    })
+  },
+  '/blog.html': {
+    table: 'blog_posts', containerId: 'blogGrid', kindPath: 'blog',
+    select: 'slug,title,title_ar,excerpt,excerpt_ar',
+    // blog_posts has no slug_ar (HAS_SLUG_AR.blog_posts is false elsewhere
+    // in this file too) — the AR page reuses the same EN slug
+    row: (r, ar) => ({
+      slug: r.slug,
+      name: (ar && r.title_ar) || r.title,
+      sub: (ar ? r.excerpt_ar : r.excerpt) || r.excerpt || ''
+    })
+  }
+};
+
 // looks up a real-visitor pre-rendered snapshot written by api/prerender.js —
 // path format must match blobKey() there exactly. api/prerender.js writes
 // with addRandomSuffix:false, so this URL is fully deterministic — no
@@ -393,6 +452,26 @@ export default async function middleware(request) {
           // runs for a bot reading this raw response, same root cause as the
           // missing hreflang tags above
           if (staticIsAr) html = html.replace('<html lang="en">', '<html lang="ar" dir="rtl">');
+          const listingCfg = LISTING_INJECT[staticEnPath];
+          if (listingCfg) {
+            const rows = await fetchListingRows(listingCfg.table, listingCfg.select);
+            const items = rows
+              .map(r => listingCfg.row(r, staticIsAr))
+              .filter(x => x.slug && x.name);
+            const listHtml = `<ul>${items.map(x => {
+              const slug = String(x.slug).replace(/^\/+|\/+$/g, '');
+              const href = `${staticIsAr ? '/ar' : ''}/${listingCfg.kindPath}/${encodeURIComponent(slug)}`;
+              return `<li><a href="${esc(href)}">${esc(x.name)}</a>${x.sub ? ' — ' + esc(x.sub) : ''}</li>`;
+            }).join('')}</ul>`;
+            // the container is an empty div in the static source
+            // (<div class="..." id="projectsGrid"></div>) that client JS
+            // fills with the exact same cards for a real visitor — putting
+            // this inside it, not appending elsewhere, means a real browser
+            // (or Google's later JS-rendering pass) just overwrites it via
+            // innerHTML= like it already does, no duplicate-content risk
+            const containerRe = new RegExp(`(id="${listingCfg.containerId}"[^>]*>)(\\s*)(</div>)`);
+            html = html.replace(containerRe, `$1${listHtml}$3`);
+          }
           const tags = `<link rel="alternate" hreflang="en" href="${esc(enUrl)}">\n<link rel="alternate" hreflang="ar" href="${esc(arUrl)}">\n<link rel="alternate" hreflang="x-default" href="${esc(enUrl)}">\n</head>`;
           return new Response(html.replace('</head>', tags), {
             headers: {
