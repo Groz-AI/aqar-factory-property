@@ -60,7 +60,14 @@ async function renderOne(browser, url, bypassSecret) {
   const page = await browser.newPage();
   try {
     await page.setExtraHTTPHeaders({ 'x-prerender-bypass': bypassSecret });
-    await page.goto(url, { waitUntil: 'networkidle0', timeout: 20000 });
+    // NOT 'networkidle0': every page opens a persistent Supabase Realtime
+    // WebSocket (store.js) that never closes, so "0 active connections" can
+    // never be true here — that made every single render time out at 20s,
+    // 100% failure, regardless of the page. The real readiness signal is
+    // the explicit waitForSelector below (set by the page's own JS only
+    // once content has actually finished populating), so goto just needs
+    // to get the initial document parsed.
+    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 20000 });
     await page.waitForSelector('[data-prerendered-ready]', { timeout: 15000 });
     return await page.content();
   } finally {
