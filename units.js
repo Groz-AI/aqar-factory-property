@@ -56,6 +56,15 @@ function buildFacets() {
     cities.map(c => `<option value="${c}">${c}</option>`).join(''));
 }
 
+const isAr = () => !!(window.i18n && window.i18n.lang === 'ar');
+function pick(u, key, arKey) {
+  if (isAr()) {
+    const v = u[arKey];
+    if (v) return v;
+  }
+  return u[key];
+}
+
 function cardHTML(u) {
   const imgs = unitImages(u);
   const slides = imgs.map((g, n) =>
@@ -68,10 +77,10 @@ function cardHTML(u) {
       ${slides}<div class="pg-shade"></div>
       ${u.badge ? `<span class="pcard-status for-sale"><i></i>${t(u.badge)}</span>` : ''}
       <span class="pcard-cat">${u.type ? t(u.type) : ''}</span>
-      ${dots}${window.cardContact ? window.cardContact.markup(u.name) : ''}
+      ${dots}${window.cardContact ? window.cardContact.markup(pick(u, 'name', 'nameAr')) : ''}
     </div>
     <div class="pcard-body">
-      <h3>${u.name || ''}</h3>
+      <h3>${pick(u, 'name', 'nameAr') || ''}</h3>
       <p class="pcard-loc">${pinSVG}${u.location || ''}</p>
       <p class="pcard-tag">${[u.beds ? `${u.beds} ${t('Beds')}` : '', u.baths ? `${u.baths} ${t('Baths')}` : '', u.area || ''].filter(Boolean).join(' · ')}</p>
       <div class="pcard-foot">
@@ -88,7 +97,7 @@ function getFiltered() {
   let list = P.filter(u =>
     (state.type === 'all' || u.type === state.type) &&
     (state.city === 'all' || u.cityName === state.city) &&
-    (!q || [u.name, u.type, u.location, u.cityName].join(' ').toLowerCase().includes(q))
+    (!q || [u.name, u.nameAr, u.type, u.location, u.cityName].join(' ').toLowerCase().includes(q))
   );
   const byNum = (key, dir) => (a, b) => dir * ((Number(a[key]) || 0) - (Number(b[key]) || 0));
   switch (state.sort) {
@@ -96,7 +105,7 @@ function getFiltered() {
     case 'price-asc':  list.sort(byNum('priceValue', 1)); break;
     case 'area-desc':  list.sort(byNum('areaValue', -1)); break;
     case 'area-asc':   list.sort(byNum('areaValue', 1)); break;
-    case 'name-asc':   list.sort((a, b) => (a.name || '').localeCompare(b.name || '')); break;
+    case 'name-asc':   list.sort((a, b) => (pick(a, 'name', 'nameAr') || '').localeCompare(pick(b, 'name', 'nameAr') || '')); break;
   }
   return list;
 }

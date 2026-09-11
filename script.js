@@ -25,6 +25,15 @@ const emLast = (s) => {
 let allProjects = [];
 let allUnits = [];
 
+const isAr = () => !!(window.i18n && window.i18n.lang === 'ar');
+function pick(o, key, arKey) {
+  if (isAr()) {
+    const v = o[arKey];
+    if (v) return v;
+  }
+  return o[key];
+}
+
 /* ---------- custom dropdown (replaces native <select> so the open list can
    actually be styled — browsers render native option popups unstyleable) ---------- */
 function initCustomSelect(root) {
@@ -143,10 +152,10 @@ function unitCardHTML(u) {
   if (u.area) specs.push(u.area);
   return `
   <a class="project reveal" href="${window.buildUrl('unit', u)}">
-    <div class="project-img" data-gallery>${slides}<div class="pg-shade"></div>${dots}${window.cardContact ? window.cardContact.markup(u.name) : ''}</div>
+    <div class="project-img" data-gallery>${slides}<div class="pg-shade"></div>${dots}${window.cardContact ? window.cardContact.markup(pick(u, 'name', 'nameAr')) : ''}</div>
     <div class="project-body">
       <span class="project-tag">${u.type ? t(u.type) : ''}</span>
-      <h3>${u.name}</h3>
+      <h3>${pick(u, 'name', 'nameAr')}</h3>
       <p>${specs.join(' · ')}</p>
       <div class="project-foot"><span>${u.location || ''}</span><span>${window.formatPrice ? window.formatPrice(u.price) : (u.price || '')}</span></div>
     </div>
@@ -230,10 +239,10 @@ function renderProjects(projects) {
 
     return `
     <a class="project reveal" href="${window.buildUrl('project', p)}">
-      <div class="project-img" data-gallery>${slides}<div class="pg-shade"></div>${dots}${window.cardContact ? window.cardContact.markup(p.name) : ''}</div>
+      <div class="project-img" data-gallery>${slides}<div class="pg-shade"></div>${dots}${window.cardContact ? window.cardContact.markup(pick(p, 'name', 'nameAr')) : ''}</div>
       <div class="project-body">
         <span class="project-tag">${p.category ? t(p.category) : ''}</span>
-        <h3>${p.name}</h3>
+        <h3>${pick(p, 'name', 'nameAr')}</h3>
         <p>${p.tagline || ''}</p>
         ${devLine}
         ${consultantsLine}

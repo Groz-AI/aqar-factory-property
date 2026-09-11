@@ -58,6 +58,15 @@ function buildFacets() {
 
 const statusClass = s => (s || '').toLowerCase().replace(/[^a-z]/g, '-');
 
+const isAr = () => !!(window.i18n && window.i18n.lang === 'ar');
+function pick(p, key, arKey) {
+  if (isAr()) {
+    const v = p[arKey];
+    if (v) return v;
+  }
+  return p[key];
+}
+
 function cardHTML(p){
   const stats = p.stats || {};
   const imgs = projectImages(p);
@@ -74,10 +83,10 @@ function cardHTML(p){
       <span class="pcard-status ${statusClass(p.status)}"><i></i>${p.status || ''}</span>
       <span class="pcard-cat">${p.category ? t(p.category) : ''}</span>
       ${devLogo}
-      ${dots}${window.cardContact ? window.cardContact.markup(p.name) : ''}
+      ${dots}${window.cardContact ? window.cardContact.markup(pick(p, 'name', 'nameAr')) : ''}
     </div>
     <div class="pcard-body">
-      <h3>${p.name || ''}</h3>
+      <h3>${pick(p, 'name', 'nameAr') || ''}</h3>
       <p class="pcard-loc">${pinSVG}${p.location || ''}</p>
       <p class="pcard-tag">${p.tagline || ''}</p>
       <div class="pcard-foot">
@@ -94,7 +103,7 @@ function getFiltered(){
   let list = P.filter(p =>
     (state.cat === 'all' || p.category === state.cat) &&
     (state.city === 'all' || p.city === state.city) &&
-    (!q || [p.name, p.city, p.location, p.category, p.developer].join(' ').toLowerCase().includes(q))
+    (!q || [p.name, p.nameAr, p.city, p.location, p.category, p.developer].join(' ').toLowerCase().includes(q))
   );
   const byNum = (key, dir) => (a, b) => dir * ((Number(a[key]) || 0) - (Number(b[key]) || 0));
   switch(state.sort){
@@ -103,7 +112,7 @@ function getFiltered(){
     case 'area-desc':  list.sort(byNum('areaValue', -1)); break;
     case 'area-asc':   list.sort(byNum('areaValue', 1)); break;
     case 'year-desc':  list.sort(byNum('year', -1)); break;
-    case 'name-asc':   list.sort((a, b) => (a.name || '').localeCompare(b.name || '')); break;
+    case 'name-asc':   list.sort((a, b) => (pick(a, 'name', 'nameAr') || '').localeCompare(pick(b, 'name', 'nameAr') || '')); break;
   }
   return list;
 }

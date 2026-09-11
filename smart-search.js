@@ -45,6 +45,14 @@
 
   /* ---------- helpers ---------- */
   const escHTML = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const isAr = () => !!(window.i18n && window.i18n.lang === 'ar');
+  function pick(o, key, arKey) {
+    if (isAr()) {
+      const v = o[arKey];
+      if (v) return v;
+    }
+    return o[key];
+  }
 
   function debounce(fn, ms) {
     let tid;
@@ -54,13 +62,13 @@
   /* ---------- combined dataset ---------- */
   function buildCombined(projects, units) {
     const pItems = (projects || []).map(p => ({
-      _kind: 'project', id: p.id, name: p.name, city: p.city || p.location || '',
+      _kind: 'project', id: p.id, slugAr: p.slugAr || '', name: p.name, nameAr: p.nameAr || '', city: p.city || p.location || '',
       type: p.category, price: (p.stats && p.stats.price) || '', priceValue: Number(p.priceValue) || 0,
       area: (p.stats && p.stats.area) || '', areaValue: Number(p.areaValue) || 0, beds: 0,
       cover: p.cover, gallery: p.gallery
     }));
     const uItems = (units || []).map(u => ({
-      _kind: 'unit', id: u.id, name: u.name, city: u.location || '',
+      _kind: 'unit', id: u.id, slugAr: u.slugAr || '', name: u.name, nameAr: u.nameAr || '', city: u.location || '',
       type: u.type, price: u.price || '', priceValue: Number(u.priceValue) || 0,
       area: u.area || '', areaValue: Number(u.areaValue) || 0, beds: Number(u.beds) || 0,
       cover: u.cover, gallery: u.gallery
@@ -175,7 +183,7 @@
         const need = state.beds === '4+' ? 4 : Number(state.beds);
         if (state.beds === '4+' ? it.beds < 4 : it.beds !== need) return false;
       }
-      if (q && !`${it.name} ${it.city} ${it.type}`.toLowerCase().includes(q)) return false;
+      if (q && !`${it.name} ${it.nameAr} ${it.city} ${it.type}`.toLowerCase().includes(q)) return false;
       return true;
     });
   }
@@ -197,13 +205,13 @@
     const dots = imgs.length > 1 ? `<div class="pg-dots">${imgs.map((_, i) => `<i class="${i === 0 ? 'on' : ''}"></i>`).join('')}</div>` : '';
     const href = window.buildUrl(it._kind === 'unit' ? 'unit' : 'project', it);
     const kindBadge = `<span class="result-kind-badge ${it._kind}">${t(it._kind === 'unit' ? 'Unit' : 'Project')}</span>`;
-    const contact = window.cardContact ? window.cardContact.markup(it.name) : '';
+    const contact = window.cardContact ? window.cardContact.markup(pick(it, 'name', 'nameAr')) : '';
     return `
     <a class="project reveal" href="${href}">
       <div class="project-img" data-gallery>${slides}<div class="pg-shade"></div>${dots}${kindBadge}${contact}</div>
       <div class="project-body">
         <span class="project-tag">${it.type ? t(it.type) : ''}</span>
-        <h3>${escHTML(it.name)}</h3>
+        <h3>${escHTML(pick(it, 'name', 'nameAr'))}</h3>
         <p>${escHTML(it.city)}</p>
         <div class="project-foot"><span>${escHTML(it.area)}</span><span>${window.formatPrice ? window.formatPrice(it.price) : (it.price || '')}</span></div>
       </div>
@@ -249,7 +257,7 @@
     }
     const q = state.q.trim().toLowerCase();
     if (q) {
-      const hay = `${it.name} ${it.city} ${it.type}`.toLowerCase();
+      const hay = `${it.name} ${it.nameAr} ${it.city} ${it.type}`.toLowerCase();
       if (hay.includes(q)) score += 4;
       else if (q.split(/\s+/).some(w => w.length > 2 && hay.includes(w))) score += 1.5;
     }
