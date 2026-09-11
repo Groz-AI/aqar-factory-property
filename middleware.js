@@ -312,33 +312,75 @@ async function fetchListingRows(table, extraSelect, limit = 60) {
   }
 }
 
+// replaces everything INSIDE a <div id="X">...</div>, however deeply
+// nested its current content is (the homepage's containers hold real
+// nested markup — demo project cards, each with their own inner divs —
+// not the flat empty <div id="X"></div> the other listing pages have, so
+// a plain regex would grab the first nested </div> instead of the real
+// closing tag). Depth-counts forward from the opening tag to find the
+// TRUE matching close, then splices the replacement between them.
+function replaceContainerContents(html, containerId, innerHtml) {
+  const openMarker = `id="${containerId}"`;
+  const idIdx = html.indexOf(openMarker);
+  if (idIdx === -1) return html;
+  const tagEnd = html.indexOf('>', idIdx);
+  if (tagEnd === -1) return html;
+  let depth = 1;
+  let i = tagEnd + 1;
+  while (depth > 0 && i < html.length) {
+    const nextOpen = html.indexOf('<div', i);
+    const nextClose = html.indexOf('</div>', i);
+    if (nextClose === -1) return html; // malformed — leave untouched rather than corrupt it
+    if (nextOpen !== -1 && nextOpen < nextClose) {
+      depth++;
+      i = nextOpen + 4;
+    } else {
+      depth--;
+      i = nextClose + 6;
+      if (depth === 0) {
+        return html.slice(0, tagEnd + 1) + innerHtml + html.slice(nextClose);
+      }
+    }
+  }
+  return html;
+}
+
 // one entry per listing page: which table backs it, the id of the (empty,
 // client-filled) container div in the static HTML to inject real <a> links
 // into, and how to turn one DB row into a {slug, name, sub} triple for the
 // current language — sub is just a one-line bit of real substance (price/
 // location/excerpt) so this doesn't read as a bare, spammy link list
+// each page maps to an ARRAY of injections — every other page has exactly
+// one container to fill, but the homepage has two (recent projects + the
+// "by city" grid), and the city grid links to a filtered listing rather
+// than a detail page, so each entry builds its own href directly instead
+// of sharing one kindPath-based URL scheme
+const detailHref = (kindPath) => (slug, ar) => `${ar ? '/ar' : ''}/${kindPath}/${encodeURIComponent(String(slug).replace(/^\/+|\/+$/g, ''))}`;
 const LISTING_INJECT = {
-  '/projects.html': {
-    table: 'projects', containerId: 'projectsGrid', kindPath: 'project',
+  '/projects.html': [{
+    table: 'projects', containerId: 'projectsGrid',
     select: 'slug,slug_ar,name,name_ar,tagline,location',
+    href: detailHref('project'),
     row: (r, ar) => ({
       slug: (ar && r.slug_ar) || r.slug,
       name: (ar && r.name_ar) || r.name,
       sub: r.tagline || r.location || ''
     })
-  },
-  '/units.html': {
-    table: 'units', containerId: 'unitsGrid', kindPath: 'unit',
+  }],
+  '/units.html': [{
+    table: 'units', containerId: 'unitsGrid',
     select: 'slug,slug_ar,name,name_ar,location,price',
+    href: detailHref('unit'),
     row: (r, ar) => ({
       slug: (ar && r.slug_ar) || r.slug,
       name: (ar && r.name_ar) || r.name,
       sub: [r.location, r.price].filter(Boolean).join(' — ')
     })
-  },
-  '/blog.html': {
-    table: 'blog_posts', containerId: 'blogGrid', kindPath: 'blog',
+  }],
+  '/blog.html': [{
+    table: 'blog_posts', containerId: 'blogGrid',
     select: 'slug,title,title_ar,excerpt,excerpt_ar',
+    href: detailHref('blog'),
     // blog_posts has no slug_ar (HAS_SLUG_AR.blog_posts is false elsewhere
     // in this file too) — the AR page reuses the same EN slug
     row: (r, ar) => ({
@@ -346,7 +388,35 @@ const LISTING_INJECT = {
       name: (ar && r.title_ar) || r.title,
       sub: (ar ? r.excerpt_ar : r.excerpt) || r.excerpt || ''
     })
-  }
+  }],
+  // the homepage's #cityGrid/#projectList containers were found hardcoding
+  // generic template demo content in the static source (Dubai/New York/
+  // London/Singapore/Tokyo; fake project slugs like "azure-residences" that
+  // all 404 live) — meant only as a load-time placeholder, but bots reading
+  // raw HTML see it as this site's actual, permanent content: 4 dead links
+  // plus wrong-country signals, on the single highest-authority page on the
+  // whole site
+  '/': [
+    {
+      table: 'projects', containerId: 'projectList', limit: 4,
+      select: 'slug,slug_ar,name,name_ar,tagline,location',
+      href: detailHref('project'),
+      row: (r, ar) => ({
+        slug: (ar && r.slug_ar) || r.slug,
+        name: (ar && r.name_ar) || r.name,
+        sub: r.tagline || r.location || ''
+      })
+    },
+    {
+      // links to the filtered listing, not a detail page — same URL
+      // scheme as the real <a href> fix already shipped for these cards
+      // (script.js's renderCities())
+      table: 'cities', containerId: 'cityGrid', limit: 20,
+      select: 'name,country',
+      href: (name, ar) => `${ar ? '/ar' : ''}/projects.html?city=${encodeURIComponent(name)}`,
+      row: (r) => ({ slug: r.name, name: r.name, sub: r.country || '' })
+    }
+  ]
 };
 
 // looks up a real-visitor pre-rendered snapshot written by api/prerender.js —
@@ -452,25 +522,21 @@ export default async function middleware(request) {
           // runs for a bot reading this raw response, same root cause as the
           // missing hreflang tags above
           if (staticIsAr) html = html.replace('<html lang="en">', '<html lang="ar" dir="rtl">');
-          const listingCfg = LISTING_INJECT[staticEnPath];
-          if (listingCfg) {
-            const rows = await fetchListingRows(listingCfg.table, listingCfg.select);
+          for (const cfg of (LISTING_INJECT[staticEnPath] || [])) {
+            const rows = await fetchListingRows(cfg.table, cfg.select, cfg.limit || 60);
             const items = rows
-              .map(r => listingCfg.row(r, staticIsAr))
+              .map(r => cfg.row(r, staticIsAr))
               .filter(x => x.slug && x.name);
-            const listHtml = `<ul>${items.map(x => {
-              const slug = String(x.slug).replace(/^\/+|\/+$/g, '');
-              const href = `${staticIsAr ? '/ar' : ''}/${listingCfg.kindPath}/${encodeURIComponent(slug)}`;
-              return `<li><a href="${esc(href)}">${esc(x.name)}</a>${x.sub ? ' — ' + esc(x.sub) : ''}</li>`;
-            }).join('')}</ul>`;
-            // the container is an empty div in the static source
-            // (<div class="..." id="projectsGrid"></div>) that client JS
-            // fills with the exact same cards for a real visitor — putting
-            // this inside it, not appending elsewhere, means a real browser
-            // (or Google's later JS-rendering pass) just overwrites it via
-            // innerHTML= like it already does, no duplicate-content risk
-            const containerRe = new RegExp(`(id="${listingCfg.containerId}"[^>]*>)(\\s*)(</div>)`);
-            html = html.replace(containerRe, `$1${listHtml}$3`);
+            const listHtml = `<ul>${items.map(x =>
+              `<li><a href="${esc(cfg.href(x.slug, staticIsAr))}">${esc(x.name)}</a>${x.sub ? ' — ' + esc(x.sub) : ''}</li>`
+            ).join('')}</ul>`;
+            // for projects.html/units.html/blog.html the container is an
+            // empty div that client JS fills the same way for a real
+            // visitor; on the homepage it instead REPLACES hardcoded demo
+            // content (see the comment above LISTING_INJECT) — either way,
+            // client JS overwrites this container's innerHTML unconditionally
+            // for a real browser, so there's no duplicate-content risk
+            html = replaceContainerContents(html, cfg.containerId, listHtml);
           }
           const tags = `<link rel="alternate" hreflang="en" href="${esc(enUrl)}">\n<link rel="alternate" hreflang="ar" href="${esc(arUrl)}">\n<link rel="alternate" hreflang="x-default" href="${esc(enUrl)}">\n</head>`;
           return new Response(html.replace('</head>', tags), {
