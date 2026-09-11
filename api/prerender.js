@@ -169,10 +169,16 @@ module.exports = async function handler(req, res) {
     for (const t of targets) {
       try {
         const html = await renderOne(browser, SITE_ORIGIN + t.path, bypassSecret);
+        // this SDK version's PutCommandOptions only accepts access:'public'
+        // (confirmed in node_modules/@vercel/blob's own .d.ts — 'private'
+        // was never a real option, it just silently never worked); pairing
+        // that with addRandomSuffix:false is what actually gives this a
+        // fixed, overwritable, predictable URL per pathname — 'allowOverwrite'
+        // isn't a real option in this version either, it was dead all along
         await put(blobKey(kindPath, t.lang, t.slugForUrl), html, {
-          access: 'private',
-          contentType: 'text/html; charset=utf-8',
-          allowOverwrite: true
+          access: 'public',
+          addRandomSuffix: false,
+          contentType: 'text/html; charset=utf-8'
         });
         results[t.lang] = 'ok';
       } catch (e) {

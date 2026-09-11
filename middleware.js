@@ -68,7 +68,16 @@
    of itself.
    ============================================================ */
 
-import { get } from '@vercel/blob';
+// NOT `import { get } from '@vercel/blob'` — that function doesn't exist in
+// this SDK version (confirmed: Object.keys(require('@vercel/blob')) has no
+// `get`), so this was always silently throwing inside fetchPrerendered()'s
+// own try/catch and returning null unconditionally — meaning no real
+// visitor has ever actually received a cached snapshot, regardless of
+// whether api/prerender.js successfully wrote one. The store itself is a
+// public blob store (see api/prerender.js's put() call), so a snapshot's
+// URL is just this fixed base plus its known pathname — no SDK read call
+// needed at all, a plain fetch() is the correct fix.
+const BLOB_PUBLIC_BASE_URL = process.env.BLOB_PUBLIC_BASE_URL;
 // on the Node.js Middleware runtime (unlike the Edge default), a bare
 // `return;`/`return undefined` does NOT reliably fall through to normal
 // request handling — verified live: it served an empty 200 body instead of
@@ -282,28 +291,19 @@ async function fetchUnitsForProject(projectId, limit = 12) {
 }
 
 // looks up a real-visitor pre-rendered snapshot written by api/prerender.js —
-// key format must match blobKey() there exactly
+// path format must match blobKey() there exactly. api/prerender.js writes
+// with addRandomSuffix:false, so this URL is fully deterministic — no
+// lookup step (list/head) needed, just fetch it directly and treat a 404
+// as "no snapshot yet", same as the old code treated a missing blob.
 async function fetchPrerendered(kindPath, lang, slugForUrl) {
+  if (!BLOB_PUBLIC_BASE_URL) return null;
   try {
-    const blob = await get(`prerendered/${lang}/${kindPath}/${slugForUrl}.html`, { access: 'private' });
-    if (!blob) return null;
-    return await streamToText(blob.stream);
+    const res = await fetch(`${BLOB_PUBLIC_BASE_URL}/prerendered/${lang}/${kindPath}/${slugForUrl}.html`);
+    if (!res.ok) return null;
+    return await res.text();
   } catch (_) {
     return null;
   }
-}
-
-async function streamToText(stream) {
-  const reader = stream.getReader();
-  const decoder = new TextDecoder();
-  let text = '';
-  for (;;) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    text += decoder.decode(value, { stream: true });
-  }
-  text += decoder.decode();
-  return text;
 }
 
 function pageHTML({ title, description, image, url, canonicalUrl, hreflangEn, hreflangAr, type, facts, bodyText, amenities, gallery, consultants, brochurePdf, related, projectUnits, isAr }) {
