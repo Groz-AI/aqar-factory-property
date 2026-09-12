@@ -5,11 +5,25 @@
    ============================================================ */
 (function () {
   const cfg = window.SUPA || {};
-  const cloud = window.supabase && cfg.url && !/YOUR_/.test(cfg.url) && cfg.anonKey && !/YOUR_/.test(cfg.anonKey);
-  // real Supabase when configured, otherwise the local (localStorage) backend
+  const supaConfigured = !!(cfg.url && !/YOUR_/.test(cfg.url) && cfg.anonKey && !/YOUR_/.test(cfg.anonKey));
+  const cloud = !!(window.supabase && supaConfigured);
+  // real Supabase when configured, otherwise the local (localStorage) backend —
+  // but ONLY fall back to the local mock when Supabase was never configured in
+  // the first place (genuine local/demo mode). If real credentials ARE set but
+  // the supabase-js CDN script simply failed to load this one time (ad-blocker,
+  // network hiccup, a blocked CDN — all things this exact team hit while testing
+  // this very site from a filtered network), `window.supabase` is missing even
+  // though the real backend is the intended one. Treating that the same as
+  // local-demo-mode used to silently swap every visitor to a small hardcoded
+  // 8-project demo catalog and make the contact form / newsletter signup
+  // insert into that visitor's own browser storage while reporting success —
+  // a real lead vanishing with no error shown to them or to the business.
+  // Leaving `sb` null here instead makes every store.js call fall through to
+  // its own existing "not configured" branch: reads still show the bundled
+  // fallback content (unchanged), but writes correctly report a real error.
   const sb = cloud ? window.supabase.createClient(cfg.url, cfg.anonKey)
-           : (window.RealteekLocal ? window.RealteekLocal.makeClient() : null);
-  const configured = cloud || !!(window.RealteekLocal);
+           : (!supaConfigured && window.RealteekLocal) ? window.RealteekLocal.makeClient() : null;
+  const configured = cloud || (!supaConfigured && !!window.RealteekLocal);
   window.sb = sb;
   window.SUPA_READY = configured;
 

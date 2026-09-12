@@ -846,3 +846,23 @@ window.FALLBACK = {
     }
   }
 };
+
+// same reasoning as data.js's window.PROJECTS normalization above it: this
+// units array is handed back UNMAPPED (skipping mapUnit()) by store.js's
+// fetchTable()/fetchOne() whenever Supabase is unreachable, so it needs the
+// camelCase fields mapUnit() would normally synthesize, or downstream code
+// (units.js's price/area sort, project.js's project<->unit matching) silently
+// breaks instead of throwing.
+window.FALLBACK.units.forEach(u => {
+  u.dbId = u.id;
+  u.slugAr = u.slugAr || '';
+  u.nameAr = u.nameAr || '';
+  u.priceValue = Number(u.price_value) || 0;
+  u.areaValue = Number(u.area_value) || 0;
+  // resolve the loose projectSlug string (this demo dataset's only linkage)
+  // to the matching demo project's id — set as .dbId by data.js above, which
+  // loads before this file — so project.js's `u.projectId === project.dbId`
+  // check actually matches the right project instead of every project
+  const linked = u.projectSlug && (window.PROJECTS || []).find(p => p.id === u.projectSlug);
+  u.projectId = linked ? linked.dbId : null;
+});

@@ -230,4 +230,21 @@ window.PROJECTS.forEach(p => {
   p.isRental = /\/mo/i.test(p.stats.price);
   p.areaValue = parseArea(p.stats.area);
   p.coords = COORDS[p.id] || [0, 0];
+  // this demo array is also what store.js's fetchTable()/fetchOne() hand back
+  // UNMAPPED (skipping mapProject()) whenever Supabase is unreachable — a real,
+  // if rare, production path (network blip, RLS hiccup, a paused free-tier
+  // project), not just local dev. Without these, every field mapProject()
+  // normally synthesizes (dbId, slugAr, nameAr, aboutBlocks, …) comes back
+  // undefined, which silently breaks unrelated code: project.js matches a
+  // project's units via `u.projectId === project.dbId` — with both sides
+  // undefined that's true for every unit against every project.
+  p.dbId = p.id;
+  p.slugAr = p.slugAr || '';
+  p.nameAr = p.nameAr || '';
+  p.aboutBlocks = p.aboutBlocks || (p.about || []).map(t => ({ type: 'paragraph', text: t }));
+  p.aboutBlocksAr = p.aboutBlocksAr || [];
+  p.cityId = p.cityId || null;
+  p.developerId = p.developerId || null;
+  p.seoTitle = p.seoTitle || ''; p.seoTitleAr = p.seoTitleAr || '';
+  p.seoDescription = p.seoDescription || ''; p.seoDescriptionAr = p.seoDescriptionAr || '';
 });
