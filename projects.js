@@ -47,11 +47,11 @@ let state = { cat: 'all', city: 'all', q: '', sort: 'featured' };
 
 /* build category chips + city dropdown from the loaded dataset */
 function buildFacets() {
-  const categories = ['all', ...new Set(P.map(p => p.category))];
+  const categories = ['all', ...new Set(P.map(p => p.category).filter(Boolean))];
   catChips.innerHTML = categories.map((c, i) =>
     `<button class="chip ${i === 0 ? 'active' : ''}" data-cat="${c}">${c === 'all' ? t('All') : t(c)}</button>`
   ).join('');
-  const cities = [...new Set(P.map(p => p.city))].sort();
+  const cities = [...new Set(P.map(p => p.city).filter(Boolean))].sort();
   citySelect.insertAdjacentHTML('beforeend',
     cities.map(c => `<option value="${c}">${c}</option>`).join(''));
 }
@@ -80,7 +80,7 @@ function cardHTML(p){
   <a class="pcard" href="${window.buildUrl('project', p)}">
     <div class="pcard-img" data-gallery>
       ${slides}<div class="pg-shade"></div>
-      <span class="pcard-status ${statusClass(p.status)}"><i></i>${p.status || ''}</span>
+      <span class="pcard-status ${statusClass(p.status)}"><i></i>${p.status ? t(p.status) : ''}</span>
       <span class="pcard-cat">${p.category ? t(p.category) : ''}</span>
       ${devLogo}
       ${dots}${window.cardContact ? window.cardContact.markup(pick(p, 'name', 'nameAr')) : ''}

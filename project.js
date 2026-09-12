@@ -130,7 +130,7 @@ function populate() {
   document.getElementById('tagline').textContent = project.tagline || '';
   document.getElementById('badges').innerHTML = `
     <span class="dbadge dark">${project.category ? t(project.category) : ''}</span>
-    <span class="dbadge">${project.status || ''}</span>
+    <span class="dbadge">${project.status ? t(project.status) : ''}</span>
     <span class="dbadge">${project.year || ''}</span>`;
 
   document.getElementById('about').innerHTML = window.renderBlocks(pick(project, 'aboutBlocks', 'aboutBlocksAr'));
@@ -144,13 +144,13 @@ function populate() {
 
   const sidebarContact = document.getElementById('sidebarContact');
   if (sidebarContact && window.cardContact) {
-    sidebarContact.innerHTML = window.cardContact.markup(project.name, { inline: true });
+    sidebarContact.innerHTML = window.cardContact.markup(displayName, { inline: true });
     window.cardContact.wire(sidebarContact);
   }
   if (window.waFab) window.waFab.setMessage(`${t("Hi! I'm interested in")} ${displayName} — ${t('could you share more details?')}`);
 
   const facts = [
-    ['Status', project.status],
+    ['Status', project.status ? t(project.status) : ''],
     ['Handover', st.handover],
     ['Units', st.units],
     ['Floors', st.floors],
@@ -187,7 +187,7 @@ function populate() {
 
   const galleryEl = document.getElementById('gallery');
   galleryEl.innerHTML = (project.gallery || []).map((g, i) =>
-    `<figure data-idx="${i}"><img src="${U(g, 800)}" alt="${project.name} photo ${i + 1}" loading="lazy" /></figure>`).join('');
+    `<figure data-idx="${i}"><img src="${U(g, 800)}" alt="${esc(displayName)} photo ${i + 1}" loading="lazy" /></figure>`).join('');
 
   cycleGalleries('#detailHero', '.detail-hero', 7000);
   window.scrollTo(0, 0);
@@ -251,13 +251,13 @@ function projectCardHTML(p) {
   <a class="pcard" href="${window.buildUrl('project', p)}">
     <div class="pcard-img" data-gallery>
       ${slides}<div class="pg-shade"></div>
-      <span class="pcard-status ${statusClass(p.status)}"><i></i>${p.status || ''}</span>
+      <span class="pcard-status ${statusClass(p.status)}"><i></i>${p.status ? t(p.status) : ''}</span>
       <span class="pcard-cat">${p.category ? t(p.category) : ''}</span>
       ${devLogo}
-      ${dots}${window.cardContact ? window.cardContact.markup(p.name) : ''}
+      ${dots}${window.cardContact ? window.cardContact.markup(pick(p, 'name', 'nameAr')) : ''}
     </div>
     <div class="pcard-body">
-      <h3>${p.name}</h3>
+      <h3>${pick(p, 'name', 'nameAr')}</h3>
       <p class="pcard-loc">${pinSVG}${p.location || ''}</p>
       <p class="pcard-tag">${p.tagline || ''}</p>
       <div class="pcard-foot"><span class="pcard-price">${window.formatPrice ? window.formatPrice((p.stats || {}).price) : ((p.stats || {}).price || '')}</span><span class="arrow">${arrowSVG}</span></div>
@@ -290,10 +290,10 @@ function unitCardHTML(u) {
     <div class="pcard-img" data-gallery>
       ${slides}<div class="pg-shade"></div>
       <span class="pcard-cat">${u.type ? t(u.type) : ''}</span>
-      ${dots}${window.cardContact ? window.cardContact.markup(u.name) : ''}
+      ${dots}${window.cardContact ? window.cardContact.markup(pick(u, 'name', 'nameAr')) : ''}
     </div>
     <div class="pcard-body">
-      <h3>${u.name}</h3>
+      <h3>${pick(u, 'name', 'nameAr')}</h3>
       <p class="pcard-loc">${pinSVG}${u.location || ''}</p>
       <div class="pcard-foot"><span class="pcard-price">${window.formatPrice ? window.formatPrice(u.price) : (u.price || '')}</span><span class="arrow">${arrowSVG}</span></div>
     </div>

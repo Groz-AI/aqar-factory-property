@@ -7,6 +7,7 @@ const id = params.get('id') || (pathMatch && decodeURIComponent(pathMatch[1]));
 
 const pinSVG = `<svg viewBox="0 0 24 24" fill="none"><path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11Z" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="10" r="2.5" stroke="currentColor" stroke-width="1.6"/></svg>`;
 const arrowSVG = `<svg viewBox="0 0 24 24" fill="none"><path d="M7 17 17 7M9 7h8v8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 const isAr = () => !!(window.i18n && window.i18n.lang === 'ar');
 function pick(u, key, arKey) {
@@ -114,7 +115,7 @@ function populate() {
     `<div class="pg-slide${n === 0 ? ' active' : ''}" style="background-image:url('${U(g, 1600)}')"></div>`).join('');
 
   document.getElementById('unitName').textContent = pick(unit, 'name', 'nameAr') || unit.name;
-  document.getElementById('crumbName').textContent = unit.name;
+  document.getElementById('crumbName').textContent = pick(unit, 'name', 'nameAr') || unit.name;
   document.getElementById('unitLoc').innerHTML = `${pinSVG}${unit.location || ''}`;
   document.getElementById('badges').innerHTML = `
     <span class="dbadge dark">${unit.type ? t(unit.type) : ''}</span>
@@ -130,7 +131,7 @@ function populate() {
 
   const sidebarContact = document.getElementById('sidebarContact');
   if (sidebarContact && window.cardContact) {
-    sidebarContact.innerHTML = window.cardContact.markup(unit.name, { inline: true });
+    sidebarContact.innerHTML = window.cardContact.markup(pick(unit, 'name', 'nameAr') || unit.name, { inline: true });
     window.cardContact.wire(sidebarContact);
   }
   if (window.waFab) window.waFab.setMessage(`${t("Hi! I'm interested in")} ${pick(unit, 'name', 'nameAr') || unit.name} — ${t('could you share more details?')}`);
@@ -148,7 +149,7 @@ function populate() {
 
   const galleryEl = document.getElementById('gallery');
   galleryEl.innerHTML = (unit.gallery || []).map((g, i) =>
-    `<figure data-idx="${i}"><img src="${U(g, 800)}" alt="${unit.name} photo ${i + 1}" loading="lazy" /></figure>`).join('');
+    `<figure data-idx="${i}"><img src="${U(g, 800)}" alt="${esc(pick(unit, 'name', 'nameAr') || unit.name)} photo ${i + 1}" loading="lazy" /></figure>`).join('');
 
   cycleGalleries('#detailHero', '.detail-hero', 7000);
   window.scrollTo(0, 0);
@@ -166,7 +167,7 @@ function populateRelatedSections() {
   linkedProject = unit.projectId ? ALL_PROJECTS.find(p => p.dbId === unit.projectId) : null;
   if (linkedProject) {
     banner.href = window.buildUrl('project', linkedProject);
-    document.getElementById('projectBannerName').textContent = linkedProject.name;
+    document.getElementById('projectBannerName').textContent = pick(linkedProject, 'name', 'nameAr') || linkedProject.name;
     banner.hidden = false;
   } else {
     banner.hidden = true;
@@ -222,10 +223,10 @@ function unitCardHTML(u) {
     <div class="pcard-img" data-gallery>
       ${slides}<div class="pg-shade"></div>
       <span class="pcard-cat">${u.type ? t(u.type) : ''}</span>
-      ${dots}${window.cardContact ? window.cardContact.markup(u.name) : ''}
+      ${dots}${window.cardContact ? window.cardContact.markup(pick(u, 'name', 'nameAr')) : ''}
     </div>
     <div class="pcard-body">
-      <h3>${u.name}</h3>
+      <h3>${pick(u, 'name', 'nameAr')}</h3>
       <p class="pcard-loc">${pinSVG}${u.location || ''}</p>
       <div class="pcard-foot"><span class="pcard-price">${window.formatPrice ? window.formatPrice(u.price) : (u.price || '')}</span><span class="arrow">${arrowSVG}</span></div>
     </div>

@@ -170,6 +170,7 @@ function renderUnits(filterType = 'all') {
     : `<p style="grid-column:1/-1;color:var(--ink-soft)">${t('No units published yet — check back soon!')}</p>`;
   cycleGalleries('#unitList', '.project', 3200);
   if (window.cardContact) window.cardContact.wire(wrap);
+  revealElements([...wrap.querySelectorAll('.reveal')]);
 }
 
 function renderUnitChips() {
@@ -340,10 +341,10 @@ function renderTestimonials(testimonials) {
     return `
     <article class="testi-card" style="--d:${i * 90}ms">
       <div class="tc-stars">${starSVG.repeat(rating)}</div>
-      <p class="tc-quote">"${t.quote}"</p>
+      <p class="tc-quote">"${escHTML(t.quote)}"</p>
       <div class="tc-person">
-        <img src="${IMG(t.avatar, 120)}" alt="${t.name}" loading="lazy" />
-        <div class="who"><h4>${t.name}</h4><p>${t.location || ''}</p></div>
+        <img src="${IMG(t.avatar, 120)}" alt="${escHTML(t.name)}" loading="lazy" />
+        <div class="who"><h4>${escHTML(t.name)}</h4><p>${escHTML(t.location || '')}</p></div>
       </div>
     </article>`;
   };
@@ -516,27 +517,41 @@ function initStarfields() {
 /* ============================================================
    SCROLL REVEALS + STAT COUNTERS (run after dynamic render)
    ============================================================ */
-function wireReveals() {
-  const reveals = [...document.querySelectorAll('.reveal')];
+// shared across every call — renderUnits() re-renders #unitList's cards on
+// every unit-type chip click (script.js's own chip wiring further up), each
+// time injecting brand-new `.reveal` elements that the ORIGINAL one-time
+// wireReveals() snapshot at boot never knew existed, so they stayed at
+// `.reveal`'s default opacity:0 forever (nothing ever added `.in`). Pulling
+// the observer out into this reusable function, called again after every
+// dynamic re-render, fixes that without duplicating the IO setup.
+let revealObserver = null;
+function revealElements(els) {
+  if (!els.length) return;
   const show = el => el.classList.add('in');
   const inView = el => { const r = el.getBoundingClientRect(); return r.top < innerHeight * 0.92 && r.bottom > 0; };
 
   // Reveal anything already on screen immediately — covers cases where the
   // IntersectionObserver is throttled (e.g. the tab loaded in the background)
   // so above-the-fold content & images never sit invisible.
-  reveals.forEach(el => { if (inView(el)) show(el); });
+  els.forEach(el => { if (inView(el)) show(el); });
 
   if ('IntersectionObserver' in window) {
-    const io = new IntersectionObserver((entries) => {
-      entries.forEach(en => { if (en.isIntersecting) { show(en.target); io.unobserve(en.target); } });
-    }, { threshold: .12, rootMargin: '0px 0px -8% 0px' });
-    reveals.forEach(el => { if (!el.classList.contains('in')) io.observe(el); });
+    if (!revealObserver) {
+      revealObserver = new IntersectionObserver((entries) => {
+        entries.forEach(en => { if (en.isIntersecting) { show(en.target); revealObserver.unobserve(en.target); } });
+      }, { threshold: .12, rootMargin: '0px 0px -8% 0px' });
+    }
+    els.forEach(el => { if (!el.classList.contains('in')) revealObserver.observe(el); });
   } else {
-    reveals.forEach(show);
+    els.forEach(show);
   }
 
   // Safety net: never leave content permanently hidden if the observer never fires.
-  setTimeout(() => reveals.forEach(show), 4000);
+  setTimeout(() => els.forEach(show), 4000);
+}
+
+function wireReveals() {
+  revealElements([...document.querySelectorAll('.reveal')]);
 
   const cio = new IntersectionObserver((entries) => {
     entries.forEach(en => {

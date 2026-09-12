@@ -13,6 +13,15 @@
 (function () {
   'use strict';
 
+  const isAr = () => !!(window.i18n && window.i18n.lang === 'ar');
+  function pick(o, key, arKey) {
+    if (isAr()) {
+      const v = o[arKey];
+      if (v) return v;
+    }
+    return o[key];
+  }
+
   const sparkSVG = `<svg viewBox="0 0 24 24" fill="none"><path d="M4 6.8A2.8 2.8 0 0 1 6.8 4h10.4A2.8 2.8 0 0 1 20 6.8v6.4a2.8 2.8 0 0 1-2.8 2.8H10.2l-3.9 2.9a.7.7 0 0 1-1.12-.56V16h-.4A2.8 2.8 0 0 1 4 13.2V6.8Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M14.2 7.4c.3 1.55.95 2.2 2.5 2.5-1.55.3-2.2.95-2.5 2.5-.3-1.55-.95-2.2-2.5-2.5 1.55-.3 2.2-.95 2.5-2.5Z" fill="currentColor"/></svg>`;
   const closeSVG = `<svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`;
   const sendSVG = `<svg viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
@@ -375,7 +384,7 @@
       card.innerHTML = `
         <img src="${IMG(p.cover, 160)}" alt="" loading="lazy">
         <div class="ai-match-body">
-          <h4>${p.name || ''}</h4>
+          <h4>${pick(p, 'name', 'nameAr') || ''}</h4>
           <p>${p.location || p.city || ''}</p>
           <b>${price || ''}</b>
         </div>`;

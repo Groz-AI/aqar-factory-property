@@ -60,7 +60,24 @@
   }
 
   /* ---------- combined dataset ---------- */
-  function buildCombined(projects, units) {
+  // a unit's real city usually only exists via its linked project's cityId
+  // (or, rarely, its own cityId) — its free-text `location` field is a street
+  // address, not the city name, so filtering on it alone (as this used to do)
+  // silently missed units whose location text doesn't happen to mention the
+  // city. Mirrors units.js's own resolution so the homepage search's city
+  // filter agrees with units.html's.
+  function resolveUnitCity(u, projectsByDbId, cityById) {
+    const linkedProject = u.projectId ? projectsByDbId[u.projectId] : null;
+    const cityId = linkedProject ? linkedProject.cityId : u.cityId;
+    const cityRow = cityId ? cityById[cityId] : null;
+    return (linkedProject && linkedProject.city) || (cityRow && cityRow.name) || u.location || '';
+  }
+  function buildCombined(projects, units, cities) {
+    const projectsByDbId = {};
+    (projects || []).forEach(p => { if (p.dbId) projectsByDbId[p.dbId] = p; });
+    const cityById = {};
+    (cities || []).forEach(c => { cityById[c.id] = c; });
+
     const pItems = (projects || []).map(p => ({
       _kind: 'project', id: p.id, slugAr: p.slugAr || '', name: p.name, nameAr: p.nameAr || '', city: p.city || p.location || '',
       type: p.category, price: (p.stats && p.stats.price) || '', priceValue: Number(p.priceValue) || 0,
@@ -68,7 +85,7 @@
       cover: p.cover, gallery: p.gallery
     }));
     const uItems = (units || []).map(u => ({
-      _kind: 'unit', id: u.id, slugAr: u.slugAr || '', name: u.name, nameAr: u.nameAr || '', city: u.location || '',
+      _kind: 'unit', id: u.id, slugAr: u.slugAr || '', name: u.name, nameAr: u.nameAr || '', city: resolveUnitCity(u, projectsByDbId, cityById),
       type: u.type, price: u.price || '', priceValue: Number(u.priceValue) || 0,
       area: u.area || '', areaValue: Number(u.areaValue) || 0, beds: Number(u.beds) || 0,
       cover: u.cover, gallery: u.gallery
@@ -268,6 +285,13 @@
     const active = hasSearched || activeFilterCount() > 0;
     resultsWrap.hidden = !active;
     if (!active) return;
+    // clear the previous batch's gallery cross-fade timers before replacing
+    // resultsGrid's HTML below — render() fires on every debounced keystroke,
+    // slider drag and chip/sort change, and without this each firing left its
+    // interval(s) running forever against now-detached DOM nodes (unlike
+    // projects.js/units.js's listing grids, which already clear these before
+    // every re-render)
+    resultsGrid.querySelectorAll('[data-gallery]').forEach(b => { if (b._tid) clearInterval(b._tid); });
     let list = sortList(getFiltered());
 
     if (list.length) {
@@ -354,7 +378,7 @@
 
   /* ---------- public entry point (called from script.js's boot) ---------- */
   function setData(cities, projects, units) {
-    COMBINED = buildCombined(projects, units);
+    COMBINED = buildCombined(projects, units, cities);
 
     cityOptions = (cities || []).map(c => ({ value: c.name, label: c.name }));
     searchCitySelect = searchCitySelect || (typeof initCustomSelect === 'function' ? initCustomSelect(document.getElementById('searchCity')) : null);
