@@ -126,10 +126,13 @@ module.exports = async function handler(req, res) {
     });
     const data = await upstream.json();
     if (!upstream.ok) {
+      // never forward Groq's raw error text to the client — it can include
+      // upstream model/config wording that's an internal implementation
+      // detail, not something a visitor-facing chat response should leak
+      console.error('ai-chat upstream error:', data && data.error && data.error.message);
       res.status(200).json({
         error: 'upstream',
-        reply: "Sorry, I'm having trouble thinking right now — please try again in a moment.",
-        detail: data && data.error && data.error.message
+        reply: "Sorry, I'm having trouble thinking right now — please try again in a moment."
       });
       return;
     }
