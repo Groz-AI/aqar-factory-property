@@ -155,9 +155,15 @@ const blocksToText = (blocks) => (Array.isArray(blocks) ? blocks : []).map(b => 
 // blocks (which can be several thousand words of nested HTML) for those was
 // pure wasted latency. AI-content bots still get the full row (select=*) so
 // they can read the actual article/about text.
+// slug_ar must be selected even in lean mode — the canonical-redirect check
+// further down (HAS_SLUG_AR branch) reads row.slug_ar regardless of richMode,
+// and its absence here used to make every /ar/ preview-bot request (WhatsApp/
+// Facebook/…) for a project/unit that HAS a distinct slug_ar silently redirect
+// its own correct Arabic-slug URL onto the English slug under /ar/ — a wrong,
+// self-inflicted canonical for exactly the pages a custom slug_ar was set on.
 const LEAN_SELECT = {
-  projects: 'slug,seo_title,seo_title_ar,seo_description,seo_description_ar,name,name_ar,tagline,cover,developer,location,city,category,status,price',
-  units: 'slug,seo_title,seo_title_ar,seo_description,seo_description_ar,name,name_ar,description,description_ar,cover,type,price,beds,baths,area,location',
+  projects: 'slug,slug_ar,seo_title,seo_title_ar,seo_description,seo_description_ar,name,name_ar,tagline,cover,developer,location,city,category,status,price',
+  units: 'slug,slug_ar,seo_title,seo_title_ar,seo_description,seo_description_ar,name,name_ar,description,description_ar,cover,type,price,beds,baths,area,location',
   blog_posts: 'slug,seo_title,seo_title_ar,seo_description,seo_description_ar,title,title_ar,excerpt,excerpt_ar,cover,author_name'
 };
 
@@ -538,7 +544,15 @@ export default async function middleware(request) {
             // for a real browser, so there's no duplicate-content risk
             html = replaceContainerContents(html, cfg.containerId, listHtml);
           }
-          const tags = `<link rel="alternate" hreflang="en" href="${esc(enUrl)}">\n<link rel="alternate" hreflang="ar" href="${esc(arUrl)}">\n<link rel="alternate" hreflang="x-default" href="${esc(enUrl)}">\n</head>`;
+          // self-canonical, stripped of any query string (city/cat filters
+          // on projects.html/units.html are 100% client-side — this bot-
+          // served response is byte-identical no matter what's in the query
+          // string, so without an explicit canonical every ?city=<X> link
+          // from the homepage's city grid (~20 cities × 2 languages) reads
+          // to Google as its own separate page with duplicate content and no
+          // declared canonical, instead of one clean, consolidated URL
+          const canonicalTag = `<link rel="canonical" href="${esc(staticIsAr ? arUrl : enUrl)}">\n`;
+          const tags = `${canonicalTag}<link rel="alternate" hreflang="en" href="${esc(enUrl)}">\n<link rel="alternate" hreflang="ar" href="${esc(arUrl)}">\n<link rel="alternate" hreflang="x-default" href="${esc(enUrl)}">\n</head>`;
           return new Response(html.replace('</head>', tags), {
             headers: {
               'content-type': 'text/html; charset=utf-8',
