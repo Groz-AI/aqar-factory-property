@@ -630,7 +630,9 @@ export default async function middleware(request) {
   // to the real 404 further down.
   const RENAMED = {
     // wrong kind: these slugs belong to a project, not a unit
-    'unit/salt-marina-in-ras-el-hekma': '/project/salt-marina-in-ras-el-hekma',
+    // (target is the project's CURRENT slug, not the first-redirect one it
+    // used to point at — see the 2-hop-chain note further down)
+    'unit/salt-marina-in-ras-el-hekma': '/project/salt-marina-ras-el-hekma-resort',
     'unit/river-park-residence-new-obour': '/project/river-park-residence-new-obour',
     // resolves a previously-ambiguous stale slug (matched 2 live units) —
     // this one is a near-exact substring of the 133m unit's current slug
@@ -647,16 +649,20 @@ export default async function middleware(request) {
     // aljarbritishdistrictyorkphase was itself already a fixed-forward
     // target that has since been renamed AGAIN — proof this exact class of
     // bug recurs, and the reason slug_redirects exists now instead of
-    // another one-off entry
-    'project/aljar_british_district_york_phase': '/project/aljar-british-district-el-shorouk-compound-york',
+    // another one-off entry. Target below is the project's CURRENT slug
+    // (aljar-british-district-el-shorouk-compound-york was itself found live
+    // to be a second stale hop, redirecting again via slug_redirects — fixed
+    // to point straight at the final destination so this is one 301, not two)
+    'project/aljar_british_district_york_phase': '/project/aljar-british-district-el-shorouk',
     // a third slug variant for the same project, found via a "different
     // canonical" export — Google had this crawled and indexed directly
     // (not via a redirect), so it isn't simply the underscored form above
-    'project/aljarbritishdistrictyorkphase': '/project/aljar-british-district-el-shorouk-compound-york',
+    'project/aljarbritishdistrictyorkphase': '/project/aljar-british-district-el-shorouk',
     'project/r_five_new_capital': '/project/rfivenewcapital',
     'project/lagonza-residence-santorini-coastal-living-in-obour': '/project/lagonza-residence-compound-el-obour-city',
-    // found via a live GSC "Discovered - not indexed" export
-    'project/كمبوند-الجار-الشروق-مرحلة-يورك-البريطانية-Aljar-York-Phase': '/project/aljar-british-district-el-shorouk-compound-york',
+    // found via a live GSC "Discovered - not indexed" export — same current
+    // slug as the two entries above, for the same reason
+    'project/كمبوند-الجار-الشروق-مرحلة-يورك-البريطانية-Aljar-York-Phase': '/project/aljar-british-district-el-shorouk',
     'project/مول-اربكو-ساوث-90th-Street-أبو-الهول-التجمع-الخامس-محلات-ومكاتب-بالتقسيط-علي-الشارع-التسعين-Arabco-South-90th-Street-Mall-New-Landmark': '/project/jeel-plaza-arabco-new-cairo-mall',
     // renamed before slug_redirects existed; predates the tracking system
     // (confirmed via a direct query — this row has no slug_redirects entry,
@@ -665,20 +671,31 @@ export default async function middleware(request) {
     'project/apartments-for-sale-jazeel-residence-new-obour': '/project/jazeel-residence-compound-new-obour-city',
     // found via a live GSC "different canonical" export — old AR slug had
     // both a typo (كمبورد vs كمبوند) and the wrong area name (الشروق/Shorouk
-    // vs العبور/Obour); project's current EN slug is
-    // mazaya-developments-new-obour-compound
-    'project/كمبورد-تاون-تن-الشروق-الجديدة-Town-Ten-New-Obour-Compound': '/project/كمبوند-تاون-تن-العبور-الجديدة-Town-Ten-New-Obour-Compound',
+    // vs العبور/Obour). The fixed-AR-slug target above was itself confirmed
+    // live to be a second stale hop (that AR slug has since changed too) —
+    // pointing straight at the project's current EN slug instead, both to
+    // fix the chain and to sidestep the AR-slug-under-EN-path canonical
+    // redirect this would otherwise trigger a second time
+    'project/كمبورد-تاون-تن-الشروق-الجديدة-Town-Ten-New-Obour-Compound': '/project/mazaya-developments-new-obour-compound',
     // found via a live GSC "Crawled - currently not indexed" export — all
     // 6 below are genuinely stale slugs (renamed rows, predating
     // slug_redirects), confirmed 404 live before this fix
     // old AR slug had a tatweel character (ـ) in "لـ" that the current
     // slug (after Arabic Unicode folding) no longer has
     'project/كمبوند-دي-جويا-4-العاصمة-الإدارية-شقق-وفيلات-للبيع-بمقدم-120-ألف-وتقسيط-لـ-12-سنة-De-Joya-4-New-Capital-Apartments-from-120K-DP': '/project/كمبوند-دي-جويا-4-العاصمة-الإدارية-شقق-وفيلات-للبيع-بمقدم-120-ألف-وتقسيط-ل-12-سنة-De-Joya-4-New-Capital-Apartments-from-120K-DP',
-    'unit/1br-cabana-silver-bay-silversands': '/unit/كبانا-غرفة-للبيع-صف-أول-على-اللاجون-في-سيلفر-ساندس-الساحل-الشمالي-1BR-Cabana-for-Sale-in-Silver-Bay-Silversands',
-    'unit/the-c-north-coast': '/unit/شاليه-غرفتين-95م-للبيع-قرب-الاستلام-في-ذا-سي-نورث-رأس-الحكمة-2-Bedroom-Chalet-95m-for-Sale-in-The-C-North-Ras-El-Hekma',
+    // targets below point at the unit's current EN slug rather than its AR
+    // slug (both originally pointed at the AR slug under this non-/ar/ path,
+    // which live-tested as a 2-hop chain: fetchRow matches slug OR slug_ar,
+    // so the request lands on the row fine, but the HAS_SLUG_AR canonical
+    // check then immediately 301s again onto the EN slug anyway — pointing
+    // straight at the EN slug here skips that second hop entirely)
+    'unit/1br-cabana-silver-bay-silversands': '/unit/1br-cabana-for-sale-in-silver-bay-silversands-north-coast',
+    'unit/the-c-north-coast': '/unit/the-c-north-coast-chalet-95m',
     'unit/126m-apartment-for-sale-in-mayan-el-shorouk': '/unit/3-bedroom-fully-finished-apartment-for-sale-in-mayan-el-shorouk-126m',
     'project/mayan-el-shorouk-compound-apartments-for-sale': '/project/mayan-el-shorouk-city-compound-apartments',
-    'unit/mirissa-new-obour-apartment-117m': '/unit/شقة-غرفتين-117م-للبيع-استلام-سنتين-في-كمبوند-ميريسا-العبور-الجديدة-2-Bedroom-Apartment-117m-for-Sale-in-Mirissa-New-Obour',
+    // same AR-slug-under-EN-path chain as the two entries above — pointing
+    // straight at the current EN slug
+    'unit/mirissa-new-obour-apartment-117m': '/unit/2-bedroom-apartment-for-sale-in-mirissa-new-obour-117m',
     // this unit has no distinct AR slug, so the AR-path target is just its
     // (unchanged) EN slug
     'unit/apartment-for-sale-jazeel-obour-4b005': '/unit/jazeel-residence-obour-2nd-floor-apartment-4-b-205',
@@ -690,7 +707,10 @@ export default async function middleware(request) {
     // a row that still exists, not a delete) — redirecting straight to the
     // surviving, correct unit
     'unit/the-river-park-residence-new-obour': '/unit/3-bedroom-apartment-for-sale-in-river-park-residence-new-obour-148m',
-    'unit/شقة-3-غرف-148م-للبيع-في-كمبوند-ريفر-بارك-العبور-الجديدة': '/unit/شقة-3-غرف-148م-للبيع-في-كمبوند-ريفر-بارك-العبور-الجديدة-بالتقسيط-3-Bedroom-Apartment-148m-for-Sale-in-River-Park-Residence'
+    // same AR-slug-under-EN-path chain as the entries above — the AR-slug
+    // target was itself confirmed live to redirect a second time onto the
+    // current EN slug, so pointing straight at that EN slug instead
+    'unit/شقة-3-غرف-148م-للبيع-في-كمبوند-ريفر-بارك-العبور-الجديدة': '/unit/3-bedroom-apartment-for-sale-in-river-park-residence-new-obour-148m'
   };
   const renamedTo = RENAMED[`${kindPath}/${slugFromUrl}`];
   if (renamedTo) {
