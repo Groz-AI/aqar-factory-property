@@ -26,9 +26,6 @@
    so a regenerate never just re-captures a stale copy of itself.
    ============================================================ */
 
-const SUPA_URL = 'https://dwufpgsqblwjgmzoseev.supabase.co';
-const SUPA_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR3dWZwZ3NxYmx3amdtem9zZWV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5ODgyNTMsImV4cCI6MjA5ODU2NDI1M30.dvO4voO8tRIo-99kHJ3o_x3YvSiaEnq8I0gOmgf1YOY';
-
 const SITE_ORIGIN = 'https://www.aqar-factory.com';
 const KIND_PATH = { project: 'project', unit: 'unit', blog: 'blog' };
 
@@ -36,17 +33,36 @@ function send(res, status, body) {
   res.status(status).json(body);
 }
 
-// any logged-in admin is enough here (this is a side effect of an
+// any logged-in ADMIN is enough here (this is a side effect of an
 // already-authorized save/delete, not a sensitive operation in itself —
 // unlike api/admin-users.js, which manages OTHER users' accounts and
-// requires the Owner role)
+// requires the Owner role). This used to only check "is this a valid
+// Supabase session at all" (via the anon key), not "is this session an
+// active row in `admins`" — meaning ANY signed-up Supabase user, admin or
+// not, could trigger an expensive headless-Chrome render or invalidate any
+// published page's cached snapshot. Now resolves the caller's identity via
+// the service-role key (same pattern as api/admin-users.js's verifyOwner)
+// and requires an active `admins` row, regardless of role.
 async function verifyCaller(callerToken) {
   if (!callerToken) return false;
+  const SUPABASE_URL = process.env.SUPABASE_URL;
+  const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!SUPABASE_URL || !SERVICE_KEY) return false; // fail closed, not open
   try {
-    const r = await fetch(`${SUPA_URL}/auth/v1/user`, {
-      headers: { apikey: SUPA_ANON_KEY, Authorization: `Bearer ${callerToken}` }
+    const userRes = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+      headers: { apikey: SERVICE_KEY, Authorization: `Bearer ${callerToken}` }
     });
-    return r.ok;
+    if (!userRes.ok) return false;
+    const caller = await userRes.json().catch(() => null);
+    if (!caller || !caller.id) return false;
+
+    const rowRes = await fetch(`${SUPABASE_URL}/rest/v1/admins?user_id=eq.${caller.id}&select=active`, {
+      headers: { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}` }
+    });
+    if (!rowRes.ok) return false;
+    const rows = await rowRes.json().catch(() => []);
+    const me = Array.isArray(rows) ? rows[0] : null;
+    return !!(me && me.active);
   } catch (_) {
     return false;
   }

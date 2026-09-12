@@ -23,20 +23,38 @@
    a sensitive operation in itself, unlike api/admin-users.js).
    ============================================================ */
 
-const SUPA_URL = 'https://dwufpgsqblwjgmzoseev.supabase.co';
-const SUPA_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR3dWZwZ3NxYmx3amdtem9zZWV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5ODgyNTMsImV4cCI6MjA5ODU2NDI1M30.dvO4voO8tRIo-99kHJ3o_x3YvSiaEnq8I0gOmgf1YOY';
-
 function send(res, status, body) {
   res.status(status).json(body);
 }
 
+// Any logged-in ADMIN is enough here — but this used to only check "is this
+// a valid Supabase session at all" (via the anon key), not "is this session
+// an active row in `admins`". That meant ANY Supabase user (admin or not —
+// the Auth REST API is directly reachable with the public anon key already
+// embedded in every page) could mint a presigned upload URL to the R2
+// bucket or list every uploaded file. Now resolves the caller's identity via
+// the service-role key (same pattern as api/admin-users.js's verifyOwner)
+// and requires an active `admins` row, regardless of role.
 async function verifyCaller(callerToken) {
   if (!callerToken) return false;
+  const SUPABASE_URL = process.env.SUPABASE_URL;
+  const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!SUPABASE_URL || !SERVICE_KEY) return false; // fail closed, not open
   try {
-    const r = await fetch(`${SUPA_URL}/auth/v1/user`, {
-      headers: { apikey: SUPA_ANON_KEY, Authorization: `Bearer ${callerToken}` }
+    const userRes = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+      headers: { apikey: SERVICE_KEY, Authorization: `Bearer ${callerToken}` }
     });
-    return r.ok;
+    if (!userRes.ok) return false;
+    const caller = await userRes.json().catch(() => null);
+    if (!caller || !caller.id) return false;
+
+    const rowRes = await fetch(`${SUPABASE_URL}/rest/v1/admins?user_id=eq.${caller.id}&select=active`, {
+      headers: { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}` }
+    });
+    if (!rowRes.ok) return false;
+    const rows = await rowRes.json().catch(() => []);
+    const me = Array.isArray(rows) ? rows[0] : null;
+    return !!(me && me.active);
   } catch (_) {
     return false;
   }
@@ -76,6 +94,20 @@ module.exports = async function handler(req, res) {
   if (body.action === 'presign') {
     const filename = String(body.filename || '');
     const contentType = String(body.contentType || 'application/octet-stream');
+    // hard allow-list, not just the client's own image/* check (which admin.js
+    // already does, but that's trivially bypassable by anyone calling this
+    // endpoint directly with the admin's session token, and it explicitly
+    // permits image/svg+xml — an SVG can carry a <script> tag that executes if
+    // its uploaded URL is ever opened directly, and every uploaded file here
+    // is served back with a public, cached-forever URL on the site's own
+    // domain). Every real upload site-wide is either a photo or a brochure PDF.
+    const ALLOWED_CONTENT_TYPES = new Set([
+      'image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif',
+      'application/pdf'
+    ]);
+    if (!ALLOWED_CONTENT_TYPES.has(contentType)) {
+      return send(res, 400, { error: 'unsupported_content_type' });
+    }
     const ext = (filename.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
     // same naming scheme the old Supabase path used: timestamp + random
     // suffix, so every key is unique and content-addressed enough to cache
