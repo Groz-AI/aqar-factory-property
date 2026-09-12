@@ -710,6 +710,17 @@
   let editing = null; // { view, id }
   let uploads = {};   // transient per-form state for arrays/gallery
   let pendingUploads = 0; // in-flight image uploads — block saves until they finish
+  // bumped on every openForm() — an upload started against one drawer that's
+  // still in flight when the admin closes it and opens a DIFFERENT item (or
+  // the same item again) used to resolve straight into the wrong instance:
+  // `uploads`/`pendingUploads` are shared module-level state, so a late
+  // gallery upload could silently land in the newly-opened item's array
+  // instead of the one it was actually uploaded for, or throw mid-callback
+  // (skipping its own `pendingUploads--`) if the new item has no field with
+  // that same key — permanently blocking Save for the rest of the session.
+  // Every upload call site below captures its own generation and bails out
+  // before touching shared state if a newer drawer has since opened.
+  let drawerGen = 0;
   let dynamicCitiesList = [];   // { id, name } — cached whenever a City picker is populated
   let dynamicDevelopersList = []; // { id, name } — cached whenever a Developer picker is populated
 
@@ -721,6 +732,8 @@
     // moment an admin edits a project/unit/post's URL
     editing = { view, id: row ? row.id : null, origSlug: row ? row.slug : null, origSlugAr: row ? row.slug_ar : null };
     uploads = {};
+    pendingUploads = 0;
+    drawerGen++;
     $('#drawerTitle').textContent = (row ? t('Edit') : t('New')) + ' ' + r.singular.toLowerCase();
     const body = $('#drawerBody');
     body.innerHTML = '';
@@ -924,9 +937,11 @@
     if (pick) pick.addEventListener('click', () => openMediaPicker('image', (url) => { input.value = url; prev.src = url; toast(t('Image selected — remember to Save')); }));
     file.addEventListener('change', async () => {
       if (!file.files[0]) return;
+      const gen = drawerGen;
       pendingUploads++;
       btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>';
       const url = await uploadFile(file.files[0]);
+      if (gen !== drawerGen) return; // a different drawer is open now — discard
       pendingUploads--;
       btn.disabled = false; btn.textContent = t('Upload…');
       if (url) { input.value = url; prev.src = url; toast(t('Image uploaded — remember to Save')); }
@@ -955,9 +970,14 @@
     file.addEventListener('change', async () => {
       const files = Array.from(file.files || []);
       if (!files.length) return;
+      const gen = drawerGen;
       pendingUploads++;
       toast(t('Uploading') + ' ' + files.length + ' ' + t('image(s)…'));
-      for (const f of files) { const url = await uploadFile(f); if (url) uploads[key].push(url); }
+      for (const f of files) {
+        const url = await uploadFile(f);
+        if (gen !== drawerGen) return; // a different drawer opened mid-upload — discard the rest
+        if (url) uploads[key].push(url);
+      }
       pendingUploads--;
       file.value = ''; paint(); toast(t('Gallery updated — remember to Save'));
     });
@@ -974,9 +994,11 @@
     if (pick) pick.addEventListener('click', () => openMediaPicker('pdf', (url) => { input.value = url; updatePrev(url); toast(t('PDF selected — remember to Save')); }));
     file.addEventListener('change', async () => {
       if (!file.files[0]) return;
+      const gen = drawerGen;
       pendingUploads++;
       btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>';
       const url = await uploadFile(file.files[0], 'pdf');
+      if (gen !== drawerGen) return; // a different drawer is open now — discard
       pendingUploads--;
       btn.disabled = false; btn.textContent = t('Upload…');
       if (url) { input.value = url; updatePrev(url); toast(t('PDF uploaded — remember to Save')); }
@@ -1009,8 +1031,10 @@
     addBtn.addEventListener('click', () => { uploads[key].push({ name: '', logo: '' }); paint(); });
     file.addEventListener('change', async () => {
       if (!file.files[0] || uploadTarget == null) return;
+      const gen = drawerGen;
       pendingUploads++;
       const url = await uploadFile(file.files[0], 'image');
+      if (gen !== drawerGen) return; // a different drawer is open now — discard
       pendingUploads--;
       file.value = '';
       if (url) { uploads[key][uploadTarget].logo = url; paint(); toast(t('Logo uploaded — remember to Save')); }
@@ -1509,8 +1533,10 @@
 
     file.addEventListener('change', async () => {
       if (!file.files[0] || uploadTarget == null) return;
+      const gen = drawerGen;
       pendingUploads++;
       const url = await uploadFile(file.files[0], 'image');
+      if (gen !== drawerGen) return; // a different drawer is open now — discard
       pendingUploads--;
       file.value = '';
       if (!url) return;
@@ -2371,7 +2397,12 @@
       const editBtn = r.role === 'staff'
         ? `<button class="icon-btn" data-edit-perms="${r.user_id}" title="${esc(t('Edit permissions'))}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>` : '';
       const resetBtn = `<button class="icon-btn" data-reset="${r.user_id}" title="${esc(t('Reset password'))}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg></button>`;
-      const toggleBtn = `<button class="icon-btn" data-toggle-active="${r.user_id}" title="${esc(r.active ? t('Deactivate') : t('Reactivate'))}">${r.active
+      // reactivating is always safe; DEactivating is hidden for the last active
+      // owner — same as demoteBtn/deleteBtn below — since is_admin()/is_owner()
+      // (schema.sql) both require active=true, so deactivating the last one
+      // would strip everyone of Owner-gated access with no in-app way back
+      // (no other admin could ever reactivate them again)
+      const toggleBtn = (r.active && isLastOwner) ? '' : `<button class="icon-btn" data-toggle-active="${r.user_id}" title="${esc(r.active ? t('Deactivate') : t('Reactivate'))}">${r.active
         ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/></svg>'
         : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg>'}</button>`;
       const promoteBtn = r.role === 'staff'
@@ -2538,6 +2569,13 @@
 
   async function toggleUserActive(userId, row) {
     const next = !row.active;
+    // re-check at click time, not just via the button being hidden — the
+    // rendered row could be stale if another admin deactivated/demoted the
+    // last other owner a moment earlier
+    if (!next && row.role === 'owner') {
+      const activeOwners = (state.cache.users || []).filter(u => u.role === 'owner' && u.active).length;
+      if (activeOwners <= 1) { toast(t('Can’t deactivate the last active Owner'), 'err'); return; }
+    }
     if (!next && !confirm(t('Deactivate this user? They will be signed out immediately and can’t log in until reactivated.'))) return;
     const { error } = await sb.from('admins').update({ active: next }).eq('user_id', userId);
     if (error) { toast(error.message, 'err'); return; }
