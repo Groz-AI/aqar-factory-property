@@ -1,5 +1,5 @@
 /* ============================================================
-   AQAR FACTORY — bot-only content prerender (Vercel Edge Middleware)
+   AQAR FACTORY — bot detection + redirects (Vercel Node.js Middleware)
    ------------------------------------------------------------
    WHY THIS EXISTS: project.html/unit.html/blog-post.html are 100%
    client-rendered — the real per-item title, description AND all
@@ -39,13 +39,31 @@
 
    FIX: intercept requests whose User-Agent matches a known bot from
    either list above, OR that are missing the Sec-Fetch-Mode header
-   entirely (see group 4 above). Fetch the item straight from
-   Supabase here (runs on Vercel's edge, before any static file is
-   served), and return an HTML document with the correct <title>,
-   meta description, Open Graph/Twitter tags, AND the actual readable
-   content as plain text/HTML in the body. Every real browser request
-   (Sec-Fetch-Mode always present) is untouched and gets the normal
-   site exactly as before.
+   entirely (see group 4 above), and REWRITE (not redirect — the
+   visible URL never changes) to api/bot-render.js, which fetches the
+   item from Supabase and returns an HTML document with the correct
+   <title>, meta description, Open Graph/Twitter tags, AND the actual
+   readable content as plain text/HTML in the body. Every real browser
+   request (Sec-Fetch-Mode always present) is untouched and gets the
+   normal site exactly as before.
+
+   WHY A REWRITE TO A SEPARATE FUNCTION, NOT BUILT INLINE HERE: this
+   file used to build and return that HTML directly. Vercel's CDN only
+   ever caches a response produced by a real Function or a static
+   asset — a Node.js Middleware Response is NEVER cached regardless of
+   its own Cache-Control header (confirmed live: identical back-to-back
+   bot requests each got a fresh X-Vercel-Id and zero X-Vercel-Cache
+   header, while api/sitemap.js's identical setup — a plain Vercel
+   Function — shows a real X-Vercel-Cache: HIT with a growing Age). That
+   meant every single bot/AI-crawler/preview-bot hit re-ran the full
+   Supabase fetch (up to 5 REST calls for a richMode detail page) from
+   scratch every time, no matter how recently the exact same URL had
+   just been served. Rewriting to api/bot-render.js instead means the
+   response Vercel actually caches is a genuine Function response, so a
+   page N bots hit inside its cache window now costs ONE Supabase round
+   trip, not N. All of the DECISION logic below (who counts as a bot,
+   which old URLs redirect where) is unchanged — only the final step,
+   building the actual HTML, moved out.
 
    This file also owns the old-URL -> new-clean-URL redirect (see the
    `oldKind` branch below): project.html?id=/unit.html?id=/blog-post.html?slug=
@@ -83,7 +101,7 @@ const BLOB_PUBLIC_BASE_URL = process.env.BLOB_PUBLIC_BASE_URL;
 // request handling — verified live: it served an empty 200 body instead of
 // the real page. `next()` is the documented, explicit "continue the chain"
 // signal for non-Next.js frameworks on this runtime.
-import { next } from '@vercel/functions';
+import { next, rewrite } from '@vercel/functions';
 
 export const config = {
   matcher: [
@@ -108,9 +126,6 @@ export const config = {
   // deploy failure ("referencing unsupported modules") before switching this
   runtime: 'nodejs'
 };
-
-const SUPA_URL = 'https://dwufpgsqblwjgmzoseev.supabase.co';
-const SUPA_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR3dWZwZ3NxYmx3amdtem9zZWV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5ODgyNTMsImV4cCI6MjA5ODU2NDI1M30.dvO4voO8tRIo-99kHJ3o_x3YvSiaEnq8I0gOmgf1YOY';
 
 // group 1: link-unfurl bots (want title/description/image only)
 const PREVIEW_BOT_RE = /facebookexternalhit|facebot|whatsapp|twitterbot|linkedinbot|telegrambot|slackbot|discordbot|redditbot|pinterest|skypeuripreview|vkshare|w3c_validator|embedly|quora link preview|showyoubot|outbrain|nuzzel|flipboard|tumblr|bitlybot|iframely|viber|line-poker|kakaotalk/i;
@@ -137,294 +152,6 @@ const AI_BOT_RE = /gptbot|chatgpt-user|oai-searchbot|claudebot|claude-web|anthro
 
 const BOT_RE = new RegExp(PREVIEW_BOT_RE.source + '|' + AI_BOT_RE.source, 'i');
 
-const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-
-// same "unsplash id vs. full URL" rule as data.js's window.U()
-const img = (id, w = 1200) =>
-  !id ? '' : /^https?:\/\//.test(id) ? id : `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=${w}&q=80`;
-
-// rich-text block `text` fields are trusted HTML (bold/italic/links from the
-// block editor — see blocks-render.js) — strip tags down to plain text for
-// a bot-readable body. No DOM available in the edge runtime, so this is a
-// plain regex strip rather than project.js's detached-<div> trick.
-const stripHtml = (html) => String(html || '').replace(/<[^>]*>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
-const blocksToText = (blocks) => (Array.isArray(blocks) ? blocks : []).map(b => b && b.text ? stripHtml(b.text) : '').filter(Boolean).join(' ');
-
-// preview bots (WhatsApp/Facebook/Twitter/…) only ever read title/description/
-// image — fetching and regex-stripping the rich-text about/description
-// blocks (which can be several thousand words of nested HTML) for those was
-// pure wasted latency. AI-content bots still get the full row (select=*) so
-// they can read the actual article/about text.
-// slug_ar must be selected even in lean mode — the canonical-redirect check
-// further down (HAS_SLUG_AR branch) reads row.slug_ar regardless of richMode,
-// and its absence here used to make every /ar/ preview-bot request (WhatsApp/
-// Facebook/…) for a project/unit that HAS a distinct slug_ar silently redirect
-// its own correct Arabic-slug URL onto the English slug under /ar/ — a wrong,
-// self-inflicted canonical for exactly the pages a custom slug_ar was set on.
-const LEAN_SELECT = {
-  projects: 'slug,slug_ar,seo_title,seo_title_ar,seo_description,seo_description_ar,name,name_ar,tagline,cover,developer,location,city,category,status,price',
-  units: 'slug,slug_ar,seo_title,seo_title_ar,seo_description,seo_description_ar,name,name_ar,description,description_ar,cover,type,price,beds,baths,area,location',
-  blog_posts: 'slug,seo_title,seo_title_ar,seo_description,seo_description_ar,title,title_ar,excerpt,excerpt_ar,cover,author_name'
-};
-
-// projects/units can have a custom Arabic slug (slug_ar) used on /ar/ URLs
-// instead of the default slug — match either column so a shared /ar/ link
-// using the Arabic slug isn't silently missed
-const HAS_SLUG_AR = { projects: true, units: true, blog_posts: false };
-
-// Returns the row, or null when the query succeeded and the item genuinely
-// isn't there, or LOOKUP_FAILED when we couldn't ask at all. Those last two
-// used to be indistinguishable, which is fine when both just fall through to
-// the client-rendered page — but the caller now answers "not there" with a
-// real 404, and a Supabase hiccup must never be allowed to 404 (and so
-// deindex) a page that actually exists.
-const LOOKUP_FAILED = Symbol('lookup_failed');
-
-async function fetchRow(table, slug, rich) {
-  try {
-    const select = rich ? '*' : LEAN_SELECT[table];
-    const filter = HAS_SLUG_AR[table]
-      ? `or=(slug.eq.${encodeURIComponent(slug)},slug_ar.eq.${encodeURIComponent(slug)})`
-      : `slug=eq.${encodeURIComponent(slug)}`;
-    const res = await fetch(
-      `${SUPA_URL}/rest/v1/${table}?select=${select}&${filter}&published=eq.true&limit=1`,
-      { headers: { apikey: SUPA_ANON_KEY, Authorization: `Bearer ${SUPA_ANON_KEY}` } }
-    );
-    if (!res.ok) return LOOKUP_FAILED;
-    const rows = await res.json();
-    return rows[0] || null;
-  } catch (_) {
-    return LOOKUP_FAILED;
-  }
-}
-
-async function fetchById(table, id, select) {
-  if (!id) return null;
-  try {
-    const res = await fetch(
-      `${SUPA_URL}/rest/v1/${table}?select=${select}&id=eq.${encodeURIComponent(id)}&limit=1`,
-      { headers: { apikey: SUPA_ANON_KEY, Authorization: `Bearer ${SUPA_ANON_KEY}` } }
-    );
-    if (!res.ok) return null;
-    const rows = await res.json();
-    return rows[0] || null;
-  } catch (_) {
-    return null;
-  }
-}
-
-// admin.js records a project/unit/post's PREVIOUS slug here every time one
-// is renamed (see its recordSlugRename()) — this is how an already-indexed
-// URL keeps resolving after the admin edits it, without needing a manual
-// hardcoded redirect added for every rename
-async function fetchRenamedRowId(table, oldSlug) {
-  try {
-    const res = await fetch(
-      `${SUPA_URL}/rest/v1/slug_redirects?select=row_id&table_name=eq.${table}&old_slug=eq.${encodeURIComponent(oldSlug)}&limit=1`,
-      { headers: { apikey: SUPA_ANON_KEY, Authorization: `Bearer ${SUPA_ANON_KEY}` } }
-    );
-    if (!res.ok) return null;
-    const rows = await res.json();
-    return rows[0] ? rows[0].row_id : null;
-  } catch (_) {
-    return null;
-  }
-}
-
-// "more from the same developer" — mirrors renderDeveloperPicks() in
-// project.js/unit.js, so richMode fetchers see the same recommendations a
-// real visitor would scroll down to
-async function fetchRelated(table, devId, devName, excludeSlug, limit = 6) {
-  if (!devId && !devName) return [];
-  try {
-    const filter = devId ? `developer_id=eq.${encodeURIComponent(devId)}` : `developer=eq.${encodeURIComponent(devName)}`;
-    const res = await fetch(
-      `${SUPA_URL}/rest/v1/${table}?select=slug,slug_ar,name,name_ar&${filter}&published=eq.true&limit=${limit}`,
-      { headers: { apikey: SUPA_ANON_KEY, Authorization: `Bearer ${SUPA_ANON_KEY}` } }
-    );
-    if (!res.ok) return [];
-    const rows = await res.json();
-    return rows.filter(r => r.slug !== excludeSlug);
-  } catch (_) {
-    return [];
-  }
-}
-
-// units-specific version of fetchRelated: a unit frequently has no
-// developer_id/developer of its own, inheriting it only via its linked
-// project (see the "Part of project" fallback above) — and the SAME is true
-// of sibling units, so a plain units.developer_id=eq.X filter misses them.
-// Mirrors unit.js's renderDeveloperPicks(), which checks each candidate
-// unit's own developer OR its linked project's developer.
-async function fetchRelatedUnits(devId, devName, excludeSlug, limit = 6) {
-  if (!devId && !devName) return [];
-  try {
-    const devFilter = devId ? `developer_id=eq.${encodeURIComponent(devId)}` : `developer=eq.${encodeURIComponent(devName)}`;
-    const projRes = await fetch(
-      `${SUPA_URL}/rest/v1/projects?select=id&${devFilter}&published=eq.true`,
-      { headers: { apikey: SUPA_ANON_KEY, Authorization: `Bearer ${SUPA_ANON_KEY}` } }
-    );
-    const projIds = projRes.ok ? (await projRes.json()).map(p => p.id) : [];
-
-    const unitDevFilter = devId ? `developer_id.eq.${encodeURIComponent(devId)}` : `developer.eq.${encodeURIComponent(devName)}`;
-    const orParts = [unitDevFilter];
-    if (projIds.length) orParts.push(`project_id.in.(${projIds.join(',')})`);
-    const res = await fetch(
-      `${SUPA_URL}/rest/v1/units?select=slug,slug_ar,name,name_ar&or=(${orParts.join(',')})&published=eq.true&limit=${limit}`,
-      { headers: { apikey: SUPA_ANON_KEY, Authorization: `Bearer ${SUPA_ANON_KEY}` } }
-    );
-    if (!res.ok) return [];
-    const rows = await res.json();
-    return rows.filter(r => r.slug !== excludeSlug);
-  } catch (_) {
-    return [];
-  }
-}
-
-// units directly assigned to a project via the unit's own "Linked project"
-// picker in the admin — mirrors renderProjectUnits() in project.js
-async function fetchUnitsForProject(projectId, limit = 12) {
-  try {
-    const res = await fetch(
-      `${SUPA_URL}/rest/v1/units?select=slug,slug_ar,name,name_ar&project_id=eq.${encodeURIComponent(projectId)}&published=eq.true&limit=${limit}`,
-      { headers: { apikey: SUPA_ANON_KEY, Authorization: `Bearer ${SUPA_ANON_KEY}` } }
-    );
-    if (!res.ok) return [];
-    return await res.json();
-  } catch (_) {
-    return [];
-  }
-}
-
-// the listing pages (projects.html/units.html/blog.html) render every card
-// entirely client-side, same as detail pages used to — but unlike detail
-// pages, bots here never got ANY real content at all (STATIC_HREFLANG_PAGES
-// below only ever injected <head> hreflang tags, never touched the body).
-// That matters more here than it did for a single detail page: Google's
-// first crawl pass reads raw HTML for links to discover, and only runs
-// JavaScript in a later, separate pass — an empty listing page means every
-// project/unit/post it links to is discovered a full pass later than it
-// needs to be. Mirrors fetchRelated()'s query shape above.
-async function fetchListingRows(table, extraSelect, limit = 60) {
-  try {
-    const res = await fetch(
-      `${SUPA_URL}/rest/v1/${table}?select=${extraSelect}&published=eq.true&order=sort_order.asc&limit=${limit}`,
-      { headers: { apikey: SUPA_ANON_KEY, Authorization: `Bearer ${SUPA_ANON_KEY}` } }
-    );
-    if (!res.ok) return [];
-    return await res.json();
-  } catch (_) {
-    return [];
-  }
-}
-
-// replaces everything INSIDE a <div id="X">...</div>, however deeply
-// nested its current content is (the homepage's containers hold real
-// nested markup — demo project cards, each with their own inner divs —
-// not the flat empty <div id="X"></div> the other listing pages have, so
-// a plain regex would grab the first nested </div> instead of the real
-// closing tag). Depth-counts forward from the opening tag to find the
-// TRUE matching close, then splices the replacement between them.
-function replaceContainerContents(html, containerId, innerHtml) {
-  const openMarker = `id="${containerId}"`;
-  const idIdx = html.indexOf(openMarker);
-  if (idIdx === -1) return html;
-  const tagEnd = html.indexOf('>', idIdx);
-  if (tagEnd === -1) return html;
-  let depth = 1;
-  let i = tagEnd + 1;
-  while (depth > 0 && i < html.length) {
-    const nextOpen = html.indexOf('<div', i);
-    const nextClose = html.indexOf('</div>', i);
-    if (nextClose === -1) return html; // malformed — leave untouched rather than corrupt it
-    if (nextOpen !== -1 && nextOpen < nextClose) {
-      depth++;
-      i = nextOpen + 4;
-    } else {
-      depth--;
-      i = nextClose + 6;
-      if (depth === 0) {
-        return html.slice(0, tagEnd + 1) + innerHtml + html.slice(nextClose);
-      }
-    }
-  }
-  return html;
-}
-
-// one entry per listing page: which table backs it, the id of the (empty,
-// client-filled) container div in the static HTML to inject real <a> links
-// into, and how to turn one DB row into a {slug, name, sub} triple for the
-// current language — sub is just a one-line bit of real substance (price/
-// location/excerpt) so this doesn't read as a bare, spammy link list
-// each page maps to an ARRAY of injections — every other page has exactly
-// one container to fill, but the homepage has two (recent projects + the
-// "by city" grid), and the city grid links to a filtered listing rather
-// than a detail page, so each entry builds its own href directly instead
-// of sharing one kindPath-based URL scheme
-const detailHref = (kindPath) => (slug, ar) => `${ar ? '/ar' : ''}/${kindPath}/${encodeURIComponent(String(slug).replace(/^\/+|\/+$/g, ''))}`;
-const LISTING_INJECT = {
-  '/projects.html': [{
-    table: 'projects', containerId: 'projectsGrid',
-    select: 'slug,slug_ar,name,name_ar,tagline,location',
-    href: detailHref('project'),
-    row: (r, ar) => ({
-      slug: (ar && r.slug_ar) || r.slug,
-      name: (ar && r.name_ar) || r.name,
-      sub: r.tagline || r.location || ''
-    })
-  }],
-  '/units.html': [{
-    table: 'units', containerId: 'unitsGrid',
-    select: 'slug,slug_ar,name,name_ar,location,price',
-    href: detailHref('unit'),
-    row: (r, ar) => ({
-      slug: (ar && r.slug_ar) || r.slug,
-      name: (ar && r.name_ar) || r.name,
-      sub: [r.location, r.price].filter(Boolean).join(' — ')
-    })
-  }],
-  '/blog.html': [{
-    table: 'blog_posts', containerId: 'blogGrid',
-    select: 'slug,title,title_ar,excerpt,excerpt_ar',
-    href: detailHref('blog'),
-    // blog_posts has no slug_ar (HAS_SLUG_AR.blog_posts is false elsewhere
-    // in this file too) — the AR page reuses the same EN slug
-    row: (r, ar) => ({
-      slug: r.slug,
-      name: (ar && r.title_ar) || r.title,
-      sub: (ar ? r.excerpt_ar : r.excerpt) || r.excerpt || ''
-    })
-  }],
-  // the homepage's #cityGrid/#projectList containers were found hardcoding
-  // generic template demo content in the static source (Dubai/New York/
-  // London/Singapore/Tokyo; fake project slugs like "azure-residences" that
-  // all 404 live) — meant only as a load-time placeholder, but bots reading
-  // raw HTML see it as this site's actual, permanent content: 4 dead links
-  // plus wrong-country signals, on the single highest-authority page on the
-  // whole site
-  '/': [
-    {
-      table: 'projects', containerId: 'projectList', limit: 4,
-      select: 'slug,slug_ar,name,name_ar,tagline,location',
-      href: detailHref('project'),
-      row: (r, ar) => ({
-        slug: (ar && r.slug_ar) || r.slug,
-        name: (ar && r.name_ar) || r.name,
-        sub: r.tagline || r.location || ''
-      })
-    },
-    {
-      // links to the filtered listing, not a detail page — same URL
-      // scheme as the real <a href> fix already shipped for these cards
-      // (script.js's renderCities())
-      table: 'cities', containerId: 'cityGrid', limit: 20,
-      select: 'name,country',
-      href: (name, ar) => `${ar ? '/ar' : ''}/projects.html?city=${encodeURIComponent(name)}`,
-      row: (r) => ({ slug: r.name, name: r.name, sub: r.country || '' })
-    }
-  ]
-};
-
 // looks up a real-visitor pre-rendered snapshot written by api/prerender.js —
 // path format must match blobKey() there exactly. api/prerender.js writes
 // with addRandomSuffix:false, so this URL is fully deterministic — no
@@ -439,57 +166,6 @@ async function fetchPrerendered(kindPath, lang, slugForUrl) {
   } catch (_) {
     return null;
   }
-}
-
-function pageHTML({ title, description, image, url, canonicalUrl, hreflangEn, hreflangAr, type, facts, bodyText, amenities, gallery, consultants, brochurePdf, related, projectUnits, isAr }) {
-  const factsList = facts.length
-    ? `<h2>Key facts</h2><ul>${facts.map(([k, v]) => `<li><b>${esc(k)}:</b> ${esc(v)}</li>`).join('')}</ul>` : '';
-  const amenitiesList = (amenities && amenities.length)
-    ? `<h2>Amenities</h2><ul>${amenities.map(a => `<li>${esc(a)}</li>`).join('')}</ul>` : '';
-  const consultantsList = (consultants && consultants.length)
-    ? `<h2>Consultants</h2><ul>${consultants.map(c => `<li>${esc(c)}</li>`).join('')}</ul>` : '';
-  const brochureLink = brochurePdf ? `<p><a href="${esc(brochurePdf)}">Brochure (PDF)</a></p>` : '';
-  const galleryHtml = (gallery && gallery.length)
-    ? `<h2>Gallery (${gallery.length} photos)</h2>` + gallery.map((g, i) => `<img src="${esc(g)}" alt="photo ${i + 1}">`).join('')
-    : '';
-  const projectUnitsHtml = (projectUnits && projectUnits.length)
-    ? `<h2>Units in this project</h2><ul>${projectUnits.map(r => `<li><a href="${esc(r.url)}">${esc(r.name)}</a></li>`).join('')}</ul>`
-    : '';
-  const relatedHtml = (related && related.length)
-    ? `<h2>Related, from the same developer</h2><ul>${related.map(r => `<li><a href="${esc(r.url)}">${esc(r.name)}</a></li>`).join('')}</ul>`
-    : '';
-  return `<!DOCTYPE html>
-<html lang="${isAr ? 'ar' : 'en'}" dir="${isAr ? 'rtl' : 'ltr'}"><head>
-<meta charset="utf-8">
-<title>${esc(title)}</title>
-<meta name="description" content="${esc(description)}">
-<link rel="canonical" href="${esc(canonicalUrl)}">
-<link rel="alternate" hreflang="en" href="${esc(hreflangEn)}">
-<link rel="alternate" hreflang="ar" href="${esc(hreflangAr)}">
-<link rel="alternate" hreflang="x-default" href="${esc(hreflangEn)}">
-<meta property="og:type" content="${type}">
-<meta property="og:site_name" content="Aqar Factory">
-<meta property="og:title" content="${esc(title)}">
-<meta property="og:description" content="${esc(description)}">
-<meta property="og:url" content="${esc(url)}">
-${image ? `<meta property="og:image" content="${esc(image)}">` : ''}
-<meta name="twitter:card" content="${image ? 'summary_large_image' : 'summary'}">
-<meta name="twitter:title" content="${esc(title)}">
-<meta name="twitter:description" content="${esc(description)}">
-${image ? `<meta name="twitter:image" content="${esc(image)}">` : ''}
-</head><body>
-<h1>${esc(title)}</h1>
-${image ? `<img src="${esc(image)}" alt="${esc(title)}">` : ''}
-<p>${esc(bodyText)}</p>
-${factsList}
-${amenitiesList}
-${brochureLink}
-${consultantsList}
-${galleryHtml}
-${projectUnitsHtml}
-${relatedHtml}
-<p><a href="${esc(url)}">${esc(url)}</a></p>
-</body></html>`;
 }
 
 export default async function middleware(request) {
@@ -508,59 +184,17 @@ export default async function middleware(request) {
   const STATIC_HREFLANG_PAGES = new Set(['/', '/projects.html', '/units.html', '/blog.html', '/about.html', '/contact.html']);
   const staticIsAr = url.pathname === '/ar' || url.pathname.startsWith('/ar/');
   const staticEnPath = staticIsAr ? (url.pathname === '/ar' ? '/' : url.pathname.slice(3)) : url.pathname;
-  // the header below is this function's OWN internal re-fetch of the static
-  // file, not a real request — without checking for it first, that re-fetch
-  // would come back through this same matcher and recurse forever
+  // the header below is api/bot-render.js's OWN internal re-fetch of this
+  // same static file (it needs the raw source to inject content into) — not
+  // a real request — without checking for it first, that re-fetch would come
+  // back through this same matcher and get rewritten right back to itself
   if (request.headers.get('x-mw-static-fetch') !== '1' && STATIC_HREFLANG_PAGES.has(staticEnPath)) {
     const uaStatic = request.headers.get('user-agent') || '';
     const isNamedBotStatic = BOT_RE.test(uaStatic);
     const looksLikeNonBrowserStatic = !isNamedBotStatic && !request.headers.get('sec-fetch-mode');
     if (isNamedBotStatic || looksLikeNonBrowserStatic) {
-      const arPath = staticEnPath === '/' ? '/ar' : '/ar' + staticEnPath;
-      const enUrl = `https://www.aqar-factory.com${staticEnPath}`;
-      const arUrl = `https://www.aqar-factory.com${arPath}`;
-      try {
-        const staticRes = await fetch(url.toString(), { headers: { 'x-mw-static-fetch': '1' } });
-        if (staticRes.ok) {
-          let html = await staticRes.text();
-          // every static page's source hardcodes <html lang="en">, corrected
-          // to the real language only by i18n.js client-side — which never
-          // runs for a bot reading this raw response, same root cause as the
-          // missing hreflang tags above
-          if (staticIsAr) html = html.replace('<html lang="en">', '<html lang="ar" dir="rtl">');
-          for (const cfg of (LISTING_INJECT[staticEnPath] || [])) {
-            const rows = await fetchListingRows(cfg.table, cfg.select, cfg.limit || 60);
-            const items = rows
-              .map(r => cfg.row(r, staticIsAr))
-              .filter(x => x.slug && x.name);
-            const listHtml = `<ul>${items.map(x =>
-              `<li><a href="${esc(cfg.href(x.slug, staticIsAr))}">${esc(x.name)}</a>${x.sub ? ' — ' + esc(x.sub) : ''}</li>`
-            ).join('')}</ul>`;
-            // for projects.html/units.html/blog.html the container is an
-            // empty div that client JS fills the same way for a real
-            // visitor; on the homepage it instead REPLACES hardcoded demo
-            // content (see the comment above LISTING_INJECT) — either way,
-            // client JS overwrites this container's innerHTML unconditionally
-            // for a real browser, so there's no duplicate-content risk
-            html = replaceContainerContents(html, cfg.containerId, listHtml);
-          }
-          // self-canonical, stripped of any query string (city/cat filters
-          // on projects.html/units.html are 100% client-side — this bot-
-          // served response is byte-identical no matter what's in the query
-          // string, so without an explicit canonical every ?city=<X> link
-          // from the homepage's city grid (~20 cities × 2 languages) reads
-          // to Google as its own separate page with duplicate content and no
-          // declared canonical, instead of one clean, consolidated URL
-          const canonicalTag = `<link rel="canonical" href="${esc(staticIsAr ? arUrl : enUrl)}">\n`;
-          const tags = `${canonicalTag}<link rel="alternate" hreflang="en" href="${esc(enUrl)}">\n<link rel="alternate" hreflang="ar" href="${esc(arUrl)}">\n<link rel="alternate" hreflang="x-default" href="${esc(enUrl)}">\n</head>`;
-          return new Response(html.replace('</head>', tags), {
-            headers: {
-              'content-type': 'text/html; charset=utf-8',
-              'cache-control': 'public, max-age=0, s-maxage=300, stale-while-revalidate=1800'
-            }
-          });
-        }
-      } catch (_) { /* fall through to next() below on any fetch failure */ }
+      const qs = new URLSearchParams({ mode: 'static', page: staticEnPath, lang: staticIsAr ? 'ar' : 'en' });
+      return rewrite(new URL(`/api/bot-render?${qs.toString()}`, url.origin));
     }
     return next();
   }
@@ -614,7 +248,7 @@ export default async function middleware(request) {
 
   // NEW clean-path form (/project/slug, /ar/unit/slug, …) — parsed once,
   // used both by the pre-rendered-cache check below (real visitors) and
-  // by the bot-content generation further down
+  // by the bot-content rewrite further down
   const m = page.match(/^\/(project|unit|blog)\/([^/]+)\/?$/);
   if (!m) return next();
   const kindPath = m[1]; // 'project' | 'unit' | 'blog'
@@ -627,7 +261,7 @@ export default async function middleware(request) {
   // crawler. Each entry below was verified against live Supabase data to
   // resolve to EXACTLY ONE row, so the 301 can't send anyone to the wrong
   // listing; genuinely-deleted slugs are deliberately absent and fall through
-  // to the real 404 further down.
+  // to the real 404 in api/bot-render.js.
   const RENAMED = {
     // wrong kind: these slugs belong to a project, not a unit
     // (target is the project's CURRENT slug, not the first-redirect one it
@@ -642,9 +276,9 @@ export default async function middleware(request) {
     'unit/ready-to-move-2br-apartment-latin-district-new-alamein': '/unit/ready-to-move-2br-apartment-for-sale-in-latin-district-new-alamein-133m',
     'unit/mirissa-new-obour-compound': '/project/mirissa-new-obour-compound',
     // renamed slugs — kept as a hardcoded backstop for URLs that went stale
-    // BEFORE slug_redirects existed (see fetchRenamedRowId() below, which
-    // now records and follows every rename automatically going forward, so
-    // this map shouldn't need new entries added by hand again)
+    // BEFORE slug_redirects existed (see api/bot-render.js's fetchRenamedRowId(),
+    // which now records and follows every rename automatically going forward,
+    // so this map shouldn't need new entries added by hand again)
     'project/citalia-compound-valero-new-obour': '/project/citalia-compound-valero-new-obour-city',
     // aljarbritishdistrictyorkphase was itself already a fixed-forward
     // target that has since been renamed AGAIN — proof this exact class of
@@ -752,214 +386,6 @@ export default async function middleware(request) {
   // named preview bots (WhatsApp/Facebook/…) get the lean/fast title+meta path
   const richMode = AI_BOT_RE.test(ua) || looksLikeNonBrowser;
 
-  const table = kindPath === 'unit' ? 'units' : kindPath === 'blog' ? 'blog_posts' : 'projects';
-  const id = slugFromUrl;
-
-  const row = await fetchRow(table, id, richMode);
-  // couldn't reach Supabase — fall through to the client-rendered page (which
-  // retries the fetch itself) rather than claiming the page doesn't exist
-  if (row === LOOKUP_FAILED) return next();
-  if (!row) {
-    // Before giving up: an Arabic slug typed with spaces used to be stored
-    // verbatim, so the same page can be addressed as "…داون تاون" (spaces,
-    // which only ever works percent-encoded) or "…داون-تاون" (dashes, the form
-    // everyone actually expects and links to). Try the other form and 301 onto
-    // whichever one really exists, so a slug being tidied up in the admin can
-    // never strand the URL Google already indexed — in either direction.
-    const alt = /\s/.test(slugFromUrl) ? slugFromUrl.replace(/\s+/g, '-')
-              : slugFromUrl.includes('-') ? slugFromUrl.replace(/-+/g, ' ')
-              : null;
-    if (alt) {
-      const altRow = await fetchRow(table, alt, false);
-      if (altRow && altRow !== LOOKUP_FAILED) {
-        return Response.redirect(
-          new URL(`${isAr ? '/ar' : ''}/${kindPath}/${encodeURIComponent(alt)}`, url.origin), 301);
-      }
-    }
-    // The row this slug used to point at may have been renamed since Google
-    // indexed it — look up its stable id and redirect to whatever slug it
-    // answers to NOW, so a project renamed twice still resolves through
-    // both of its old URLs, not just the first one anyone happened to fix.
-    const renamedRowId = await fetchRenamedRowId(table, slugFromUrl);
-    if (renamedRowId) {
-      const currentRow = await fetchById(table, renamedRowId, 'slug,slug_ar');
-      const newSlug = currentRow && ((isAr && currentRow.slug_ar) ? currentRow.slug_ar : currentRow.slug);
-      if (newSlug) {
-        return Response.redirect(
-          new URL(`${isAr ? '/ar' : ''}/${kindPath}/${encodeURIComponent(newSlug)}`, url.origin), 301);
-      }
-    }
-
-    // No such published row. Falling through to the CSR template here would
-    // answer a crawler with HTTP 200 and an empty generic page — a soft 404,
-    // which Google keeps in its index and reports as an error rather than
-    // dropping cleanly. Answer with a real 404 instead: unambiguous, and it
-    // retires stale URLs (deleted/unpublished items, slugs renamed without a
-    // RENAMED entry above) by itself, with no per-URL maintenance.
-    return new Response(
-      `<!DOCTYPE html><html lang="${isAr ? 'ar' : 'en'}" dir="${isAr ? 'rtl' : 'ltr'}"><head><meta charset="utf-8"><title>Not found — Aqar Factory</title>` +
-      `<meta name="robots" content="noindex"></head><body><h1>Not found</h1>` +
-      `<p>This page is no longer available. <a href="https://www.aqar-factory.com${isAr ? '/ar' : ''}/">Go to Aqar Factory</a></p>` +
-      `</body></html>`,
-      { status: 404, headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'public, max-age=0, s-maxage=60' } }
-    );
-  }
-
-  // fetchRow() matches slug OR slug_ar on purpose — a project with NO custom
-  // Arabic slug must still resolve under /ar/ via its one shared slug. But
-  // that same OR-match means a project that DOES have a distinct slug_ar was
-  // ALSO reachable via its English slug under /ar/, and via its Arabic slug
-  // under the plain English path — two accidental duplicates of the correct
-  // page, each self-declaring its own (wrong) canonical. Found live via a
-  // real duplicate-canonical report: both variants returned 200 with
-  // identical content. Redirect either accidental combination onto whichever
-  // URL is actually correct for the requested language before anything else
-  // gets built, so nothing ever serves this content under two canonicals.
-  if (HAS_SLUG_AR[table]) {
-    const properSlug = String((isAr && row.slug_ar) ? row.slug_ar : row.slug).replace(/^\/+|\/+$/g, '');
-    if (properSlug && properSlug !== slugFromUrl) {
-      return Response.redirect(
-        new URL(`${isAr ? '/ar' : ''}/${kindPath}/${encodeURIComponent(properSlug)}`, url.origin), 301);
-    }
-  }
-
-  const pick = (en, ar) => (isAr && row[ar]) ? row[ar] : row[en];
-  const linkUrl = (slug, slugAr, otherTable) => {
-    const p = otherTable === 'units' ? '/unit/' : otherTable === 'blog_posts' ? '/blog/' : '/project/';
-    // strip a stray leading/trailing slash defensively — see store.js's
-    // buildUrl() for the full explanation (a bad stored slug otherwise
-    // produces a double-slash URL that 404s for everyone)
-    const s = String((isAr && slugAr) ? slugAr : slug).replace(/^\/+|\/+$/g, '');
-    return `https://www.aqar-factory.com${isAr ? '/ar' : ''}${p}${encodeURIComponent(s)}`;
-  };
-
-  let title, description, image, facts = [], bodyText = '';
-  let amenities = [], gallery = [], consultants = [], brochurePdf = '', related = [], projectUnits = [];
-  if (table === 'blog_posts') {
-    title = pick('seo_title', 'seo_title_ar') || pick('title', 'title_ar');
-    description = pick('seo_description', 'seo_description_ar') || pick('excerpt', 'excerpt_ar');
-    image = img(row.cover, 1200);
-    if (row.author_name) facts.push([isAr ? 'الكاتب' : 'Author', row.author_name]);
-    if (row.published_at) facts.push([isAr ? 'تاريخ النشر' : 'Published', row.published_at]);
-    const tags = pick('tags', 'tags_ar') || row.tags;
-    if (tags && tags.length) facts.push([isAr ? 'الوسوم' : 'Tags', tags.join(', ')]);
-    bodyText = richMode ? description + ' ' + blocksToText(pick('blocks', 'blocks_ar')) : description;
-  } else if (table === 'projects') {
-    const name = pick('name', 'name_ar') || row.name;
-    const customTitle = pick('seo_title', 'seo_title_ar');
-    title = customTitle || `${name} — Aqar Factory`;
-    description = pick('seo_description', 'seo_description_ar') || row.tagline
-      || (richMode ? blocksToText(pick('about_blocks', 'about_blocks_ar')) || (row.about && row.about[0]) : '') || '';
-    image = img(row.cover, 1200);
-    if (row.developer) facts.push([isAr ? 'المطوّر' : 'Developer', row.developer]);
-    if (row.location) facts.push([isAr ? 'الموقع' : 'Location', row.location]);
-    if (row.city) facts.push([isAr ? 'المدينة' : 'City', row.city]);
-    if (row.country) facts.push([isAr ? 'الدولة' : 'Country', row.country]);
-    if (row.category) facts.push([isAr ? 'الفئة' : 'Category', row.category]);
-    if (row.status) facts.push([isAr ? 'الحالة' : 'Status', row.status]);
-    if (row.year) facts.push([isAr ? 'السنة' : 'Year', row.year]);
-    if (row.price) facts.push([isAr ? 'السعر' : 'Price', row.price]);
-    if (row.units) facts.push([isAr ? 'عدد الوحدات' : 'Units', row.units]);
-    if (row.floors) facts.push([isAr ? 'الطوابق' : 'Floors', row.floors]);
-    if (row.area) facts.push([isAr ? 'مساحة الوحدة' : 'Unit size', row.area]);
-    if (row.handover) facts.push([isAr ? 'التسليم' : 'Handover', row.handover]);
-    if (row.is_rental) facts.push([isAr ? 'إيجار' : 'Rental', isAr ? 'نعم' : 'Yes']);
-    if (Array.isArray(row.unit_types) && row.unit_types.length) facts.push([isAr ? 'أنواع الوحدات' : 'Unit types', row.unit_types.join(', ')]);
-    bodyText = richMode ? (description + ' ' + blocksToText(pick('about_blocks', 'about_blocks_ar'))).trim() : description;
-    if (richMode) {
-      amenities = row.amenities || [];
-      gallery = (row.gallery || []).map(g => img(g, 800));
-      consultants = (Array.isArray(row.consultants) ? row.consultants : []).map(c => c && c.name).filter(Boolean);
-      brochurePdf = row.brochure_pdf || '';
-      const [relProjects, relUnits, ownUnits] = await Promise.all([
-        fetchRelated('projects', row.developer_id, row.developer, row.slug),
-        fetchRelatedUnits(row.developer_id, row.developer, null),
-        fetchUnitsForProject(row.id)
-      ]);
-      related = [
-        ...relProjects.map(r => ({ name: (isAr && r.name_ar) || r.name, url: linkUrl(r.slug, r.slug_ar, 'projects') })),
-        ...relUnits.map(r => ({ name: (isAr && r.name_ar) || r.name, url: linkUrl(r.slug, r.slug_ar, 'units') }))
-      ];
-      projectUnits = ownUnits.map(r => ({ name: (isAr && r.name_ar) || r.name, url: linkUrl(r.slug, r.slug_ar, 'units') }));
-    }
-  } else {
-    const name = pick('name', 'name_ar') || row.name;
-    const customTitle = pick('seo_title', 'seo_title_ar');
-    title = customTitle || `${name} — Aqar Factory`;
-    description = pick('seo_description', 'seo_description_ar')
-      || (richMode ? blocksToText(pick('description_blocks', 'description_blocks_ar')) : '')
-      || pick('description', 'description_ar') || '';
-    image = img(row.cover, 1200);
-    // a unit doesn't always carry its own developer — many are only linked via
-    // project_id, with the developer set on the parent project instead (see
-    // richMode block below, which fetches the linked project and fills these in)
-    let devId = row.developer_id, devName = row.developer;
-    if (row.type) facts.push([isAr ? 'النوع' : 'Type', row.type]);
-    if (row.badge) facts.push([isAr ? 'الوسم' : 'Badge', row.badge]);
-    if (row.price) facts.push([isAr ? 'السعر' : 'Price', row.price]);
-    if (row.beds) facts.push([isAr ? 'غرف النوم' : 'Bedrooms', row.beds]);
-    if (row.baths) facts.push([isAr ? 'دورات المياه' : 'Bathrooms', row.baths]);
-    if (row.area) facts.push([isAr ? 'المساحة' : 'Area', row.area]);
-    if (row.location) facts.push([isAr ? 'الموقع' : 'Location', row.location]);
-    bodyText = richMode ? (description + ' ' + blocksToText(pick('description_blocks', 'description_blocks_ar'))).trim() : description;
-    if (richMode) {
-      gallery = (row.gallery || []).map(g => img(g, 800));
-      if (row.project_id) {
-        const proj = await fetchById('projects', row.project_id, 'slug,slug_ar,name,name_ar,developer,developer_id');
-        if (proj) {
-          facts.unshift([isAr ? 'جزء من مشروع' : 'Part of project', (isAr && proj.name_ar) || proj.name]);
-          if (!devId && !devName) { devId = proj.developer_id; devName = proj.developer; }
-        }
-      }
-      const relUnits = await fetchRelatedUnits(devId, devName, row.slug);
-      related = relUnits.map(r => ({ name: (isAr && r.name_ar) || r.name, url: linkUrl(r.slug, r.slug_ar, 'units') }));
-    }
-    if (devName) facts.unshift([isAr ? 'المطوّر' : 'Developer', devName]);
-  }
-  description = String(description || '').trim();
-  bodyText = String(bodyText || '').trim();
-  if (!description) description = table === 'projects'
-    ? 'Aqar Factory project detail — gallery, key facts, amenities and location.'
-    : table === 'units' ? 'Aqar Factory unit detail — gallery, price, specs and location.'
-    : 'Aqar Factory blog — market insight, buying guides and stories from our team.';
-  if (!bodyText) bodyText = description;
-
-  // the exact clean-path URL that was requested IS the canonical form (old
-  // ?id=/?slug= URLs already 301-redirected before reaching this code) —
-  // built explicitly rather than reusing the raw request URL so it's never
-  // polluted by an incidental query string
-  const canonicalUrl = `https://www.aqar-factory.com${isAr ? '/ar' : ''}/${kindPath}/${encodeURIComponent(slugFromUrl)}`;
-
-  // hreflang alternates — mirrors i18n.js's injectSeoLinks()/setCrossLangSlug(),
-  // which only ever runs client-side after the page loads. Googlebot's own
-  // rendering is Chromium-based and sends Sec-Fetch-Mode like a real browser,
-  // so without this it was reaching this exact bot-served response (built
-  // for the raw first crawl pass specifically to avoid depending on any
-  // client-side JS) and STILL seeing zero hreflang tags — the canonical was
-  // fixed here already, this relationship signal was not. Without it Google
-  // has no way to know the /ar/ and non-/ar/ URLs are the same content in
-  // two languages rather than unrelated (or duplicate) pages, which plausibly
-  // contributes to it picking its own canonical over ours for some of them.
-  const rawSlug = String(row.slug || '').replace(/^\/+|\/+$/g, '');
-  const rawSlugAr = (HAS_SLUG_AR[table] && row.slug_ar) ? String(row.slug_ar).replace(/^\/+|\/+$/g, '') : rawSlug;
-  const hreflangEn = `https://www.aqar-factory.com/${kindPath}/${encodeURIComponent(rawSlug)}`;
-  const hreflangAr = `https://www.aqar-factory.com/ar/${kindPath}/${encodeURIComponent(rawSlugAr)}`;
-
-  const html = pageHTML({
-    title, description, image, facts, bodyText, amenities, gallery, consultants, brochurePdf, related, projectUnits,
-    url: url.toString(), canonicalUrl, hreflangEn, hreflangAr, isAr,
-    type: table === 'blog_posts' ? 'article' : 'website'
-  });
-
-  return new Response(html, {
-    headers: {
-      'content-type': 'text/html; charset=utf-8',
-      // fresh for 30s at the edge, then serve last-known copy instantly
-      // while quietly refetching in the background — an edit shows up on
-      // the very next fetch after that 30s window, but repeat/retry fetches
-      // (WhatsApp, testing tools) are near-instant instead of round-tripping
-      // to Supabase every single time
-      'cache-control': 'public, max-age=0, s-maxage=30, stale-while-revalidate=120'
-    }
-  });
+  const qs = new URLSearchParams({ mode: 'detail', kind: kindPath, slug: slugFromUrl, lang: isAr ? 'ar' : 'en', rich: richMode ? '1' : '0' });
+  return rewrite(new URL(`/api/bot-render?${qs.toString()}`, url.origin));
 }
