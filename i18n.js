@@ -19,6 +19,10 @@
 (function () {
   'use strict';
   const STORAGE_KEY = 'realteek_lang';
+  // separate from the admin-only key above — this remembers a PUBLIC-site
+  // visitor's explicit language choice (see setLang()/the redirect block
+  // further down), distinct from the admin dashboard's own toggle
+  const PUBLIC_LANG_KEY = 'realteek_public_lang';
 
   // ---------- dictionary: English source -> Arabic ----------
   const AR = {
@@ -861,19 +865,55 @@
     }
     return isArPath(location.pathname) ? 'ar' : 'en';
   }
+  // the toggled counterpart of the current path for the given language —
+  // shared by setLang() (an explicit switcher click) and the sticky-
+  // preference redirect below (an automatic one), so both produce the same
+  // URL shape for the same input
+  function toggledPath(lang, path) {
+    const ar = isArPath(path);
+    if (lang === 'ar' && !ar) return path === '/' ? '/ar' : '/ar' + path;
+    if (lang === 'en' && ar) return path.replace(/^\/ar/, '') || '/';
+    return path;
+  }
   function setLang(lang) {
     if (isAdminPath()) {
       try { localStorage.setItem(STORAGE_KEY, lang === 'ar' ? 'ar' : 'en'); } catch (_) { /* ignore */ }
       location.reload();
       return;
     }
-    const path = location.pathname;
-    const ar = isArPath(path);
-    let target;
-    if (lang === 'ar' && !ar) target = path === '/' ? '/ar' : '/ar' + path;
-    else if (lang === 'en' && ar) target = path.replace(/^\/ar/, '') || '/';
-    else target = path;
-    location.href = target + location.search + location.hash;
+    // remembered site-wide so this choice "sticks" across pages and future
+    // visits — see the redirect block below
+    try { localStorage.setItem(PUBLIC_LANG_KEY, lang === 'ar' ? 'ar' : 'en'); } catch (_) { /* ignore */ }
+    location.href = toggledPath(lang, location.pathname) + location.search + location.hash;
+  }
+
+  // Public-site default is Arabic, and once a visitor explicitly picks a
+  // language via the switcher (setLang() above), that choice follows them
+  // to every page and every future visit — via localStorage, checked here
+  // on every page load before anything paints. Doesn't touch /admin (its
+  // own separate, already-existing localStorage toggle, untouched above).
+  //
+  // This can NEVER affect indexing/SEO: every bot-classified request
+  // (Googlebot, Bingbot, GPTBot, WhatsApp's link-unfurl, an unnamed crawler
+  // missing Sec-Fetch-Mode, …) is intercepted by middleware.js and answered
+  // by api/bot-render.js instead of this page — a bare HTML document with
+  // zero <script> tags, so this file never even loads for a bot, regardless
+  // of what it does here. Google's own JS-rendering pass matches the exact
+  // same "googlebot" pattern and gets the identical bot-render.js response,
+  // never this client-rendered page. Language for a crawler is decided
+  // entirely by the literal URL it requested, exactly as before.
+  if (!isAdminPath()) {
+    let storedPref = null;
+    try { storedPref = localStorage.getItem(PUBLIC_LANG_KEY); } catch (_) { /* ignore */ }
+    const preferredLang = (storedPref === 'en' || storedPref === 'ar') ? storedPref : 'ar';
+    const currentIsAr = isArPath(location.pathname);
+    if ((preferredLang === 'ar') !== currentIsAr) {
+      const target = toggledPath(preferredLang, location.pathname);
+      if (target !== location.pathname) {
+        location.replace(target + location.search + location.hash);
+        return;
+      }
+    }
   }
 
   const lang = getLang();
