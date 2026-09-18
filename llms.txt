@@ -1,0 +1,18 @@
+# Aqar Factory
+
+> Aqar Factory is a real-estate marketplace covering Egypt's most active investment areas — the Fifth Settlement, New Administrative Capital, Sheikh Zayed, North Coast and Ain Sokhna, among others — listing residential, office, retail and mixed-use developments (projects) and individual for-sale units (apartments, villas, duplexes, townhouses, studios, offices, retail spaces). Content is published in both English and Arabic, each as its own crawlable URL (Arabic under an /ar/ prefix).
+
+## Site sections
+
+- [Projects](https://www.aqar-factory.com/projects.html): Browse developments by category and city.
+- [Units](https://www.aqar-factory.com/units.html): Browse individual for-sale units by type and city.
+- [Blog](https://www.aqar-factory.com/blog.html): Market insight, buying guides and area-specific articles.
+- [About](https://www.aqar-factory.com/about.html): About Aqar Factory.
+- [Contact](https://www.aqar-factory.com/contact.html): Get in touch with an advisor.
+
+## Notes for AI agents and crawlers
+
+- Every project (`/project/<slug>`), unit (`/unit/<slug>`) and blog post (`/blog/<slug>`) has a real, standalone page with its own title, description, price (where applicable) and Product/Offer or BlogPosting structured data (schema.org JSON-LD).
+- The Arabic version of any page is the same path prefixed with `/ar` (e.g. `/ar/projects.html`, `/ar/project/<slug>`); each language pair cross-references the other via `hreflang`.
+- A full, up-to-date list of every published page is at [/sitemap.xml](https://www.aqar-factory.com/sitemap.xml).
+- Prices, availability and project/unit details change as the developer's team updates listings — always prefer the live page over a cached summary when citing a specific price or availability.

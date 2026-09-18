@@ -101,20 +101,24 @@ function populate() {
     window.i18n.setCrossLangSlug(isAr() ? project.slugAr : project.id, isAr() ? project.id : project.slugAr);
   }
 
+  // a project is a thing for sale, not an article — Product+Offer, not
+  // BlogPosting (copy-pasted from the blog post page originally; same
+  // fix applied server-side in api/bot-render.js, which is what a real
+  // crawler actually receives)
   injectJsonLd({
     '@context': 'https://schema.org',
-    '@type': 'BlogPosting',
-    mainEntityOfPage: { '@type': 'WebPage', '@id': location.href },
-    headline: customTitle || pick(project, 'name', 'nameAr') || project.name,
+    '@type': 'Product',
+    name: customTitle || pick(project, 'name', 'nameAr') || project.name,
     description: desc || undefined,
     image: project.cover ? U(project.cover, 1600) : undefined,
-    author: { '@type': 'Organization', name: 'Aqar Factory', url: 'https://www.aqar-factory.com' },
-    publisher: {
-      '@type': 'Organization', name: 'Aqar Factory',
-      logo: { '@type': 'ImageObject', url: COMPANY.logo ? U(COMPANY.logo, 512) : undefined }
-    },
-    datePublished: project.createdAt || undefined,
-    dateModified: project.updatedAt || project.createdAt || undefined
+    url: location.href,
+    brand: { '@type': 'Organization', name: 'Aqar Factory' },
+    offers: {
+      '@type': 'Offer', url: location.href, priceCurrency: 'EGP',
+      price: project.priceValue > 0 ? project.priceValue : undefined,
+      availability: 'https://schema.org/InStock',
+      seller: { '@type': 'Organization', name: 'Aqar Factory' }
+    }
   });
 
   const heroImg = document.getElementById('heroImg');

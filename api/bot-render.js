@@ -54,9 +54,13 @@ const blocksToText = (blocks) => (Array.isArray(blocks) ? blocks : []).map(b => 
 // and its absence used to make every /ar/ preview-bot request (WhatsApp/
 // Facebook/…) for a project/unit that HAS a distinct slug_ar silently redirect
 // its own correct Arabic-slug URL onto the English slug under /ar/.
+// price_value (the plain numeric price, alongside the formatted display
+// string in `price`) is needed for Offer.price in the Product schema built
+// below — Schema.org/Google Rich Results want a clean number, not
+// "EGP 3,200,000"
 const LEAN_SELECT = {
-  projects: 'slug,slug_ar,seo_title,seo_title_ar,seo_description,seo_description_ar,name,name_ar,tagline,cover,developer,location,city,category,status,price',
-  units: 'slug,slug_ar,seo_title,seo_title_ar,seo_description,seo_description_ar,name,name_ar,description,description_ar,cover,type,price,beds,baths,area,location',
+  projects: 'slug,slug_ar,seo_title,seo_title_ar,seo_description,seo_description_ar,name,name_ar,tagline,cover,developer,location,city,category,status,price,price_value',
+  units: 'slug,slug_ar,seo_title,seo_title_ar,seo_description,seo_description_ar,name,name_ar,description,description_ar,cover,type,price,price_value,beds,baths,area,location',
   blog_posts: 'slug,seo_title,seo_title_ar,seo_description,seo_description_ar,title,title_ar,excerpt,excerpt_ar,cover,author_name'
 };
 
@@ -205,6 +209,64 @@ async function fetchListingRows(table, extraSelect, limit = 60) {
   }
 }
 
+// homepage/listing-page OG image — same content_blocks 'company' singleton
+// row store.js's getCompany()/branding.js read client-side
+async function fetchCompanyLogo() {
+  try {
+    const res = await fetch(
+      `${SUPA_URL}/rest/v1/content_blocks?select=value&key=eq.company&limit=1`,
+      { headers: { apikey: SUPA_ANON_KEY, Authorization: `Bearer ${SUPA_ANON_KEY}` } }
+    );
+    if (!res.ok) return '';
+    const rows = await res.json();
+    return (rows[0] && rows[0].value && rows[0].value.logo) || '';
+  } catch (_) {
+    return '';
+  }
+}
+
+// STATIC_HREFLANG_PAGES' raw HTML source hardcodes its <title>/<meta
+// description> in English, translated to Arabic only by i18n.js client-side
+// — which never runs for a bot reading this response. Confirmed live before
+// this fix: Googlebot's crawl of /ar (the single highest-authority page on
+// the whole site) and every /ar/ listing page got `lang="ar"` but an
+// English <title> and description — the exact class of bug this file exists
+// to eliminate, just never extended to these 6 pages. Every EN/AR pair below
+// is copied verbatim from i18n.js's own translation dictionary, so it's
+// guaranteed to match what a real Arabic-mode visitor is already shown.
+const STATIC_META = {
+  '/': {
+    title: 'Aqar Factory — Real Estate Done Right', titleAr: 'Aqar Factory — العقارات كما ينبغي',
+    description: "Aqar Factory — handpicked residential homes, offices and luxury units for sale, curated for people who refuse to settle.",
+    descriptionAr: 'Aqar Factory — منازل سكنية ومكاتب ووحدات فاخرة مختارة بعناية للبيع، لمن يرفضون التنازل.'
+  },
+  '/projects.html': {
+    title: 'Projects — Aqar Factory', titleAr: 'المشاريع — Aqar Factory',
+    description: 'Browse Aqar Factory developments by category and city — residential, offices, luxury villas, retail and mixed-use projects.',
+    descriptionAr: 'تصفح مشاريع Aqar Factory حسب الفئة والمدينة — سكني، مكاتب، فلل فاخرة، تجزئة، ومشاريع متعددة الاستخدامات.'
+  },
+  '/units.html': {
+    title: 'Units — Aqar Factory', titleAr: 'الوحدات — Aqar Factory',
+    description: 'Browse Aqar Factory units by type and city — villas, apartments, duplexes, townhouses, studios, offices and retail spaces for sale.',
+    descriptionAr: 'تصفح وحدات Aqar Factory حسب النوع والمدينة — فلل، شقق، دوبلكس، تاون هاوس، استوديوهات، مكاتب ومساحات تجزئة للبيع.'
+  },
+  '/blog.html': {
+    title: 'Blog — Aqar Factory', titleAr: 'المدونة — Aqar Factory',
+    description: 'Market insight, buying guides and stories from the Aqar Factory team — real estate, done right.',
+    descriptionAr: 'رؤى السوق وأدلة الشراء وقصص من فريق Aqar Factory — العقارات كما ينبغي.'
+  },
+  '/about.html': {
+    title: 'About Us — Aqar Factory', titleAr: 'من نحن — Aqar Factory',
+    description: "Aqar Factory is a boutique real-estate house curating homes, offices and luxury spaces across the world's great cities. Meet the team and the philosophy behind the work.",
+    descriptionAr: 'Aqar Factory بيت عقاري متخصص يختار المنازل والمكاتب والمساحات الفاخرة في أعظم مدن العالم. تعرّف على الفريق والفلسفة وراء العمل.'
+  },
+  '/contact.html': {
+    title: 'Contact — Aqar Factory', titleAr: 'تواصل معنا — Aqar Factory',
+    description: 'Get in touch with Aqar Factory. Book a viewing, ask about a listing, or talk to an advisor — our team replies within one business day.',
+    descriptionAr: 'تواصل مع Aqar Factory. احجز معاينة، اسأل عن عقار، أو تحدث مع مستشار — يرد فريقنا خلال يوم عمل واحد.'
+  }
+};
+
 // replaces everything INSIDE a <div id="X">...</div>, however deeply
 // nested its current content is (the homepage's containers hold real
 // nested markup — demo project cards, each with their own inner divs —
@@ -300,7 +362,7 @@ const LISTING_INJECT = {
   ]
 };
 
-function pageHTML({ title, description, image, url, canonicalUrl, hreflangEn, hreflangAr, type, facts, bodyText, amenities, gallery, consultants, brochurePdf, related, projectUnits, isAr }) {
+function pageHTML({ title, description, image, url, canonicalUrl, hreflangEn, hreflangAr, type, facts, bodyText, amenities, gallery, consultants, brochurePdf, related, projectUnits, isAr, jsonLd }) {
   const factsList = facts.length
     ? `<h2>Key facts</h2><ul>${facts.map(([k, v]) => `<li><b>${esc(k)}:</b> ${esc(v)}</li>`).join('')}</ul>` : '';
   const amenitiesList = (amenities && amenities.length)
@@ -336,6 +398,7 @@ ${image ? `<meta property="og:image" content="${esc(image)}">` : ''}
 <meta name="twitter:title" content="${esc(title)}">
 <meta name="twitter:description" content="${esc(description)}">
 ${image ? `<meta name="twitter:image" content="${esc(image)}">` : ''}
+${jsonLd ? `<script type="application/ld+json">${JSON.stringify(jsonLd)}</script>` : ''}
 </head><body>
 <h1>${esc(title)}</h1>
 ${image ? `<img src="${esc(image)}" alt="${esc(title)}">` : ''}
@@ -392,20 +455,58 @@ async function handleStatic(req, res, params) {
     // a bot reading this raw response
     if (isAr) html = html.replace('<html lang="en">', '<html lang="ar" dir="rtl">');
 
-    for (const cfg of (LISTING_INJECT[page] || [])) {
-      const rows = await fetchListingRows(cfg.table, cfg.select, cfg.limit || 60);
-      const items = rows.map(r => cfg.row(r, isAr)).filter(x => x.slug && x.name);
-      const listHtml = `<ul>${items.map(x =>
-        `<li><a href="${esc(cfg.href(x.slug, isAr))}">${esc(x.name)}</a>${x.sub ? ' — ' + esc(x.sub) : ''}</li>`
-      ).join('')}</ul>`;
-      html = replaceContainerContents(html, cfg.containerId, listHtml);
+    const meta = STATIC_META[page] || null;
+    const title = meta ? (isAr ? meta.titleAr : meta.title) : '';
+    const description = meta ? (isAr ? meta.descriptionAr : meta.description) : '';
+    if (meta) {
+      // the raw source's <title>/<meta description> are hardcoded English —
+      // i18n.js only ever corrects them client-side, which a bot never runs.
+      // Confirmed live before this fix: Googlebot's crawl of /ar (the single
+      // highest-authority page on the whole site) and every /ar/ listing
+      // page got lang="ar" but an English title and description.
+      html = html.replace(/<title[^>]*>[^<]*<\/title>/, `<title data-i18n>${esc(title)}</title>`);
+      html = html.replace(/<meta name="description" content="[^"]*"/, `<meta name="description" content="${esc(description)}"`);
+    }
+
+    const [injectResults, logo] = await Promise.all([
+      Promise.all((LISTING_INJECT[page] || []).map(async cfg => {
+        const rows = await fetchListingRows(cfg.table, cfg.select, cfg.limit || 60);
+        const items = rows.map(r => cfg.row(r, isAr)).filter(x => x.slug && x.name);
+        const listHtml = `<ul>${items.map(x =>
+          `<li><a href="${esc(cfg.href(x.slug, isAr))}">${esc(x.name)}</a>${x.sub ? ' — ' + esc(x.sub) : ''}</li>`
+        ).join('')}</ul>`;
+        return { containerId: cfg.containerId, listHtml };
+      })),
+      fetchCompanyLogo()
+    ]);
+    for (const { containerId, listHtml } of injectResults) {
+      html = replaceContainerContents(html, containerId, listHtml);
     }
 
     // self-canonical, stripped of any query string (city/cat filters on
     // projects.html/units.html are 100% client-side — this bot-served
     // response is byte-identical no matter what's in the query string)
-    const canonicalTag = `<link rel="canonical" href="${esc(isAr ? arUrl : enUrl)}">\n`;
-    const tags = `${canonicalTag}<link rel="alternate" hreflang="en" href="${esc(enUrl)}">\n<link rel="alternate" hreflang="ar" href="${esc(arUrl)}">\n<link rel="alternate" hreflang="x-default" href="${esc(enUrl)}">\n</head>`;
+    const pageUrl = isAr ? arUrl : enUrl;
+    const image = logo ? img(logo, 1200) : '';
+    // Organization/WebSite schema only on the homepage — the single page
+    // most likely to actually earn a knowledge-panel/sitelinks treatment;
+    // listing pages already get real crawlable links via LISTING_INJECT
+    // above, which matters more for discovery than a schema block would
+    const jsonLd = (page === '/') ? `<script type="application/ld+json">${JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'Organization',
+      name: 'Aqar Factory',
+      url: 'https://www.aqar-factory.com/',
+      logo: image || undefined,
+      sameAs: []
+    })}</script>\n` : '';
+    const tags = `<link rel="canonical" href="${esc(pageUrl)}">\n` +
+      `<link rel="alternate" hreflang="en" href="${esc(enUrl)}">\n<link rel="alternate" hreflang="ar" href="${esc(arUrl)}">\n<link rel="alternate" hreflang="x-default" href="${esc(enUrl)}">\n` +
+      (title ? `<meta property="og:type" content="website">\n<meta property="og:site_name" content="Aqar Factory">\n<meta property="og:title" content="${esc(title)}">\n<meta property="og:description" content="${esc(description)}">\n<meta property="og:url" content="${esc(pageUrl)}">\n` : '') +
+      (image ? `<meta property="og:image" content="${esc(image)}">\n` : '') +
+      (title ? `<meta name="twitter:card" content="${image ? 'summary_large_image' : 'summary'}">\n<meta name="twitter:title" content="${esc(title)}">\n<meta name="twitter:description" content="${esc(description)}">\n` : '') +
+      (image ? `<meta name="twitter:image" content="${esc(image)}">\n` : '') +
+      jsonLd + '</head>';
     sendHtml(res, 200, html.replace('</head>', tags), 'public, max-age=0, s-maxage=300, stale-while-revalidate=1800');
   } catch (_) {
     // best-effort: never answer a bot with a hard error over a caching
@@ -603,9 +704,43 @@ async function handleDetail(req, res, params) {
   const hreflangEn = `https://www.aqar-factory.com/${kindPath}/${encodeURIComponent(rawSlug)}`;
   const hreflangAr = `https://www.aqar-factory.com/ar/${kindPath}/${encodeURIComponent(rawSlugAr)}`;
 
+  // structured data — this was entirely absent from what a bot/AI crawler
+  // actually receives (the only JSON-LD anywhere on the site was injected
+  // client-side by project.js/unit.js/blog-post.js, invisible to Google's
+  // first-pass crawl and every AI/preview bot, all of which are served by
+  // this function instead of that client-rendered page). Projects/units are
+  // things for sale, not articles — Product+Offer, not BlogPosting (the
+  // client-side version had exactly this mistake too, copy-pasted from the
+  // blog post page's own JSON-LD; fixed there as well).
+  let jsonLd;
+  if (table === 'blog_posts') {
+    jsonLd = {
+      '@context': 'https://schema.org', '@type': 'BlogPosting',
+      mainEntityOfPage: { '@type': 'WebPage', '@id': canonicalUrl },
+      headline: title, description, image: image || undefined,
+      author: row.author_name ? { '@type': 'Person', name: row.author_name } : { '@type': 'Organization', name: 'Aqar Factory' },
+      publisher: { '@type': 'Organization', name: 'Aqar Factory' },
+      datePublished: row.published_at || undefined,
+      dateModified: row.updated_at || row.published_at || undefined
+    };
+  } else {
+    const priceValue = Number(row.price_value) || 0;
+    jsonLd = {
+      '@context': 'https://schema.org', '@type': 'Product',
+      name: title, description, image: image || undefined, url: canonicalUrl,
+      brand: { '@type': 'Organization', name: 'Aqar Factory' },
+      offers: {
+        '@type': 'Offer', url: canonicalUrl, priceCurrency: 'EGP',
+        price: priceValue > 0 ? priceValue : undefined,
+        availability: 'https://schema.org/InStock',
+        seller: { '@type': 'Organization', name: 'Aqar Factory' }
+      }
+    };
+  }
+
   const html = pageHTML({
     title, description, image, facts, bodyText, amenities, gallery, consultants, brochurePdf, related, projectUnits,
-    url: canonicalUrl, canonicalUrl, hreflangEn, hreflangAr, isAr,
+    url: canonicalUrl, canonicalUrl, hreflangEn, hreflangAr, isAr, jsonLd,
     type: table === 'blog_posts' ? 'article' : 'website'
   });
 
