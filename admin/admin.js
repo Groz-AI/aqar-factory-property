@@ -1660,12 +1660,52 @@
   // presigned URL minted by api/media-upload.js — the file bytes never pass
   // through a Vercel function, which both avoids its body-size limit and
   // keeps large uploads fast.
+  // Shrinks + re-encodes an image to WebP client-side before it ever reaches
+  // the network. R2 has no resize/format pipeline of its own — confirmed
+  // live: an uploaded JPEG is served back to every visitor byte-for-byte at
+  // whatever size and format it was uploaded at, so an unmodified phone-
+  // camera photo (often 3000px+ wide, several MB) went straight into every
+  // project/unit gallery unchanged. Deliberately skips GIFs (re-encoding
+  // through <canvas> flattens animation to a single frame) and SVGs
+  // (already vector; raster-encoding one is a downgrade, not an
+  // optimization). Falls back to the original file on ANY failure — an old
+  // browser without WebP encoding support, a corrupt image, an image that
+  // comes out LARGER as WebP than it went in — an upload must never be
+  // silently blocked or degraded by this.
+  async function resizeImageToWebP(file, maxDim = 1920, quality = 0.82) {
+    if (!/^image\//.test(file.type || '') || file.type === 'image/gif' || file.type === 'image/svg+xml') return file;
+    if (typeof createImageBitmap !== 'function') return file;
+    let bitmap;
+    try {
+      bitmap = await createImageBitmap(file);
+      const scale = Math.min(1, maxDim / Math.max(bitmap.width, bitmap.height));
+      const w = Math.max(1, Math.round(bitmap.width * scale));
+      const h = Math.max(1, Math.round(bitmap.height * scale));
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return file;
+      ctx.drawImage(bitmap, 0, 0, w, h);
+      const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/webp', quality));
+      if (!blob || blob.size >= file.size) return file; // encoding failed, or genuinely not an improvement
+      const newName = (file.name || 'image').replace(/\.[a-zA-Z0-9]+$/, '') + '.webp';
+      return new File([blob], newName, { type: 'image/webp' });
+    } catch (_) {
+      return file;
+    } finally {
+      if (bitmap && bitmap.close) bitmap.close();
+    }
+  }
+
   async function uploadFile(f, kind) {
     kind = kind || 'image';
     if (!f) return null;
-    // guard: right file type, and keep it a sane size
+    // guard: right file type
     if (kind === 'image' && f.type && !/^image\//.test(f.type)) { toast(t('Please choose an image file'), 'err'); return null; }
     if (kind === 'pdf' && f.type && f.type !== 'application/pdf') { toast(t('Please choose a PDF file'), 'err'); return null; }
+    // resize/re-encode BEFORE the size check below — a 15MB straight-out-of-
+    // camera photo should shrink to something reasonable, not get rejected
+    if (kind === 'image') f = await resizeImageToWebP(f);
     const maxMB = kind === 'pdf' ? 50 : 12;
     if (f.size > maxMB * 1024 * 1024) { toast(`${t('File is larger than')} ${maxMB} MB — ${t('please pick a smaller one')}`, 'err'); return null; }
     try {
