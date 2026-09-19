@@ -617,8 +617,13 @@ async function handleDetail(req, res, params) {
     const name = pick('name', 'name_ar') || row.name;
     const customTitle = pick('seo_title', 'seo_title_ar');
     title = customTitle || `${name} — Aqar Factory`;
-    description = pick('seo_description', 'seo_description_ar') || row.tagline
-      || (richMode ? blocksToText(pick('about_blocks', 'about_blocks_ar')) || (row.about && row.about[0]) : '') || '';
+    // about_blocks/about_blocks_ar is checked before tagline: tagline has no
+    // _ar counterpart, so whichever language it was written in leaks onto
+    // the other language's page whenever seo_description is empty - a
+    // language-matched about_blocks excerpt is always the safer fallback.
+    description = pick('seo_description', 'seo_description_ar')
+      || (richMode ? blocksToText(pick('about_blocks', 'about_blocks_ar')) || (row.about && row.about[0]) : '')
+      || row.tagline || '';
     image = img(row.cover, 1200);
     if (row.developer) facts.push([isAr ? 'المطوّر' : 'Developer', row.developer]);
     if (row.location) facts.push([isAr ? 'الموقع' : 'Location', row.location]);
