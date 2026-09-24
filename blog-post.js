@@ -88,23 +88,28 @@ function populate() {
     logo: COMPANY.logo ? { '@type': 'ImageObject', url: U(COMPANY.logo, 512) } : undefined
   };
   const orgRef = { '@id': ORG_ID };
-  injectJsonLd({
-    '@context': 'https://schema.org',
-    '@graph': [
-      orgEntity,
-      {
-        '@type': 'BlogPosting',
-        mainEntityOfPage: { '@type': 'WebPage', '@id': location.href },
-        headline: customTitle || title,
-        description: desc || undefined,
-        image: post.cover ? U(post.cover, 1600) : undefined,
-        author: post.authorName ? { '@type': 'Person', name: post.authorName, url: 'https://www.aqar-factory.com/about.html' } : orgRef,
-        publisher: orgRef,
-        datePublished: post.publishedAt || undefined,
-        dateModified: post.updatedAt || post.publishedAt || undefined
-      }
-    ]
-  });
+  const graph = [
+    orgEntity,
+    {
+      '@type': 'BlogPosting',
+      mainEntityOfPage: { '@type': 'WebPage', '@id': location.href },
+      headline: customTitle || title,
+      description: desc || undefined,
+      image: post.cover ? U(post.cover, 1600) : undefined,
+      author: post.authorName ? { '@type': 'Person', name: post.authorName, url: 'https://www.aqar-factory.com/about.html' } : orgRef,
+      publisher: orgRef,
+      datePublished: post.publishedAt || undefined,
+      dateModified: post.updatedAt || post.publishedAt || undefined
+    }
+  ];
+  const SH = window.SchemaHelpers;
+  if (SH) {
+    const pageUrl = SH.SITE + location.pathname;
+    graph.push(SH.breadcrumbNode('blog', isAr(), title, pageUrl));
+    const faq = SH.faqNode(SH.extractFaq(pick(post, 'blocks', 'blocksAr')), pageUrl);
+    if (faq) graph.push(faq);
+  }
+  injectJsonLd({ '@context': 'https://schema.org', '@graph': graph });
 
   document.getElementById('heroImg').style.backgroundImage = `url('${U(post.cover, 1600)}')`;
   document.getElementById('postTitle').textContent = title;

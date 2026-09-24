@@ -132,6 +132,13 @@ function populate() {
       mainEntityOfPage: { '@type': 'WebPage', '@id': location.href }
     });
   }
+  const SH = window.SchemaHelpers;
+  if (SH) {
+    const pageUrl = SH.SITE + location.pathname;
+    graph.push(SH.breadcrumbNode('unit', isAr(), pick(unit, 'name', 'nameAr') || unit.name, pageUrl));
+    const faq = SH.faqNode(SH.extractFaq(descBlocks), pageUrl);
+    if (faq) graph.push(faq);
+  }
   injectJsonLd({ '@context': 'https://schema.org', '@graph': graph });
 
   const heroImg = document.getElementById('heroImg');

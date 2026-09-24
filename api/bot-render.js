@@ -28,6 +28,10 @@
    within its s-maxage window now costs ONE Supabase round-trip, not N.
    ============================================================ */
 
+// shared with project.js/unit.js/blog-post.js (loaded there as a plain
+// <script>) so crawler and browser JSON-LD are built by the same code
+const SchemaHelpers = require('../schema-helpers.js');
+
 const SUPA_URL = 'https://dwufpgsqblwjgmzoseev.supabase.co';
 const SUPA_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR3dWZwZ3NxYmx3amdtem9zZWV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5ODgyNTMsImV4cCI6MjA5ODU2NDI1M30.dvO4voO8tRIo-99kHJ3o_x3YvSiaEnq8I0gOmgf1YOY';
 
@@ -209,19 +213,20 @@ async function fetchListingRows(table, extraSelect, limit = 60) {
   }
 }
 
-// homepage/listing-page OG image — same content_blocks 'company' singleton
-// row store.js's getCompany()/branding.js read client-side
-async function fetchCompanyLogo() {
+// the content_blocks 'company' singleton row store.js's getCompany()/
+// branding.js read client-side - logo for OG images, plus the address/
+// phone/hours/socials the static pages' Organization markup is built from
+async function fetchCompany() {
   try {
     const res = await fetch(
       `${SUPA_URL}/rest/v1/content_blocks?select=value&key=eq.company&limit=1`,
       { headers: { apikey: SUPA_ANON_KEY, Authorization: `Bearer ${SUPA_ANON_KEY}` } }
     );
-    if (!res.ok) return '';
+    if (!res.ok) return {};
     const rows = await res.json();
-    return (rows[0] && rows[0].value && rows[0].value.logo) || '';
+    return (rows[0] && rows[0].value) || {};
   } catch (_) {
-    return '';
+    return {};
   }
 }
 
@@ -468,7 +473,7 @@ async function handleStatic(req, res, params) {
       html = html.replace(/<meta name="description" content="[^"]*"/, `<meta name="description" content="${esc(description)}"`);
     }
 
-    const [injectResults, logo] = await Promise.all([
+    const [injectResults, company] = await Promise.all([
       Promise.all((LISTING_INJECT[page] || []).map(async cfg => {
         const rows = await fetchListingRows(cfg.table, cfg.select, cfg.limit || 60);
         const items = rows.map(r => cfg.row(r, isAr)).filter(x => x.slug && x.name);
@@ -477,8 +482,9 @@ async function handleStatic(req, res, params) {
         ).join('')}</ul>`;
         return { containerId: cfg.containerId, listHtml };
       })),
-      fetchCompanyLogo()
+      fetchCompany()
     ]);
+    const logo = company.logo || '';
     for (const { containerId, listHtml } of injectResults) {
       html = replaceContainerContents(html, containerId, listHtml);
     }
@@ -488,21 +494,27 @@ async function handleStatic(req, res, params) {
     // response is byte-identical no matter what's in the query string)
     const pageUrl = isAr ? arUrl : enUrl;
     const image = logo ? img(logo, 1200) : '';
-    // Organization/WebSite schema only on the homepage — the single page
-    // most likely to actually earn a knowledge-panel/sitelinks treatment;
-    // listing pages already get real crawlable links via LISTING_INJECT
-    // above, which matters more for discovery than a schema block would
-    const jsonLd = (page === '/') ? `<script type="application/ld+json">${JSON.stringify({
-      '@context': 'https://schema.org',
-      // same @id every other page's Organization node references (detail
-      // pages, blog posts) - one canonical entity across the whole site
-      '@id': 'https://www.aqar-factory.com/#organization',
-      '@type': 'Organization',
-      name: 'Aqar Factory',
-      url: 'https://www.aqar-factory.com/',
-      logo: image || undefined,
-      sameAs: []
-    })}</script>\n` : '';
+    // Full business entity (Organization + RealEstateAgent: address, phone,
+    // hours, socials - all shown on the contact page) plus WebSite on every
+    // static page, and a page-type node for the pages that have one. The
+    // static source files carry a copy of this block (id="siteSchema") for
+    // real browsers/validators; it's dropped here so bots get exactly one,
+    // built fresh from the database.
+    html = html.replace(/<script type="application\/ld\+json" id="siteSchema">[\s\S]*?<\/script>\s*/, '');
+    const PAGE_TYPE = {
+      '/about.html': 'AboutPage', '/contact.html': 'ContactPage',
+      '/projects.html': 'CollectionPage', '/units.html': 'CollectionPage', '/blog.html': 'CollectionPage'
+    };
+    const graph = [SchemaHelpers.companyNode(company), SchemaHelpers.websiteNode()];
+    if (PAGE_TYPE[page]) {
+      graph.push({
+        '@type': PAGE_TYPE[page], '@id': pageUrl + '#webpage', url: pageUrl,
+        name: title || undefined, description: description || undefined,
+        inLanguage: isAr ? 'ar' : 'en',
+        isPartOf: { '@id': SchemaHelpers.WEBSITE_ID }, about: { '@id': SchemaHelpers.ORG_ID }
+      });
+    }
+    const jsonLd = `<script type="application/ld+json" id="siteSchema">${JSON.stringify({ '@context': 'https://schema.org', '@graph': graph })}</script>\n`;
     const tags = `<link rel="canonical" href="${esc(pageUrl)}">\n` +
       `<link rel="alternate" hreflang="en" href="${esc(enUrl)}">\n<link rel="alternate" hreflang="ar" href="${esc(arUrl)}">\n<link rel="alternate" hreflang="x-default" href="${esc(enUrl)}">\n` +
       (title ? `<meta property="og:type" content="website">\n<meta property="og:site_name" content="Aqar Factory">\n<meta property="og:title" content="${esc(title)}">\n<meta property="og:description" content="${esc(description)}">\n<meta property="og:url" content="${esc(pageUrl)}">\n` : '') +
@@ -776,6 +788,22 @@ async function handleDetail(req, res, params) {
       });
     }
     jsonLd = { '@context': 'https://schema.org', '@graph': graph };
+  }
+
+  // breadcrumb + FAQ - built by the same shared helpers the browser scripts
+  // use. pick() treats an empty [] as "filled", but the page itself falls
+  // back to the English blocks when the Arabic ones are empty, so the FAQ
+  // source has to follow the page, not pick().
+  const pickBlocks = (en, ar) => (isAr && Array.isArray(row[ar]) && row[ar].length) ? row[ar] : row[en];
+  const crumbKind = table === 'blog_posts' ? 'blog' : table === 'units' ? 'unit' : 'project';
+  const crumbName = table === 'blog_posts' ? (pick('title', 'title_ar') || title) : (pick('name', 'name_ar') || row.name || title);
+  jsonLd['@graph'].push(SchemaHelpers.breadcrumbNode(crumbKind, isAr, crumbName, canonicalUrl));
+  if (richMode) {
+    const faqBlocks = table === 'blog_posts' ? pickBlocks('blocks', 'blocks_ar')
+      : table === 'units' ? pickBlocks('description_blocks', 'description_blocks_ar')
+      : pickBlocks('about_blocks', 'about_blocks_ar');
+    const faq = SchemaHelpers.faqNode(SchemaHelpers.extractFaq(faqBlocks), canonicalUrl);
+    if (faq) jsonLd['@graph'].push(faq);
   }
 
   const html = pageHTML({

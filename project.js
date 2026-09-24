@@ -147,6 +147,13 @@ function populate() {
       mainEntityOfPage: { '@type': 'WebPage', '@id': location.href }
     });
   }
+  const SH = window.SchemaHelpers;
+  if (SH) {
+    const pageUrl = SH.SITE + location.pathname;
+    graph.push(SH.breadcrumbNode('project', isAr(), pick(project, 'name', 'nameAr') || project.name, pageUrl));
+    const faq = SH.faqNode(SH.extractFaq(pick(project, 'aboutBlocks', 'aboutBlocksAr')), pageUrl);
+    if (faq) graph.push(faq);
+  }
   injectJsonLd({ '@context': 'https://schema.org', '@graph': graph });
 
   const heroImg = document.getElementById('heroImg');
