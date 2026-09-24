@@ -494,6 +494,9 @@ async function handleStatic(req, res, params) {
     // above, which matters more for discovery than a schema block would
     const jsonLd = (page === '/') ? `<script type="application/ld+json">${JSON.stringify({
       '@context': 'https://schema.org',
+      // same @id every other page's Organization node references (detail
+      // pages, blog posts) - one canonical entity across the whole site
+      '@id': 'https://www.aqar-factory.com/#organization',
       '@type': 'Organization',
       name: 'Aqar Factory',
       url: 'https://www.aqar-factory.com/',

@@ -95,22 +95,44 @@ function populate() {
   // a unit is a thing for sale, not an article — Product+Offer, not
   // BlogPosting (copy-pasted from the blog post page originally; same
   // fix applied server-side in api/bot-render.js, which is what a real
-  // crawler actually receives)
-  injectJsonLd({
-    '@context': 'https://schema.org',
+  // crawler actually receives). Organization is its own top-level @graph
+  // node (not just nested inside brand/seller) so schema-testing tools
+  // that only report root-level @type entities actually detect it — same
+  // reasoning and structure as api/bot-render.js.
+  const ORG_ID = 'https://www.aqar-factory.com/#organization';
+  const orgEntity = { '@id': ORG_ID, '@type': 'Organization', name: 'Aqar Factory', url: 'https://www.aqar-factory.com/' };
+  const orgRef = { '@id': ORG_ID };
+  const unitTitle = customTitle || pick(unit, 'name', 'nameAr') || unit.name;
+  const productEntity = {
     '@type': 'Product',
-    name: customTitle || pick(unit, 'name', 'nameAr') || unit.name,
+    name: unitTitle,
     description: desc || undefined,
     image: unit.cover ? U(unit.cover, 1600) : undefined,
     url: location.href,
-    brand: { '@type': 'Organization', name: 'Aqar Factory' },
+    brand: orgRef,
     offers: {
       '@type': 'Offer', url: location.href, priceCurrency: 'EGP',
       price: unit.priceValue > 0 ? unit.priceValue : undefined,
       availability: 'https://schema.org/InStock',
-      seller: { '@type': 'Organization', name: 'Aqar Factory' }
+      seller: orgRef
     }
-  });
+  };
+  const graph = [orgEntity, productEntity];
+  // Article only when there's real long-form content, not a thin one-liner
+  // - checked against an absolute length, not against desc: when
+  // seoDescription is empty, desc itself falls back to this exact same
+  // blocksToText() call, so comparing the two would always be a no-op tie.
+  const articleBody = blocksToText(descBlocks);
+  if (articleBody.length > 300) {
+    graph.push({
+      '@type': 'Article',
+      headline: unitTitle, description: desc || undefined,
+      image: unit.cover ? U(unit.cover, 1600) : undefined,
+      articleBody, author: orgRef, publisher: orgRef,
+      mainEntityOfPage: { '@type': 'WebPage', '@id': location.href }
+    });
+  }
+  injectJsonLd({ '@context': 'https://schema.org', '@graph': graph });
 
   const heroImg = document.getElementById('heroImg');
   if (heroImg._tid) clearInterval(heroImg._tid);

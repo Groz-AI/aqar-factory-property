@@ -78,22 +78,32 @@ function populate() {
   // canonical/hreflang are handled generically (and language-aware) by
   // i18n.js's injectSeoLinks() — see the note in project.js's populate().
 
+  // Organization is its own top-level @graph node (not just nested inside
+  // author/publisher) so schema-testing tools that only report root-level
+  // @type entities actually detect it — same structure as project.js/
+  // unit.js/api/bot-render.js.
+  const ORG_ID = 'https://www.aqar-factory.com/#organization';
+  const orgEntity = {
+    '@id': ORG_ID, '@type': 'Organization', name: 'Aqar Factory', url: 'https://www.aqar-factory.com/',
+    logo: COMPANY.logo ? { '@type': 'ImageObject', url: U(COMPANY.logo, 512) } : undefined
+  };
+  const orgRef = { '@id': ORG_ID };
   injectJsonLd({
     '@context': 'https://schema.org',
-    '@type': 'BlogPosting',
-    mainEntityOfPage: { '@type': 'WebPage', '@id': location.href },
-    headline: customTitle || title,
-    description: desc || undefined,
-    image: post.cover ? U(post.cover, 1600) : undefined,
-    author: post.authorName
-      ? { '@type': 'Person', name: post.authorName, url: 'https://www.aqar-factory.com/about.html' }
-      : { '@type': 'Organization', name: 'Aqar Factory', url: 'https://www.aqar-factory.com' },
-    publisher: {
-      '@type': 'Organization', name: 'Aqar Factory',
-      logo: { '@type': 'ImageObject', url: COMPANY.logo ? U(COMPANY.logo, 512) : undefined }
-    },
-    datePublished: post.publishedAt || undefined,
-    dateModified: post.updatedAt || post.publishedAt || undefined
+    '@graph': [
+      orgEntity,
+      {
+        '@type': 'BlogPosting',
+        mainEntityOfPage: { '@type': 'WebPage', '@id': location.href },
+        headline: customTitle || title,
+        description: desc || undefined,
+        image: post.cover ? U(post.cover, 1600) : undefined,
+        author: post.authorName ? { '@type': 'Person', name: post.authorName, url: 'https://www.aqar-factory.com/about.html' } : orgRef,
+        publisher: orgRef,
+        datePublished: post.publishedAt || undefined,
+        dateModified: post.updatedAt || post.publishedAt || undefined
+      }
+    ]
   });
 
   document.getElementById('heroImg').style.backgroundImage = `url('${U(post.cover, 1600)}')`;

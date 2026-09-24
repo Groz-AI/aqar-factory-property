@@ -86,8 +86,13 @@ function populate() {
   const customTitle = pick(project, 'seoTitle', 'seoTitleAr');
   document.title = customTitle || `${pick(project, 'name', 'nameAr') || project.name} — Aqar Factory`;
   const metaDesc = document.querySelector('meta[name="description"]');
-  const desc = pick(project, 'seoDescription', 'seoDescriptionAr') || project.tagline
-    || blocksToText(pick(project, 'aboutBlocks', 'aboutBlocksAr')) || (project.about && project.about[0]) || '';
+  // aboutBlocks/aboutBlocksAr is checked before tagline: tagline has no
+  // Arabic-specific counterpart, so whichever language it happens to be
+  // written in was leaking onto the other language's page whenever
+  // seoDescription was empty — same fix as api/bot-render.js.
+  const desc = pick(project, 'seoDescription', 'seoDescriptionAr')
+    || blocksToText(pick(project, 'aboutBlocks', 'aboutBlocksAr')) || (project.about && project.about[0])
+    || project.tagline || '';
   if (metaDesc && desc) metaDesc.setAttribute('content', desc.length > 160 ? desc.slice(0, 157) + '…' : desc);
   // canonical/hreflang are handled generically (and language-aware) by
   // i18n.js's injectSeoLinks() — it self-references the current URL, which
@@ -104,22 +109,45 @@ function populate() {
   // a project is a thing for sale, not an article — Product+Offer, not
   // BlogPosting (copy-pasted from the blog post page originally; same
   // fix applied server-side in api/bot-render.js, which is what a real
-  // crawler actually receives)
-  injectJsonLd({
-    '@context': 'https://schema.org',
+  // crawler actually receives). Organization is its own top-level @graph
+  // node (not just nested inside brand/seller) so schema-testing tools
+  // that only report root-level @type entities actually detect it — same
+  // reasoning and structure as api/bot-render.js.
+  const ORG_ID = 'https://www.aqar-factory.com/#organization';
+  const orgEntity = { '@id': ORG_ID, '@type': 'Organization', name: 'Aqar Factory', url: 'https://www.aqar-factory.com/' };
+  const orgRef = { '@id': ORG_ID };
+  const projTitle = customTitle || pick(project, 'name', 'nameAr') || project.name;
+  const productEntity = {
     '@type': 'Product',
-    name: customTitle || pick(project, 'name', 'nameAr') || project.name,
+    name: projTitle,
     description: desc || undefined,
     image: project.cover ? U(project.cover, 1600) : undefined,
     url: location.href,
-    brand: { '@type': 'Organization', name: 'Aqar Factory' },
+    brand: orgRef,
     offers: {
       '@type': 'Offer', url: location.href, priceCurrency: 'EGP',
       price: project.priceValue > 0 ? project.priceValue : undefined,
       availability: 'https://schema.org/InStock',
-      seller: { '@type': 'Organization', name: 'Aqar Factory' }
+      seller: orgRef
     }
-  });
+  };
+  const graph = [orgEntity, productEntity];
+  // Article only when there's real long-form content, not a thin one-liner
+  // - a thin/duplicate Article entity is worse than none. Checked against
+  // an absolute length, not against desc: when seoDescription is empty,
+  // desc itself falls back to this exact same blocksToText() call, so
+  // comparing the two would always be a no-op tie.
+  const articleBody = blocksToText(pick(project, 'aboutBlocks', 'aboutBlocksAr'));
+  if (articleBody.length > 300) {
+    graph.push({
+      '@type': 'Article',
+      headline: projTitle, description: desc || undefined,
+      image: project.cover ? U(project.cover, 1600) : undefined,
+      articleBody, author: orgRef, publisher: orgRef,
+      mainEntityOfPage: { '@type': 'WebPage', '@id': location.href }
+    });
+  }
+  injectJsonLd({ '@context': 'https://schema.org', '@graph': graph });
 
   const heroImg = document.getElementById('heroImg');
   if (heroImg._tid) clearInterval(heroImg._tid);
