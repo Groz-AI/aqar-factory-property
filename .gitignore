@@ -16,3 +16,6 @@ scratchpad/
 
 .vercel
 .env*
+
+# Google service account credentials (Search Console API)
+.gsc-service-account.json

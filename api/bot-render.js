@@ -59,8 +59,8 @@ const blocksToText = (blocks) => (Array.isArray(blocks) ? blocks : []).map(b => 
 // below — Schema.org/Google Rich Results want a clean number, not
 // "EGP 3,200,000"
 const LEAN_SELECT = {
-  projects: 'slug,slug_ar,seo_title,seo_title_ar,seo_description,seo_description_ar,name,name_ar,tagline,cover,developer,location,city,category,status,price,price_value',
-  units: 'slug,slug_ar,seo_title,seo_title_ar,seo_description,seo_description_ar,name,name_ar,description,description_ar,cover,type,price,price_value,beds,baths,area,location',
+  projects: 'slug,slug_ar,seo_title,seo_title_ar,seo_description,seo_description_ar,name,name_ar,tagline,cover,developer,location,city,category,status,price,price_value,created_at,updated_at',
+  units: 'slug,slug_ar,seo_title,seo_title_ar,seo_description,seo_description_ar,name,name_ar,description,description_ar,cover,type,price,price_value,beds,baths,area,location,created_at,updated_at',
   blog_posts: 'slug,seo_title,seo_title_ar,seo_description,seo_description_ar,title,title_ar,excerpt,excerpt_ar,cover,author_name'
 };
 
@@ -717,30 +717,62 @@ async function handleDetail(req, res, params) {
   // things for sale, not articles — Product+Offer, not BlogPosting (the
   // client-side version had exactly this mistake too, copy-pasted from the
   // blog post page's own JSON-LD; fixed there as well).
+  // Organization as its own top-level @graph node (not just nested inside
+  // brand/seller/publisher) - a schema-testing tool only lists root-level
+  // @type entities as "detected", so an Organization referenced only from
+  // inside Product never showed up as its own type even though the data
+  // was technically present. @id + references is the correct JSON-LD way
+  // to point multiple entities at the same Organization without repeating it.
+  const ORG_ID = 'https://www.aqar-factory.com/#organization';
+  const orgEntity = { '@id': ORG_ID, '@type': 'Organization', name: 'Aqar Factory', url: 'https://www.aqar-factory.com/' };
+  const orgRef = { '@id': ORG_ID };
+
   let jsonLd;
   if (table === 'blog_posts') {
     jsonLd = {
-      '@context': 'https://schema.org', '@type': 'BlogPosting',
-      mainEntityOfPage: { '@type': 'WebPage', '@id': canonicalUrl },
-      headline: title, description, image: image || undefined,
-      author: row.author_name ? { '@type': 'Person', name: row.author_name } : { '@type': 'Organization', name: 'Aqar Factory' },
-      publisher: { '@type': 'Organization', name: 'Aqar Factory' },
-      datePublished: row.published_at || undefined,
-      dateModified: row.updated_at || row.published_at || undefined
+      '@context': 'https://schema.org',
+      '@graph': [
+        orgEntity,
+        {
+          '@type': 'BlogPosting',
+          mainEntityOfPage: { '@type': 'WebPage', '@id': canonicalUrl },
+          headline: title, description, image: image || undefined,
+          author: row.author_name ? { '@type': 'Person', name: row.author_name } : orgRef,
+          publisher: orgRef,
+          datePublished: row.published_at || undefined,
+          dateModified: row.updated_at || row.published_at || undefined
+        }
+      ]
     };
   } else {
     const priceValue = Number(row.price_value) || 0;
-    jsonLd = {
-      '@context': 'https://schema.org', '@type': 'Product',
+    const productEntity = {
+      '@type': 'Product',
       name: title, description, image: image || undefined, url: canonicalUrl,
-      brand: { '@type': 'Organization', name: 'Aqar Factory' },
+      brand: orgRef,
       offers: {
         '@type': 'Offer', url: canonicalUrl, priceCurrency: 'EGP',
         price: priceValue > 0 ? priceValue : undefined,
         availability: 'https://schema.org/InStock',
-        seller: { '@type': 'Organization', name: 'Aqar Factory' }
+        seller: orgRef
       }
     };
+    const graph = [orgEntity, productEntity];
+    // Article only when there's real long-form content beyond the meta
+    // description (bodyText = description + about/description_blocks text
+    // in richMode) - a thin/duplicate Article entity is worse than none.
+    if (richMode && bodyText && bodyText.length > description.length + 100) {
+      graph.push({
+        '@type': 'Article',
+        headline: title, description, image: image || undefined,
+        articleBody: bodyText,
+        author: orgRef, publisher: orgRef,
+        mainEntityOfPage: { '@type': 'WebPage', '@id': canonicalUrl },
+        datePublished: row.created_at || undefined,
+        dateModified: row.updated_at || row.created_at || undefined
+      });
+    }
+    jsonLd = { '@context': 'https://schema.org', '@graph': graph };
   }
 
   const html = pageHTML({
