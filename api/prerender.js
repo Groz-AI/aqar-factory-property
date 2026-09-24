@@ -72,10 +72,18 @@ function blobKey(kindPath, lang, slugForUrl) {
   return `prerendered/${lang}/${kindPath}/${slugForUrl}.html`;
 }
 
-async function renderOne(browser, url, bypassSecret) {
+async function renderOne(browser, url, bypassSecret, lang) {
   const page = await browser.newPage();
   try {
     await page.setExtraHTTPHeaders({ 'x-prerender-bypass': bypassSecret });
+    // headless Chrome has no stored language preference, so i18n.js's
+    // Arabic-by-default redirect sent every English render to the /ar/
+    // page - and that Arabic HTML (lang="ar", Arabic canonical) was then
+    // cached under the English key. Pin the preference to the language
+    // being rendered before any page script runs.
+    await page.evaluateOnNewDocument((l) => {
+      try { localStorage.setItem('realteek_public_lang', l); } catch (_) { /* ignore */ }
+    }, lang);
     // NOT 'networkidle0': every page opens a persistent Supabase Realtime
     // WebSocket (store.js) that never closes, so "0 active connections" can
     // never be true here — that made every single render time out at 20s,
@@ -184,7 +192,7 @@ module.exports = async function handler(req, res) {
 
     for (const t of targets) {
       try {
-        const html = await renderOne(browser, SITE_ORIGIN + t.path, bypassSecret);
+        const html = await renderOne(browser, SITE_ORIGIN + t.path, bypassSecret, t.lang);
         // this SDK version's PutCommandOptions only accepts access:'public'
         // (confirmed in node_modules/@vercel/blob's own .d.ts — 'private'
         // was never a real option, it just silently never worked); pairing
