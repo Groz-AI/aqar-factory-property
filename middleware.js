@@ -73,29 +73,13 @@
    the original query string to a redirect destination with no documented
    way to turn that off, which produced a broken double-slug URL.
 
-   REAL VISITORS, NOT JUST BOTS: separately from all of the above, this
-   file also checks Vercel Blob for a pre-rendered snapshot of the page
-   (written by api/prerender.js, triggered from the admin portal on every
-   save) and serves that directly when one exists — so a real visitor's
-   very first response already has the content, not just bots/AI. A cache
-   miss (brand new item, or the snapshot hasn't been generated yet) falls
-   through to today's client-rendered page exactly as before — never a
-   broken state. The one exception is api/prerender.js's own headless-
-   browser request, which sends a secret bypass header so it always
-   captures the true live page instead of re-snapshotting a stale copy
-   of itself.
+   REAL VISITORS, NOT JUST BOTS: real browsers are rewritten to
+   api/bot-render.js in "shell" mode - the normal client-rendered page,
+   with the page's title/description/canonical/hreflang/JSON-LD already
+   in <head>. (This replaced a Vercel Blob snapshot cache that went stale
+   and then got blocked when the store hit its plan limits.)
    ============================================================ */
 
-// NOT `import { get } from '@vercel/blob'` — that function doesn't exist in
-// this SDK version (confirmed: Object.keys(require('@vercel/blob')) has no
-// `get`), so this was always silently throwing inside fetchPrerendered()'s
-// own try/catch and returning null unconditionally — meaning no real
-// visitor has ever actually received a cached snapshot, regardless of
-// whether api/prerender.js successfully wrote one. The store itself is a
-// public blob store (see api/prerender.js's put() call), so a snapshot's
-// URL is just this fixed base plus its known pathname — no SDK read call
-// needed at all, a plain fetch() is the correct fix.
-const BLOB_PUBLIC_BASE_URL = process.env.BLOB_PUBLIC_BASE_URL;
 // on the Node.js Middleware runtime (unlike the Edge default), a bare
 // `return;`/`return undefined` does NOT reliably fall through to normal
 // request handling — verified live: it served an empty 200 body instead of
@@ -152,24 +136,15 @@ const AI_BOT_RE = /gptbot|chatgpt-user|oai-searchbot|claudebot|claude-web|anthro
 
 const BOT_RE = new RegExp(PREVIEW_BOT_RE.source + '|' + AI_BOT_RE.source, 'i');
 
-// looks up a real-visitor pre-rendered snapshot written by api/prerender.js —
-// path format must match blobKey() there exactly. api/prerender.js writes
-// with addRandomSuffix:false, so this URL is fully deterministic — no
-// lookup step (list/head) needed, just fetch it directly and treat a 404
-// as "no snapshot yet", same as the old code treated a missing blob.
-async function fetchPrerendered(kindPath, lang, slugForUrl) {
-  if (!BLOB_PUBLIC_BASE_URL) return null;
-  try {
-    const res = await fetch(`${BLOB_PUBLIC_BASE_URL}/prerendered/${lang}/${kindPath}/${slugForUrl}.html`);
-    if (!res.ok) return null;
-    return await res.text();
-  } catch (_) {
-    return null;
-  }
-}
 
 export default async function middleware(request) {
   const url = new URL(request.url);
+
+  // api/bot-render.js re-fetching a raw static file it injects into (static
+  // pages, and the project/unit/blog-post templates for browser requests).
+  // Must be served untouched - otherwise /project.html would be redirected
+  // and static pages rewritten straight back to the function.
+  if (request.headers.get('x-mw-static-fetch') === '1') return next();
 
   // Home + the 5 static listing/info pages get zero hreflang on Google's raw
   // first pass, same root cause as the fix already shipped for project/unit/
@@ -361,23 +336,14 @@ export default async function middleware(request) {
   const isRealBrowser = !isNamedBot && !looksLikeNonBrowser;
 
   if (isRealBrowser) {
-    const bypassSecret = process.env.PRERENDER_BYPASS_SECRET;
-    const isPrerenderRequest = bypassSecret && request.headers.get('x-prerender-bypass') === bypassSecret;
-    if (!isPrerenderRequest) {
-      const cached = await fetchPrerendered(kindPath, isAr ? 'ar' : 'en', slugFromUrl);
-      if (cached) {
-        return new Response(cached, {
-          headers: {
-            'content-type': 'text/html; charset=utf-8',
-            // short edge cache on top of the Blob CDN's own caching — an
-            // admin edit's regenerate call overwrites the blob directly,
-            // so this is just extra headroom, not the source of freshness
-            'cache-control': 'public, max-age=0, s-maxage=60, stale-while-revalidate=300'
-          }
-        });
-      }
-    }
-    return next(); // no cached snapshot yet (or this IS the snapshotter) — normal CSR shell, exactly as before
+    // Real visitors get the normal page with this page's title, description,
+    // canonical, hreflang and JSON-LD already in <head>, built server-side
+    // from the same code as the crawler version. This replaces the Vercel
+    // Blob snapshot lookup, which made the raw HTML depend on a separate
+    // store (blocked when it went over the plan's limits - every browser-
+    // style fetch then got the bare template with no schema at all).
+    const qs = new URLSearchParams({ mode: 'detail', kind: kindPath, slug: slugFromUrl, lang: isAr ? 'ar' : 'en', shell: '1' });
+    return rewrite(new URL(`/api/bot-render?${qs.toString()}`, url.origin));
   }
 
   // AI bots and unidentified non-browser clients both get full article text

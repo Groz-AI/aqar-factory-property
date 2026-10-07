@@ -449,7 +449,7 @@ ${image ? `<meta property="og:image" content="${esc(image)}">` : ''}
 <meta name="twitter:title" content="${esc(title)}">
 <meta name="twitter:description" content="${esc(description)}">
 ${image ? `<meta name="twitter:image" content="${esc(image)}">` : ''}
-${jsonLd ? `<script type="application/ld+json">${JSON.stringify(jsonLd)}</script>` : ''}
+${jsonLd ? `<script type="application/ld+json">${JSON.stringify(jsonLd).replace(/</g, '\\u003c')}</script>` : ''}
 </head><body>
 <header><nav>${siteNav(isAr)} | <a href="${esc(otherLangUrl)}" hreflang="${isAr ? 'en' : 'ar'}">${esc(NAV[isAr ? 'ar' : 'en'].other)}</a></nav></header>
 <main>
@@ -586,11 +586,32 @@ async function handleStatic(req, res, params) {
   }
 }
 
+// the page template real visitors get (project.html / unit.html /
+// blog-post.html), fetched with the internal header middleware lets
+// straight through
+async function fetchTemplate(kindPath) {
+  const file = kindPath === 'blog' ? 'blog-post' : kindPath;
+  try {
+    const r = await fetch(`https://www.aqar-factory.com/${file}.html`, { headers: { 'x-mw-static-fetch': '1' }, redirect: 'manual' });
+    if (!r.ok) return null;
+    const html = await r.text();
+    // never inject into the wrong page (e.g. a redirect to a listing page)
+    return html.includes(`src="${file}.js"`) ? html : null;
+  } catch (_) {
+    return null;
+  }
+}
+
 async function handleDetail(req, res, params) {
   const kindPath = params.get('kind'); // 'project' | 'unit' | 'blog'
   const slugFromUrl = params.get('slug') || '';
   const isAr = params.get('lang') === 'ar';
-  const richMode = params.get('rich') === '1';
+  // shell mode = a real browser: the normal visitor page, but with this
+  // page's title/description/canonical/hreflang/JSON-LD already in <head>,
+  // so anything reading the raw HTML (validators, link previews, crawlers
+  // that don't identify themselves) sees them without running JavaScript
+  const shell = params.get('shell') === '1';
+  const richMode = shell || params.get('rich') === '1';
 
   const table = kindPath === 'unit' ? 'units' : kindPath === 'blog' ? 'blog_posts' : 'projects';
 
@@ -600,6 +621,11 @@ async function handleDetail(req, res, params) {
   // 404 rather than guessing; Google retries a 5xx-adjacent state on its
   // own schedule without deindexing, same intent as the original design
   if (row === LOOKUP_FAILED) {
+    if (shell) {
+      // a visitor still gets the working page; it loads its own data
+      const tpl = await fetchTemplate(kindPath);
+      if (tpl) return sendHtml(res, 200, tpl, 'public, max-age=0, s-maxage=10');
+    }
     return sendHtml(res, 503, '<!DOCTYPE html><title>Aqar Factory</title><p>Temporarily unavailable.</p>', 'public, max-age=0, s-maxage=10');
   }
   if (!row) {
@@ -634,7 +660,12 @@ async function handleDetail(req, res, params) {
     // No such published row. Falling through to the CSR template here would
     // answer a crawler with HTTP 200 and an empty generic page — a soft 404,
     // which Google keeps in its index and reports as an error rather than
-    // dropping cleanly. Answer with a real 404 instead.
+    // dropping cleanly. Answer with a real 404 instead (a visitor still gets
+    // the site's own page, which shows its "not found" state).
+    if (shell) {
+      const tpl = await fetchTemplate(kindPath);
+      if (tpl) return sendHtml(res, 404, tpl.replace('</head>', '<meta name="robots" content="noindex">\n</head>'), 'public, max-age=0, s-maxage=60');
+    }
     return sendHtml(res, 404,
       `<!DOCTYPE html><html lang="${isAr ? 'ar' : 'en'}" dir="${isAr ? 'rtl' : 'ltr'}"><head><meta charset="utf-8"><title>Not found — Aqar Factory</title>` +
       `<meta name="robots" content="noindex"></head><body><h1>Not found</h1>` +
@@ -859,6 +890,29 @@ async function handleDetail(req, res, params) {
   if (bodyBlocks) {
     const faq = SchemaHelpers.faqNode(SchemaHelpers.extractFaq(bodyBlocks), canonicalUrl);
     if (faq) jsonLd['@graph'].push(faq);
+  }
+
+  if (shell) {
+    const tpl = await fetchTemplate(kindPath);
+    if (tpl) {
+      const ogType = table === 'blog_posts' ? 'article' : 'website';
+      const head =
+        `<link rel="canonical" href="${esc(canonicalUrl)}">\n` +
+        `<link rel="alternate" hreflang="en" href="${esc(hreflangEn)}">\n<link rel="alternate" hreflang="ar" href="${esc(hreflangAr)}">\n<link rel="alternate" hreflang="x-default" href="${esc(hreflangEn)}">\n` +
+        `<meta property="og:type" content="${ogType}">\n<meta property="og:site_name" content="Aqar Factory">\n<meta property="og:title" content="${esc(title)}">\n<meta property="og:description" content="${esc(description)}">\n<meta property="og:url" content="${esc(canonicalUrl)}">\n` +
+        (image ? `<meta property="og:image" content="${esc(image)}">\n` : '') +
+        `<meta name="twitter:card" content="${image ? 'summary_large_image' : 'summary'}">\n` +
+        // same id project.js/unit.js/blog-post.js write to, so their
+        // client-side refresh replaces this block instead of adding a second
+        `<script type="application/ld+json" id="ldJson">${JSON.stringify(jsonLd).replace(/</g, '\\u003c')}</script>\n</head>`;
+      let page = tpl
+        .replace(/<title[^>]*>[^<]*<\/title>/, `<title>${esc(title)}</title>`)
+        .replace(/<meta name="description" content="[^"]*"[^>]*>/, `<meta name="description" content="${esc(description)}">`)
+        .replace('</head>', head);
+      if (isAr) page = page.replace('<html lang="en">', '<html lang="ar" dir="rtl">');
+      return sendHtml(res, 200, page, 'public, max-age=0, s-maxage=3600, stale-while-revalidate=604800');
+    }
+    // template unreachable: fall through to the crawler page rather than fail
   }
 
   const html = pageHTML({
