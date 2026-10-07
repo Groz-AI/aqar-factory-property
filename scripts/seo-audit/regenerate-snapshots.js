@@ -77,7 +77,11 @@ async function renderOne(browser, url, bypass, lang) {
   }
   console.log(`${items.length} item(s) to regenerate (x2 languages).`);
 
-  const browser = await puppeteer.launch({ executablePath: CHROME, headless: true, args: ['--no-sandbox'] });
+  const launch = () => puppeteer.launch({ executablePath: CHROME, headless: true, args: ['--no-sandbox'] });
+  // Windows can hold a lock on Chrome's temp profile at shutdown (EBUSY) -
+  // that's cleanup noise, not a render failure, so it must not crash the run
+  const safeClose = async (b) => { try { await b.close(); } catch (_) { /* ignore */ } };
+  let browser = await launch();
   const failed = [];
   let n = 0;
   try {
@@ -89,22 +93,34 @@ async function renderOne(browser, url, bypass, lang) {
       ];
       const res = {};
       for (const t of targets) {
-        try {
-          const html = await renderOne(browser, SITE_ORIGIN + t.p, bypass, t.lang);
-          if (!html.includes('@graph')) throw new Error('rendered page has no @graph JSON-LD - not caching it');
-          const htmlLang = ((html.match(/<html[^>]*\blang="([a-z]+)"/i) || [])[1] || '').toLowerCase();
-          if (htmlLang !== t.lang) throw new Error(`rendered page is lang="${htmlLang}", expected "${t.lang}" - not caching it`);
-          await put(blobKey(it.kind, t.lang, t.slugForUrl), html, { access: 'public', addRandomSuffix: false, contentType: 'text/html; charset=utf-8', token });
-          res[t.lang] = 'ok';
-        } catch (e) {
-          res[t.lang] = 'ERR ' + (e.message || e);
-          failed.push(`${it.kind}/${it.slug} [${t.lang}]: ${e.message || e}`);
+        // one retry on a fresh browser if Chrome itself died mid-render -
+        // otherwise a single crash fails every remaining item in the run
+        for (let attempt = 1; attempt <= 2; attempt++) {
+          try {
+            const html = await renderOne(browser, SITE_ORIGIN + t.p, bypass, t.lang);
+            if (!html.includes('@graph')) throw new Error('rendered page has no @graph JSON-LD - not caching it');
+            const htmlLang = ((html.match(/<html[^>]*\blang="([a-z]+)"/i) || [])[1] || '').toLowerCase();
+            if (htmlLang !== t.lang) throw new Error(`rendered page is lang="${htmlLang}", expected "${t.lang}" - not caching it`);
+            await put(blobKey(it.kind, t.lang, t.slugForUrl), html, { access: 'public', addRandomSuffix: false, contentType: 'text/html; charset=utf-8', token });
+            res[t.lang] = attempt === 1 ? 'ok' : 'ok (retried)';
+            break;
+          } catch (e) {
+            const browserDied = /Connection closed|Target closed|Session closed|Protocol error/i.test(e.message || '') || !browser.connected;
+            if (browserDied && attempt === 1) {
+              await safeClose(browser);
+              browser = await launch();
+              continue;
+            }
+            res[t.lang] = 'ERR ' + (e.message || e);
+            failed.push(`${it.kind}/${it.slug} [${t.lang}]: ${e.message || e}`);
+            break;
+          }
         }
       }
       console.log(`[${n}/${items.length}] ${it.kind}/${it.slug}`, res);
     }
   } finally {
-    await browser.close();
+    await safeClose(browser);
   }
   console.log(`\nDone. ${failed.length} failure(s).`);
   for (const f of failed) console.log('  -', f);
