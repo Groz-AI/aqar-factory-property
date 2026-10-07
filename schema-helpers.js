@@ -180,7 +180,7 @@
     };
   }
 
-  const api = { SITE, ORG_ID, WEBSITE_ID, extractFaq, faqNode, breadcrumbNode, companyNode, websiteNode, parseHours, parseAddress };
+  const api = { SITE, ORG_ID, WEBSITE_ID, htmlToLines, extractFaq, faqNode, breadcrumbNode, companyNode, websiteNode, parseHours, parseAddress };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.SchemaHelpers = api;
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -199,8 +199,12 @@ async function fetchUnitsForProject(projectId, limit = 12) {
 
 // mirrors fetchRelated()'s query shape above — the listing pages render
 // every card entirely client-side, so bots need the same real <a> links
-// injected server-side
-async function fetchListingRows(table, extraSelect, limit = 60) {
+// injected server-side. The listing pages are the only place most detail
+// pages are linked from at all: a cap here (it was 60, with 100+ projects
+// and units) left every item past it with zero internal links - 94 sitemap
+// URLs Google could only find via the sitemap, the "Discovered - currently
+// not indexed" pattern. List everything published.
+async function fetchListingRows(table, extraSelect, limit = 1000) {
   try {
     const res = await fetch(
       `${SUPA_URL}/rest/v1/${table}?select=${extraSelect}&published=eq.true&order=sort_order.asc&limit=${limit}`,
@@ -367,7 +371,41 @@ const LISTING_INJECT = {
   ]
 };
 
-function pageHTML({ title, description, image, url, canonicalUrl, hreflangEn, hreflangAr, type, facts, bodyText, amenities, gallery, consultants, brochurePdf, related, projectUnits, isAr, jsonLd }) {
+// site-wide navigation for the crawler version of a detail page. This page
+// used to have no links back into the site at all (only "related" items),
+// so a crawler landing on it had nowhere to go - and to Google it looked
+// nothing like the page visitors get, which has a full header and footer.
+const NAV = {
+  en: { home: 'Home', projects: 'Projects', units: 'Units', blog: 'Blog', about: 'About Us', contact: 'Contact', other: 'العربية' },
+  ar: { home: 'الرئيسية', projects: 'مشاريع', units: 'الوحدات', blog: 'المدونة', about: 'من نحن', contact: 'تواصل معنا', other: 'English' }
+};
+function siteNav(isAr) {
+  const L = NAV[isAr ? 'ar' : 'en'];
+  const pre = isAr ? '/ar' : '';
+  const S = 'https://www.aqar-factory.com';
+  return [
+    [L.home, isAr ? S + '/ar' : S + '/'], [L.projects, S + pre + '/projects.html'], [L.units, S + pre + '/units.html'],
+    [L.blog, S + pre + '/blog.html'], [L.about, S + pre + '/about.html'], [L.contact, S + pre + '/contact.html']
+  ].map(([label, href]) => `<a href="${esc(href)}">${esc(label)}</a>`).join(' | ');
+}
+
+// the page's own rich content with its structure kept (headings stay
+// headings, each line its own paragraph) - always re-escaped as plain
+// text, never the stored HTML itself
+function blocksToSafeHtml(blocks, altText) {
+  return (Array.isArray(blocks) ? blocks : []).map(b => {
+    if (!b) return '';
+    if (b.type === 'image' && b.image) return `<img src="${esc(img(b.image, 800))}" alt="${esc(altText)}">`;
+    if (!b.text) return '';
+    const lines = SchemaHelpers.htmlToLines(b.text);
+    if (!lines.length) return '';
+    if (b.type === 'heading') return `<h2>${esc(lines.join(' '))}</h2>`;
+    if (b.type === 'paragraph') return lines.map(l => `<p>${esc(l)}</p>`).join('');
+    return '';
+  }).filter(Boolean).join('\n');
+}
+
+function pageHTML({ title, description, image, url, canonicalUrl, hreflangEn, hreflangAr, type, facts, bodyText, bodyBlocks, amenities, gallery, consultants, brochurePdf, related, projectUnits, parentProject, crumb, isAr, jsonLd }) {
   const factsList = facts.length
     ? `<h2>Key facts</h2><ul>${facts.map(([k, v]) => `<li><b>${esc(k)}:</b> ${esc(v)}</li>`).join('')}</ul>` : '';
   const amenitiesList = (amenities && amenities.length)
@@ -384,6 +422,14 @@ function pageHTML({ title, description, image, url, canonicalUrl, hreflangEn, hr
   const relatedHtml = (related && related.length)
     ? `<h2>Related, from the same developer</h2><ul>${related.map(r => `<li><a href="${esc(r.url)}">${esc(r.name)}</a></li>`).join('')}</ul>`
     : '';
+  const parentHtml = parentProject
+    ? `<p>${isAr ? 'جزء من مشروع' : 'Part of project'}: <a href="${esc(parentProject.url)}">${esc(parentProject.name)}</a></p>`
+    : '';
+  const crumbHtml = crumb
+    ? `<nav aria-label="breadcrumb">${crumb.map(c => `<a href="${esc(c.item)}">${esc(c.name)}</a>`).join(' / ')}</nav>`
+    : '';
+  const contentHtml = blocksToSafeHtml(bodyBlocks, title);
+  const otherLangUrl = isAr ? hreflangEn : hreflangAr;
   return `<!DOCTYPE html>
 <html lang="${isAr ? 'ar' : 'en'}" dir="${isAr ? 'rtl' : 'ltr'}"><head>
 <meta charset="utf-8">
@@ -405,9 +451,13 @@ ${image ? `<meta property="og:image" content="${esc(image)}">` : ''}
 ${image ? `<meta name="twitter:image" content="${esc(image)}">` : ''}
 ${jsonLd ? `<script type="application/ld+json">${JSON.stringify(jsonLd)}</script>` : ''}
 </head><body>
+<header><nav>${siteNav(isAr)} | <a href="${esc(otherLangUrl)}" hreflang="${isAr ? 'en' : 'ar'}">${esc(NAV[isAr ? 'ar' : 'en'].other)}</a></nav></header>
+<main>
+${crumbHtml}
 <h1>${esc(title)}</h1>
 ${image ? `<img src="${esc(image)}" alt="${esc(title)}">` : ''}
-<p>${esc(bodyText)}</p>
+${parentHtml}
+${contentHtml || `<p>${esc(bodyText)}</p>`}
 ${factsList}
 ${amenitiesList}
 ${brochureLink}
@@ -415,7 +465,8 @@ ${consultantsList}
 ${galleryHtml}
 ${projectUnitsHtml}
 ${relatedHtml}
-<p><a href="${esc(url)}">${esc(url)}</a></p>
+</main>
+<footer><nav>${siteNav(isAr)}</nav></footer>
 </body></html>`;
 }
 
@@ -475,7 +526,7 @@ async function handleStatic(req, res, params) {
 
     const [injectResults, company] = await Promise.all([
       Promise.all((LISTING_INJECT[page] || []).map(async cfg => {
-        const rows = await fetchListingRows(cfg.table, cfg.select, cfg.limit || 60);
+        const rows = await fetchListingRows(cfg.table, cfg.select, cfg.limit);
         const items = rows.map(r => cfg.row(r, isAr)).filter(x => x.slug && x.name);
         const listHtml = `<ul>${items.map(x =>
           `<li><a href="${esc(cfg.href(x.slug, isAr))}">${esc(x.name)}</a>${x.sub ? ' — ' + esc(x.sub) : ''}</li>`
@@ -522,7 +573,7 @@ async function handleStatic(req, res, params) {
       (title ? `<meta name="twitter:card" content="${image ? 'summary_large_image' : 'summary'}">\n<meta name="twitter:title" content="${esc(title)}">\n<meta name="twitter:description" content="${esc(description)}">\n` : '') +
       (image ? `<meta name="twitter:image" content="${esc(image)}">\n` : '') +
       jsonLd + '</head>';
-    sendHtml(res, 200, html.replace('</head>', tags), 'public, max-age=0, s-maxage=300, stale-while-revalidate=1800');
+    sendHtml(res, 200, html.replace('</head>', tags), 'public, max-age=0, s-maxage=3600, stale-while-revalidate=604800');
   } catch (_) {
     // best-effort: never answer a bot with a hard error over a caching
     // refactor — fetch and hand back the plain static file unmodified
@@ -608,6 +659,10 @@ async function handleDetail(req, res, params) {
   }
 
   const pick = (en, ar) => (isAr && row[ar]) ? row[ar] : row[en];
+  // pick() treats an empty [] as "filled", but the page itself falls back to
+  // the English blocks when the Arabic ones are empty - content blocks have
+  // to follow the page, not pick()
+  const pickBlocks = (en, ar) => (isAr && Array.isArray(row[ar]) && row[ar].length) ? row[ar] : row[en];
   const linkUrl = (slug, slugAr, otherTable) => {
     const p = otherTable === 'units' ? '/unit/' : otherTable === 'blog_posts' ? '/blog/' : '/project/';
     // strip a stray leading/trailing slash defensively — see store.js's
@@ -618,7 +673,7 @@ async function handleDetail(req, res, params) {
   };
 
   let title, description, image, facts = [], bodyText = '';
-  let amenities = [], gallery = [], consultants = [], brochurePdf = '', related = [], projectUnits = [];
+  let amenities = [], gallery = [], consultants = [], brochurePdf = '', related = [], projectUnits = [], parentProject = null;
   if (table === 'blog_posts') {
     title = pick('seo_title', 'seo_title_ar') || pick('title', 'title_ar');
     description = pick('seo_description', 'seo_description_ar') || pick('excerpt', 'excerpt_ar');
@@ -696,7 +751,7 @@ async function handleDetail(req, res, params) {
       if (row.project_id) {
         const proj = await fetchById('projects', row.project_id, 'slug,slug_ar,name,name_ar,developer,developer_id');
         if (proj) {
-          facts.unshift([isAr ? 'جزء من مشروع' : 'Part of project', (isAr && proj.name_ar) || proj.name]);
+          parentProject = { name: (isAr && proj.name_ar) || proj.name, url: linkUrl(proj.slug, proj.slug_ar, 'projects') };
           if (!devId && !devName) { devId = proj.developer_id; devName = proj.developer; }
         }
       }
@@ -791,33 +846,35 @@ async function handleDetail(req, res, params) {
   }
 
   // breadcrumb + FAQ - built by the same shared helpers the browser scripts
-  // use. pick() treats an empty [] as "filled", but the page itself falls
-  // back to the English blocks when the Arabic ones are empty, so the FAQ
-  // source has to follow the page, not pick().
-  const pickBlocks = (en, ar) => (isAr && Array.isArray(row[ar]) && row[ar].length) ? row[ar] : row[en];
+  // use; the page body, the FAQ and the visible breadcrumb all come from the
+  // same content blocks so the markup always matches what's on the page
   const crumbKind = table === 'blog_posts' ? 'blog' : table === 'units' ? 'unit' : 'project';
   const crumbName = table === 'blog_posts' ? (pick('title', 'title_ar') || title) : (pick('name', 'name_ar') || row.name || title);
-  jsonLd['@graph'].push(SchemaHelpers.breadcrumbNode(crumbKind, isAr, crumbName, canonicalUrl));
-  if (richMode) {
-    const faqBlocks = table === 'blog_posts' ? pickBlocks('blocks', 'blocks_ar')
-      : table === 'units' ? pickBlocks('description_blocks', 'description_blocks_ar')
-      : pickBlocks('about_blocks', 'about_blocks_ar');
-    const faq = SchemaHelpers.faqNode(SchemaHelpers.extractFaq(faqBlocks), canonicalUrl);
+  const crumbNode = SchemaHelpers.breadcrumbNode(crumbKind, isAr, crumbName, canonicalUrl);
+  jsonLd['@graph'].push(crumbNode);
+  const bodyBlocks = !richMode ? null
+    : table === 'blog_posts' ? pickBlocks('blocks', 'blocks_ar')
+    : table === 'units' ? pickBlocks('description_blocks', 'description_blocks_ar')
+    : pickBlocks('about_blocks', 'about_blocks_ar');
+  if (bodyBlocks) {
+    const faq = SchemaHelpers.faqNode(SchemaHelpers.extractFaq(bodyBlocks), canonicalUrl);
     if (faq) jsonLd['@graph'].push(faq);
   }
 
   const html = pageHTML({
-    title, description, image, facts, bodyText, amenities, gallery, consultants, brochurePdf, related, projectUnits,
+    title, description, image, facts, bodyText, bodyBlocks, amenities, gallery, consultants, brochurePdf, related, projectUnits,
+    parentProject, crumb: crumbNode.itemListElement,
     url: canonicalUrl, canonicalUrl, hreflangEn, hreflangAr, isAr, jsonLd,
     type: table === 'blog_posts' ? 'article' : 'website'
   });
 
-  // fresh for 30s at the edge, then serve last-known copy instantly while
-  // quietly refetching in the background — an edit shows up on the very
-  // next fetch after that 30s window, but repeat hits (crawlers, WhatsApp,
-  // testing tools) inside it are now a real CDN cache hit, not a fresh
-  // Supabase round-trip
-  sendHtml(res, 200, html, 'public, max-age=0, s-maxage=30, stale-while-revalidate=120');
+  // An hour fresh at the edge, then up to a week of serving the last copy
+  // instantly while refreshing in the background. This was 30s/120s, which
+  // meant effectively every Googlebot visit (each URL is crawled every few
+  // days at most) missed the cache and waited ~0.65s for a full database
+  // render - and Google throttles crawling on slow responses. An admin edit
+  // still reaches crawlers within the hour.
+  sendHtml(res, 200, html, 'public, max-age=0, s-maxage=3600, stale-while-revalidate=604800');
 }
 
 module.exports = async function handler(req, res) {
