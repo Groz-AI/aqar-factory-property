@@ -68,6 +68,37 @@
     return pairs.length >= 2 ? pairs : [];
   }
 
+  // FAQs the admin typed in (projects.faqs / faqs_ar etc.): keep only
+  // complete, text-only pairs. The same cleaned list feeds the visible
+  // accordion and the FAQPage markup, so the two can never disagree.
+  function normalizeFaqs(list) {
+    if (!Array.isArray(list)) return [];
+    const out = [];
+    for (const f of list) {
+      const q = f && typeof f.q === 'string' ? f.q.replace(/\s+/g, ' ').trim() : '';
+      const a = f && typeof f.a === 'string' ? f.a.replace(/\r/g, '').trim() : '';
+      if (q && a) out.push({ q, a });
+    }
+    return out;
+  }
+
+  // typed FAQs win; otherwise fall back to Q&A found in the article text
+  // (which is on the page too, so markup still matches what's visible)
+  function pageFaq(manualList, articleBlocks) {
+    const manual = normalizeFaqs(manualList);
+    return manual.length ? manual : extractFaq(articleBlocks);
+  }
+
+  const escHtml = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+  // click-to-open list; <details> works without JavaScript, is keyboard
+  // accessible, and keeps every answer in the HTML for crawlers
+  function faqItemsHtml(pairs) {
+    return (pairs || []).map((p) =>
+      `<details class="faq-item"><summary>${escHtml(p.q)}</summary><div class="faq-answer">${escHtml(p.a).replace(/\n/g, '<br>')}</div></details>`
+    ).join('');
+  }
+
   function faqNode(pairs, pageUrl) {
     if (!pairs || !pairs.length) return null;
     return {
@@ -180,7 +211,7 @@
     };
   }
 
-  const api = { SITE, ORG_ID, WEBSITE_ID, htmlToLines, extractFaq, faqNode, breadcrumbNode, companyNode, websiteNode, parseHours, parseAddress };
+  const api = { SITE, ORG_ID, WEBSITE_ID, htmlToLines, extractFaq, normalizeFaqs, pageFaq, faqItemsHtml, faqNode, breadcrumbNode, companyNode, websiteNode, parseHours, parseAddress };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.SchemaHelpers = api;
 })(typeof window !== 'undefined' ? window : globalThis);

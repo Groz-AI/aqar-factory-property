@@ -213,6 +213,7 @@
         { key: 'cover', label: t('Cover image'), type: 'image' },
         { key: 'gallery', label: t('Gallery'), type: 'gallery' },
         { key: 'about_blocks', arKey: 'about_blocks_ar', label: t('About'), type: 'blocks-i18n', previewClass: 'rich-content', hint: t('Opens a full-screen editor — build the description from any mix of blocks, edit English and Arabic side by side, and preview exactly how it will look on the site.') },
+        { key: 'faqs', arKey: 'faqs_ar', label: t('FAQs'), type: 'faq-i18n', hint: t('Click-to-open questions and answers shown at the end of the page, before “More”. Write each in both languages — a page shows only its own language. Questions also feed the FAQ schema for Google.') },
         { key: 'amenities', label: t('Amenities'), type: 'tags' },
         { key: 'price', label: t('Price (display)'), type: 'text', half: true, hint: t('e.g. EGP 3.2M') },
         { key: 'price_value', label: t('Price value (number)'), type: 'number', half: true, hint: t('Same price as above, but as a plain number with no currency symbol or commas (e.g. 3200000) — required for Google to show the price in search results') },
@@ -346,6 +347,7 @@
         { key: 'cover', label: t('Cover image'), type: 'image' },
         { key: 'gallery', label: t('Gallery'), type: 'gallery' },
         { key: 'description_blocks', arKey: 'description_blocks_ar', label: t('Description'), type: 'blocks-i18n', previewClass: 'rich-content', hint: t('Opens a full-screen editor — build the description from any mix of blocks, edit English and Arabic side by side, and preview exactly how it will look on the site.') },
+        { key: 'faqs', arKey: 'faqs_ar', label: t('FAQs'), type: 'faq-i18n', hint: t('Click-to-open questions and answers shown at the end of the page, before “More”. Write each in both languages — a page shows only its own language. Questions also feed the FAQ schema for Google.') },
         { key: 'seo_title', label: t('SEO title'), type: 'text', half: true, hint: t('Overrides the page\'s <title> tag — leave empty to use the unit name. Aim for under 60 characters.') },
         { key: 'seo_title_ar', label: t('SEO title (Arabic)'), type: 'text', half: true, hint: t('Used on the /ar/ version — leave empty to fall back to the English SEO title above.') },
         { key: 'seo_description', label: t('SEO meta description'), type: 'textarea', hint: t('Overrides the page\'s search-result snippet — leave empty to use the description text. Aim for under 160 characters.') },
@@ -437,9 +439,26 @@
 
     wireChrome();
     applyPermissionVisibility();
+    await hideFaqFieldsIfNotMigrated();
     await refreshCounts();
     wireRealtimeCounts();
     go('overview');
+  }
+
+  // The FAQ editor saves to projects/units.faqs + faqs_ar, which exist only
+  // after supabase/add-faqs.sql has been run. Saving a column the database
+  // doesn't have fails the WHOLE save, so until then the FAQ field is hidden
+  // rather than breaking every project/unit edit.
+  async function hideFaqFieldsIfNotMigrated() {
+    if (localMode) return;
+    let missing = false;
+    for (const view of ['projects', 'units']) {
+      const res = RESOURCES[view];
+      if (!res || !res.fields.some(f => f.type === 'faq-i18n')) continue;
+      const { error } = await sb.from(res.table).select('faqs,faqs_ar').limit(1);
+      if (error) { res.fields = res.fields.filter(f => f.type !== 'faq-i18n'); missing = true; }
+    }
+    if (missing) toast(t('FAQ fields are hidden: run supabase/add-faqs.sql once in the Supabase SQL editor to enable them'), 'err');
   }
 
   // keeps sidebar badge counts (and the Overview stat cards / currently-open
@@ -806,6 +825,7 @@
       if (f.type === 'gallery') wireGallery('f_' + f.key, f.key, (row && row[f.key]) || []);
       if (f.type === 'pdf') wirePdf('f_' + f.key, row ? row[f.key] : '');
       if (f.type === 'consultants') wireConsultants('f_' + f.key, f.key, (row && row[f.key]) || []);
+      if (f.type === 'faq-i18n') wireFaqs('f_' + f.key, f.key, (row && row[f.key]) || [], (row && row[f.arKey]) || []);
       if (f.type === 'blocks-i18n') wireBlocksStudio('f_' + f.key, f.key, f.arKey, (row && row[f.key]) || [], (row && row[f.arKey]) || [], f.label, f.previewClass);
     });
 
@@ -850,6 +870,12 @@
           <button type="button" class="btn btn-ghost btn-sm" id="${id}_openBtn">${esc(t('Open editor'))}</button>
           <button type="button" class="btn btn-ghost btn-sm btn-danger-ghost" id="${id}_clearBtn">${esc(t('Delete content'))}</button>
         </div>
+        ${hint}</div>`;
+    }
+    if (f.type === 'faq-i18n') {
+      return `<div class="field"><label>${esc(f.label)}</label>
+        <div class="faq-edit" id="${id}_wrap"></div>
+        <button type="button" class="btn btn-ghost btn-sm" id="${id}_add" style="margin-top:8px">+ ${esc(t('Add question'))}</button>
         ${hint}</div>`;
     }
     if (f.type === 'bool') {
@@ -1038,6 +1064,71 @@
       pendingUploads--;
       file.value = '';
       if (url) { uploads[key][uploadTarget].logo = url; paint(); toast(t('Logo uploaded — remember to Save')); }
+    });
+    paint();
+  }
+
+  // ---------- FAQ field wiring (one row = one question, written in both languages) ----------
+  // State lives in uploads['faq:' + key] as rows of {qEn, aEn, qAr, aAr}. The row
+  // order is the display order; collect() splits the rows back into the two
+  // per-language lists (faqs / faqs_ar), dropping any incomplete pair.
+  function faqStateKey(key) { return 'faq:' + key; }
+  function faqRowsIncomplete(key) {
+    return (uploads[faqStateKey(key)] || []).some(r => {
+      const half = (q, a) => !!(q.trim()) !== !!(a.trim());
+      return half(r.qEn, r.aEn) || half(r.qAr, r.aAr);
+    });
+  }
+  function wireFaqs(id, key, initialEn, initialAr) {
+    const sk = faqStateKey(key);
+    const en = Array.isArray(initialEn) ? initialEn : [], ar = Array.isArray(initialAr) ? initialAr : [];
+    const n = Math.max(en.length, ar.length);
+    uploads[sk] = Array.from({ length: n }, (_, i) => ({
+      qEn: (en[i] && en[i].q) || '', aEn: (en[i] && en[i].a) || '',
+      qAr: (ar[i] && ar[i].q) || '', aAr: (ar[i] && ar[i].a) || ''
+    }));
+    const wrap = $('#' + id + '_wrap'), addBtn = $('#' + id + '_add');
+    if (!wrap) return;
+    const paint = () => {
+      const rows = uploads[sk];
+      wrap.innerHTML = rows.length ? rows.map((r, i) => `
+        <div class="faq-row" data-i="${i}">
+          <div class="faq-row-head">
+            <span class="faq-row-n">${esc(t('Question'))} ${i + 1}</span>
+            <span class="faq-row-btns">
+              <button type="button" class="icon-btn" data-fup="${i}" title="${esc(t('Move up'))}" ${i === 0 ? 'disabled' : ''}>${BLOCK_SVG.moveUp}</button>
+              <button type="button" class="icon-btn" data-fdown="${i}" title="${esc(t('Move down'))}" ${i === rows.length - 1 ? 'disabled' : ''}>${BLOCK_SVG.moveDown}</button>
+              <button type="button" class="icon-btn del" data-frm="${i}" title="${esc(t('Remove'))}">${BLOCK_SVG.trash}</button>
+            </span>
+          </div>
+          <div class="faq-row-grid">
+            <div class="faq-col">
+              <label>${esc(t('Question (English)'))}</label>
+              <input type="text" dir="ltr" value="${esc(r.qEn)}" data-fq="${i}" data-lang="En">
+              <label>${esc(t('Answer (English)'))}</label>
+              <textarea dir="ltr" rows="3" data-fa="${i}" data-lang="En">${esc(r.aEn)}</textarea>
+            </div>
+            <div class="faq-col">
+              <label>${esc(t('Question (Arabic)'))}</label>
+              <input type="text" dir="rtl" value="${esc(r.qAr)}" data-fq="${i}" data-lang="Ar">
+              <label>${esc(t('Answer (Arabic)'))}</label>
+              <textarea dir="rtl" rows="3" data-fa="${i}" data-lang="Ar">${esc(r.aAr)}</textarea>
+            </div>
+          </div>
+        </div>`).join('') : `<div class="faq-empty">${esc(t('No questions yet'))}</div>`;
+      // typing only updates state (no repaint, so focus and caret survive)
+      $$('[data-fq]', wrap).forEach(inp => inp.addEventListener('input', () => { uploads[sk][+inp.dataset.fq]['q' + inp.dataset.lang] = inp.value; }));
+      $$('[data-fa]', wrap).forEach(inp => inp.addEventListener('input', () => { uploads[sk][+inp.dataset.fa]['a' + inp.dataset.lang] = inp.value; }));
+      const move = (i, d) => { const a = uploads[sk]; const j = i + d; if (j < 0 || j >= a.length) return; [a[i], a[j]] = [a[j], a[i]]; paint(); };
+      $$('[data-fup]', wrap).forEach(b => b.addEventListener('click', () => move(+b.dataset.fup, -1)));
+      $$('[data-fdown]', wrap).forEach(b => b.addEventListener('click', () => move(+b.dataset.fdown, 1)));
+      $$('[data-frm]', wrap).forEach(b => b.addEventListener('click', () => { uploads[sk].splice(+b.dataset.frm, 1); paint(); }));
+    };
+    addBtn.addEventListener('click', () => {
+      uploads[sk].push({ qEn: '', aEn: '', qAr: '', aAr: '' });
+      paint();
+      const last = wrap.querySelector('.faq-row:last-child input');
+      if (last) last.focus();
     });
     paint();
   }
@@ -1822,6 +1913,15 @@
       if (f.type === 'bool') { out[f.key] = node.checked; continue; }
       if (f.type === 'gallery') { out[f.key] = uploads[f.key] || []; continue; }
       if (f.type === 'consultants') { out[f.key] = (uploads[f.key] || []).filter(c => c.name || c.logo); continue; }
+      if (f.type === 'faq-i18n') {
+        // one row -> one entry per language; a language where the row is
+        // blank just doesn't get that question (a page shows only its own list)
+        const rows = uploads[faqStateKey(f.key)] || [];
+        const pick = (q, a) => rows.map(r => ({ q: r[q].trim(), a: r[a].trim() })).filter(x => x.q && x.a);
+        out[f.key] = pick('qEn', 'aEn');
+        out[f.arKey] = pick('qAr', 'aAr');
+        continue;
+      }
       if (f.type === 'blocks-i18n') {
         out[f.key] = (uploads[f.key] || []).filter(hasBlockContent);
         out[f.arKey] = (uploads[f.arKey] || []).filter(hasBlockContent);
@@ -1853,6 +1953,13 @@
   async function saveForm(view) {
     if (pendingUploads > 0) { toast(t('An image is still uploading — please wait a moment'), 'err'); return; }
     const r = RESOURCES[view];
+    // a question without its answer (or the reverse) would be silently
+    // dropped by collect() — say so instead of losing what was typed
+    const faqField = r.fields.find(f => f.type === 'faq-i18n');
+    if (faqField && faqRowsIncomplete(faqField.key)) {
+      toast(t('Some FAQs have a question without an answer (or the other way round) — fill both or remove the row'), 'err');
+      return;
+    }
     const payload = collect(view);
     // A slug box with text in it that sanitizes down to nothing would otherwise
     // save as null and silently fall back to the English URL — the admin sees a

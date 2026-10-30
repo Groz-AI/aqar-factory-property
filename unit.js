@@ -136,8 +136,17 @@ function populate() {
   if (SH) {
     const pageUrl = SH.SITE + location.pathname;
     graph.push(SH.breadcrumbNode('unit', isAr(), pick(unit, 'name', 'nameAr') || unit.name, pageUrl));
-    const faq = SH.faqNode(SH.extractFaq(descBlocks), pageUrl);
+    const faq = SH.faqNode(SH.pageFaq(isAr() ? unit.faqsAr : unit.faqs, descBlocks), pageUrl);
     if (faq) graph.push(faq);
+  }
+
+  // typed FAQs, shown click-to-open between the content and "More Units".
+  // Each language shows only its own list — never the other language's.
+  const faqPairs = SH ? SH.normalizeFaqs(isAr() ? unit.faqsAr : unit.faqs) : [];
+  const faqSection = document.getElementById('faqSection');
+  if (faqSection) {
+    document.getElementById('faqList').innerHTML = SH ? SH.faqItemsHtml(faqPairs) : '';
+    faqSection.hidden = !faqPairs.length;
   }
   injectJsonLd({ '@context': 'https://schema.org', '@graph': graph });
 

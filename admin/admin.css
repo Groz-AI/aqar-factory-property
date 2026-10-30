@@ -228,6 +228,21 @@ label.switch{position:relative;display:inline-flex;align-items:center;gap:.6rem;
 .consultant-row input[type="text"]{flex:1;border:1px solid var(--line);border-radius:8px;padding:.55em .8em;font-family:inherit;font-size:.92rem;background:#fff;color:var(--ink);outline:none}
 .consultant-row input[type="text"]:focus{border-color:var(--sky);box-shadow:0 0 0 3px var(--sky-soft)}
 
+/* FAQ editor — one card per question, English and Arabic side by side */
+.faq-edit{display:flex;flex-direction:column;gap:12px;margin-top:6px}
+.faq-empty{padding:14px;border:1.5px dashed var(--line);border-radius:10px;color:var(--ink-soft);font-size:.9rem;text-align:center}
+.faq-row{border:1px solid var(--line);border-radius:12px;padding:12px;background:#fff}
+.faq-row-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.faq-row-n{font-weight:700;font-size:.85rem;color:var(--sky-deep, var(--ink))}
+.faq-row-btns{display:flex;gap:4px}
+.faq-row-btns .icon-btn[disabled]{opacity:.35;cursor:default}
+.faq-row-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.faq-col{display:flex;flex-direction:column;gap:6px;min-width:0}
+.faq-col label{font-size:.76rem;font-weight:600;color:var(--ink-soft)}
+.faq-col input[type="text"],.faq-col textarea{width:100%;border:1px solid var(--line);border-radius:8px;padding:.55em .8em;font-family:inherit;font-size:.92rem;background:#fff;color:var(--ink);outline:none;resize:vertical}
+.faq-col input[type="text"]:focus,.faq-col textarea:focus{border-color:var(--sky);box-shadow:0 0 0 3px var(--sky-soft)}
+@media (max-width:640px){.faq-row-grid{grid-template-columns:1fr}}
+
 /* project/blog content field — a full-screen studio (.bs-*) replaces the
    old drawer-embedded editor: a language tab (English/Arabic), a sidebar
    toolbox of block types, a live-editable canvas, and a real-CSS preview */

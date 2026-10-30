@@ -151,8 +151,17 @@ function populate() {
   if (SH) {
     const pageUrl = SH.SITE + location.pathname;
     graph.push(SH.breadcrumbNode('project', isAr(), pick(project, 'name', 'nameAr') || project.name, pageUrl));
-    const faq = SH.faqNode(SH.extractFaq(pick(project, 'aboutBlocks', 'aboutBlocksAr')), pageUrl);
+    const faq = SH.faqNode(SH.pageFaq(isAr() ? project.faqsAr : project.faqs, pick(project, 'aboutBlocks', 'aboutBlocksAr')), pageUrl);
     if (faq) graph.push(faq);
+  }
+
+  // typed FAQs, shown click-to-open between the content and "More Projects".
+  // Each language shows only its own list — never the other language's.
+  const faqPairs = SH ? SH.normalizeFaqs(isAr() ? project.faqsAr : project.faqs) : [];
+  const faqSection = document.getElementById('faqSection');
+  if (faqSection) {
+    document.getElementById('faqList').innerHTML = SH ? SH.faqItemsHtml(faqPairs) : '';
+    faqSection.hidden = !faqPairs.length;
   }
   injectJsonLd({ '@context': 'https://schema.org', '@graph': graph });
 

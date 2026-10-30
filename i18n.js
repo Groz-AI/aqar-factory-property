@@ -212,6 +212,20 @@
     'blog.more': 'المزيد من المقالات <em>المرشحة</em>',
     'Article': 'مقال',
 
+    // ---------- FAQs (project + unit pages, and their admin editor) ----------
+    'Frequently Asked Questions': 'الأسئلة الشائعة',
+    'FAQs': 'الأسئلة الشائعة',
+    'Add question': 'إضافة سؤال',
+    'Question (English)': 'السؤال (بالإنجليزية)',
+    'Answer (English)': 'الإجابة (بالإنجليزية)',
+    'Question (Arabic)': 'السؤال (بالعربية)',
+    'Answer (Arabic)': 'الإجابة (بالعربية)',
+    'Question': 'سؤال',
+    'No questions yet': 'لا توجد أسئلة بعد',
+    'Click-to-open questions and answers shown at the end of the page, before “More”. Write each in both languages — a page shows only its own language. Questions also feed the FAQ schema for Google.': 'أسئلة وأجوبة قابلة للفتح بالنقر تظهر في نهاية الصفحة قبل «المزيد». اكتب كل سؤال بالعربية والإنجليزية — كل صفحة تعرض لغتها فقط. تُستخدم الأسئلة أيضًا في بيانات FAQ لمحركات البحث.',
+    'Some FAQs have a question without an answer (or the other way round) — fill both or remove the row': 'بعض الأسئلة الشائعة بها سؤال بدون إجابة (أو العكس) — أكمل الاثنين أو احذف الصف',
+    'FAQ fields are hidden: run supabase/add-faqs.sql once in the Supabase SQL editor to enable them': 'حقول الأسئلة الشائعة مخفية: شغّل ملف supabase/add-faqs.sql مرة واحدة في محرر SQL على Supabase لتفعيلها',
+
     // ---------- project detail page ----------
     'About this development': 'عن هذا المشروع',
     'Units in this project': 'الوحدات في هذا المشروع',

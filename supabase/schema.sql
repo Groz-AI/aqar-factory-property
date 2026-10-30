@@ -279,6 +279,15 @@ update public.projects
 alter table public.units add column if not exists description_blocks    jsonb default '[]'::jsonb; -- rich-content blocks (same editor as projects.about_blocks)
 alter table public.units add column if not exists description_blocks_ar jsonb default '[]'::jsonb; -- Arabic version; falls back to description_blocks when empty
 
+-- FAQs (الأسئلة الشائعة): [{"q": "...", "a": "..."}] per language, shown as a
+-- click-to-open list before "More Projects/Units" and emitted as FAQPage
+-- schema. No cross-language fallback — each page shows only its own list.
+-- (Same statements as supabase/add-faqs.sql.)
+alter table public.projects add column if not exists faqs    jsonb default '[]'::jsonb;
+alter table public.projects add column if not exists faqs_ar jsonb default '[]'::jsonb;
+alter table public.units    add column if not exists faqs    jsonb default '[]'::jsonb;
+alter table public.units    add column if not exists faqs_ar jsonb default '[]'::jsonb;
+
 alter table public.units add column if not exists seo_title          text;
 alter table public.units add column if not exists seo_title_ar       text;
 alter table public.units add column if not exists seo_description    text;

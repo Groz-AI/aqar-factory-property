@@ -405,7 +405,7 @@ function blocksToSafeHtml(blocks, altText) {
   }).filter(Boolean).join('\n');
 }
 
-function pageHTML({ title, description, image, url, canonicalUrl, hreflangEn, hreflangAr, type, facts, bodyText, bodyBlocks, amenities, gallery, consultants, brochurePdf, related, projectUnits, parentProject, crumb, isAr, jsonLd }) {
+function pageHTML({ title, description, image, url, canonicalUrl, hreflangEn, hreflangAr, type, facts, bodyText, bodyBlocks, amenities, gallery, consultants, brochurePdf, related, projectUnits, faqPairs, parentProject, crumb, isAr, jsonLd }) {
   const factsList = facts.length
     ? `<h2>Key facts</h2><ul>${facts.map(([k, v]) => `<li><b>${esc(k)}:</b> ${esc(v)}</li>`).join('')}</ul>` : '';
   const amenitiesList = (amenities && amenities.length)
@@ -418,6 +418,9 @@ function pageHTML({ title, description, image, url, canonicalUrl, hreflangEn, hr
     : '';
   const projectUnitsHtml = (projectUnits && projectUnits.length)
     ? `<h2>Units in this project</h2><ul>${projectUnits.map(r => `<li><a href="${esc(r.url)}">${esc(r.name)}</a></li>`).join('')}</ul>`
+    : '';
+  const faqHtml = (faqPairs && faqPairs.length)
+    ? `<section><h2>${isAr ? 'الأسئلة الشائعة' : 'Frequently Asked Questions'}</h2>${SchemaHelpers.faqItemsHtml(faqPairs)}</section>`
     : '';
   const relatedHtml = (related && related.length)
     ? `<h2>Related, from the same developer</h2><ul>${related.map(r => `<li><a href="${esc(r.url)}">${esc(r.name)}</a></li>`).join('')}</ul>`
@@ -464,6 +467,7 @@ ${brochureLink}
 ${consultantsList}
 ${galleryHtml}
 ${projectUnitsHtml}
+${faqHtml}
 ${relatedHtml}
 </main>
 <footer><nav>${siteNav(isAr)}</nav></footer>
@@ -887,8 +891,13 @@ async function handleDetail(req, res, params) {
     : table === 'blog_posts' ? pickBlocks('blocks', 'blocks_ar')
     : table === 'units' ? pickBlocks('description_blocks', 'description_blocks_ar')
     : pickBlocks('about_blocks', 'about_blocks_ar');
+  // FAQs typed in the admin (projects/units): the visible accordion and the
+  // FAQPage markup both come from this one list, in this page's language only.
+  // Without any, fall back to Q&A found in the article text.
+  const manualFaqs = (richMode && table !== 'blog_posts')
+    ? SchemaHelpers.normalizeFaqs(isAr ? row.faqs_ar : row.faqs) : [];
   if (bodyBlocks) {
-    const faq = SchemaHelpers.faqNode(SchemaHelpers.extractFaq(bodyBlocks), canonicalUrl);
+    const faq = SchemaHelpers.faqNode(SchemaHelpers.pageFaq(manualFaqs, bodyBlocks), canonicalUrl);
     if (faq) jsonLd['@graph'].push(faq);
   }
 
@@ -910,6 +919,15 @@ async function handleDetail(req, res, params) {
         .replace(/<meta name="description" content="[^"]*"[^>]*>/, `<meta name="description" content="${esc(description)}">`)
         .replace('</head>', head);
       if (isAr) page = page.replace('<html lang="en">', '<html lang="ar" dir="rtl">');
+      if (manualFaqs.length) {
+        // the FAQ section is hidden and empty in the template; fill and show
+        // it here so the answers are in the raw HTML, not only added by
+        // project.js/unit.js afterwards (which then re-renders the same list)
+        page = page
+          .replace(/<section class="faq-section" id="faqSection" hidden>/, '<section class="faq-section" id="faqSection">')
+          .replace('<div class="faq-list" id="faqList"></div>', `<div class="faq-list" id="faqList">${SchemaHelpers.faqItemsHtml(manualFaqs)}</div>`);
+        if (isAr) page = page.replace('data-i18n>Frequently Asked Questions</h2>', 'data-i18n>الأسئلة الشائعة</h2>');
+      }
       return sendHtml(res, 200, page, 'public, max-age=0, s-maxage=3600, stale-while-revalidate=604800');
     }
     // template unreachable: fall through to the crawler page rather than fail
@@ -917,7 +935,7 @@ async function handleDetail(req, res, params) {
 
   const html = pageHTML({
     title, description, image, facts, bodyText, bodyBlocks, amenities, gallery, consultants, brochurePdf, related, projectUnits,
-    parentProject, crumb: crumbNode.itemListElement,
+    faqPairs: manualFaqs, parentProject, crumb: crumbNode.itemListElement,
     url: canonicalUrl, canonicalUrl, hreflangEn, hreflangAr, isAr, jsonLd,
     type: table === 'blog_posts' ? 'article' : 'website'
   });
