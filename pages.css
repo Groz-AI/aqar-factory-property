@@ -608,3 +608,21 @@
 [dir="rtl"] .blog-card-body h3, [dir="rtl"] .blog-card-excerpt, [dir="rtl"] .blog-article,
 [dir="rtl"] #postTitle, [dir="rtl"] #authorName,
 [dir="rtl"] [data-brand]{unicode-bidi:plaintext}
+
+/* ---------- Cities page ---------- */
+.city-rows{display:grid;gap:28px;padding:48px 0 72px}
+.city-row{display:grid;grid-template-columns:minmax(260px,38%) 1fr;gap:0;background:var(--paper,#fff);border:1px solid var(--line,rgba(0,0,0,.08));border-radius:22px;overflow:hidden}
+.city-row-img{display:block;min-height:260px;background-size:cover;background-position:center;background-color:#e8e4dc}
+.city-row-body{padding:clamp(22px,3vw,40px);display:flex;flex-direction:column;gap:10px;justify-content:center}
+.city-row-body h2{font-family:'Fraunces',serif;font-size:clamp(1.6rem,2.6vw,2.2rem);margin:0}
+.city-row-meta{margin:0;color:var(--ink-soft);font-size:.92rem}
+.city-row-text p{margin:.4em 0;line-height:1.75;color:var(--ink-soft)}
+.city-row-body .view-all{align-self:flex-start;margin-top:6px}
+@media (max-width:760px){.city-row{grid-template-columns:1fr}.city-row-img{min-height:200px}}
+
+/* ---------- city / developer intro above the projects list ---------- */
+.listing-intro{margin:28px 0 8px;padding:clamp(20px,3vw,32px);border:1px solid var(--line,rgba(0,0,0,.08));border-radius:20px;background:var(--paper,#fff);display:flex;gap:20px;align-items:flex-start}
+.listing-intro[hidden]{display:none}
+.listing-intro img{height:56px;width:auto;max-width:140px;object-fit:contain;flex:none}
+.listing-intro h2{font-family:'Fraunces',serif;font-size:clamp(1.3rem,2.2vw,1.8rem);margin:0 0 6px}
+.listing-intro p{margin:.35em 0;line-height:1.75;color:var(--ink-soft)}

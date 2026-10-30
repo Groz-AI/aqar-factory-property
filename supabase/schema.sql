@@ -707,3 +707,9 @@ alter table public.projects add column if not exists is_featured  boolean not nu
 alter table public.projects add column if not exists ready_to_move boolean not null default false;
 alter table public.units    add column if not exists is_featured  boolean not null default false;
 alter table public.units    add column if not exists ready_to_move boolean not null default false;
+
+-- City / developer paragraphs (same statements as supabase/add-city-developer-text.sql)
+alter table public.cities     add column if not exists description    text;
+alter table public.cities     add column if not exists description_ar text;
+alter table public.developers add column if not exists description    text;
+alter table public.developers add column if not exists description_ar text;

@@ -88,6 +88,7 @@ module.exports = async function handler(req, res) {
     { path: '/', priority: '1.0' },
     { path: '/projects.html', priority: '0.9' },
     { path: '/units.html', priority: '0.9' },
+    { path: '/cities.html', priority: '0.8' },
     { path: '/blog.html', priority: '0.8' },
     { path: '/about.html', priority: '0.6' },
     { path: '/contact.html', priority: '0.6' }

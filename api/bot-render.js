@@ -259,6 +259,11 @@ const STATIC_META = {
     description: 'Browse Aqar Factory units by type and city — villas, apartments, duplexes, townhouses, studios, offices and retail spaces for sale.',
     descriptionAr: 'تصفح وحدات Aqar Factory حسب النوع والمدينة — فلل، شقق، دوبلكس، تاون هاوس، استوديوهات، مكاتب ومساحات تجزئة للبيع.'
   },
+  '/cities.html': {
+    title: 'Cities — Aqar Factory', titleAr: 'المدن — Aqar Factory',
+    description: 'Browse real-estate projects and units by city — read about each area and see what we have for sale there.',
+    descriptionAr: 'تصفح المشروعات والوحدات العقارية حسب المدينة — اقرأ عن كل منطقة وتعرف على ما نعرضه للبيع فيها.'
+  },
   '/blog.html': {
     title: 'Blog — Aqar Factory', titleAr: 'المدونة — Aqar Factory',
     description: 'Market insight, buying guides and stories from the Aqar Factory team — real estate, done right.',
@@ -336,6 +341,12 @@ const LISTING_INJECT = {
       sub: [r.location, r.price].filter(Boolean).join(' — ')
     })
   }],
+  '/cities.html': [{
+    table: 'cities', containerId: 'cityRows', limit: 100,
+    select: 'name,country,description,description_ar',
+    href: (name, ar) => `${ar ? '/ar' : ''}/projects.html?city=${encodeURIComponent(name)}`,
+    row: (r, ar) => ({ slug: r.name, name: r.name, sub: (ar ? r.description_ar : r.description) || r.country || '' })
+  }],
   '/blog.html': [{
     table: 'blog_posts', containerId: 'blogGrid',
     select: 'slug,title,title_ar,excerpt,excerpt_ar',
@@ -376,15 +387,15 @@ const LISTING_INJECT = {
 // so a crawler landing on it had nowhere to go - and to Google it looked
 // nothing like the page visitors get, which has a full header and footer.
 const NAV = {
-  en: { home: 'Home', projects: 'Projects', units: 'Units', blog: 'Blog', about: 'About Us', contact: 'Contact', other: 'العربية' },
-  ar: { home: 'الرئيسية', projects: 'مشاريع', units: 'الوحدات', blog: 'المدونة', about: 'من نحن', contact: 'تواصل معنا', other: 'English' }
+  en: { home: 'Home', projects: 'Projects', units: 'Units', cities: 'Cities', blog: 'Blog', about: 'About Us', contact: 'Contact', other: 'العربية' },
+  ar: { home: 'الرئيسية', projects: 'مشاريع', units: 'الوحدات', cities: 'المدن', blog: 'المدونة', about: 'من نحن', contact: 'تواصل معنا', other: 'English' }
 };
 function siteNav(isAr) {
   const L = NAV[isAr ? 'ar' : 'en'];
   const pre = isAr ? '/ar' : '';
   const S = 'https://www.aqar-factory.com';
   return [
-    [L.home, isAr ? S + '/ar' : S + '/'], [L.projects, S + pre + '/projects.html'], [L.units, S + pre + '/units.html'],
+    [L.home, isAr ? S + '/ar' : S + '/'], [L.projects, S + pre + '/projects.html'], [L.units, S + pre + '/units.html'], [L.cities, S + pre + '/cities.html'],
     [L.blog, S + pre + '/blog.html'], [L.about, S + pre + '/about.html'], [L.contact, S + pre + '/contact.html']
   ].map(([label, href]) => `<a href="${esc(href)}">${esc(label)}</a>`).join(' | ');
 }
@@ -558,7 +569,7 @@ async function handleStatic(req, res, params) {
     html = html.replace(/<script type="application\/ld\+json" id="siteSchema">[\s\S]*?<\/script>\s*/, '');
     const PAGE_TYPE = {
       '/about.html': 'AboutPage', '/contact.html': 'ContactPage',
-      '/projects.html': 'CollectionPage', '/units.html': 'CollectionPage', '/blog.html': 'CollectionPage'
+      '/projects.html': 'CollectionPage', '/units.html': 'CollectionPage', '/cities.html': 'CollectionPage', '/blog.html': 'CollectionPage'
     };
     const graph = [SchemaHelpers.companyNode(company), SchemaHelpers.websiteNode()];
     if (PAGE_TYPE[page]) {

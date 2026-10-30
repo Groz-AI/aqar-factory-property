@@ -102,7 +102,7 @@ export const config = {
     // static pages — matched so bots can get server-injected hreflang (see
     // the STATIC_HREFLANG_PAGES block below); real browsers pass straight
     // through untouched, same as everywhere else in this file
-    '/', '/ar', '/projects.html', '/ar/projects.html', '/units.html', '/ar/units.html',
+    '/', '/ar', '/projects.html', '/ar/projects.html', '/units.html', '/ar/units.html', '/cities.html', '/ar/cities.html',
     '/blog.html', '/ar/blog.html', '/about.html', '/ar/about.html', '/contact.html', '/ar/contact.html'
   ],
   // @vercel/blob's get() pulls in Node-specific modules (net/tls/stream/etc.)
@@ -156,7 +156,7 @@ export default async function middleware(request) {
   // Uses its own isAr check (not the one below) because "/ar" with no
   // trailing slash — the real, trailingSlash:false form of the Arabic
   // homepage — doesn't match startsWith('/ar/').
-  const STATIC_HREFLANG_PAGES = new Set(['/', '/projects.html', '/units.html', '/blog.html', '/about.html', '/contact.html']);
+  const STATIC_HREFLANG_PAGES = new Set(['/', '/projects.html', '/units.html', '/cities.html', '/blog.html', '/about.html', '/contact.html']);
   const staticIsAr = url.pathname === '/ar' || url.pathname.startsWith('/ar/');
   const staticEnPath = staticIsAr ? (url.pathname === '/ar' ? '/' : url.pathname.slice(3)) : url.pathname;
   // the header below is api/bot-render.js's OWN internal re-fetch of this

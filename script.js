@@ -335,9 +335,11 @@ function initHeroGallery(cities, content) {
 function renderDevelopers(devs) {
   const wrap = document.getElementById('logoWall');
   if (!wrap || !devs.length) return;
+  // each logo opens that developer's projects (with its paragraph, if any)
+  const href = d => `projects.html?developer=${encodeURIComponent(d.name)}`;
   const item = d => d.logo
-    ? `<div class="logo"><img src="${IMG(d.logo, 240)}" alt="${d.name}" loading="lazy"></div>`
-    : `<div class="logo">${d.name}</div>`;
+    ? `<a class="logo" href="${href(d)}"><img src="${IMG(d.logo, 240)}" alt="${d.name}" loading="lazy"></a>`
+    : `<a class="logo" href="${href(d)}">${d.name}</a>`;
   // render the set twice so the -50% marquee loops seamlessly
   const set = devs.map(item).join('');
   wrap.innerHTML = `<div class="logo-track">${set}${set}</div>`;

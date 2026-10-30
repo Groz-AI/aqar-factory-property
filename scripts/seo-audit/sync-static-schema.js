@@ -23,6 +23,7 @@ const PAGES = {
   'contact.html': 'ContactPage',
   'projects.html': 'CollectionPage',
   'units.html': 'CollectionPage',
+  'cities.html': 'CollectionPage',
   'blog.html': 'CollectionPage',
 };
 

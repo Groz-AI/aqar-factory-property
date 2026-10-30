@@ -249,6 +249,8 @@
         { key: 'name', label: t('Name'), type: 'text', required: true, half: true },
         { key: 'country', label: t('Country'), type: 'text', half: true },
         { key: 'image', label: t('Image'), type: 'image' },
+        { key: 'description', label: t('About this city (English)'), type: 'textarea', hint: t('A short paragraph shown on the Cities page and above the projects when visitors filter by this city. Each language shows only its own text.') },
+        { key: 'description_ar', label: t('About this city (Arabic)'), type: 'textarea' },
         { key: 'size', label: t('Tile size'), type: 'select', options: ['normal', 'wide', 'big'], half: true, hint: t('controls the tile size in the homepage “By Cities” grid') },
         { key: 'sort_order', label: t('Sort order'), type: 'number', half: true },
         { key: 'published', label: t('Published'), type: 'bool', half: true }
@@ -303,6 +305,8 @@
       fields: [
         { key: 'name', label: t('Name'), type: 'text', required: true },
         { key: 'logo', label: t('Logo (optional)'), type: 'image', hint: t('leave empty to render the name as a wordmark') },
+        { key: 'description', label: t('About this developer (English)'), type: 'textarea', hint: t('A short paragraph shown above the projects when visitors click this developer on the homepage. Each language shows only its own text.') },
+        { key: 'description_ar', label: t('About this developer (Arabic)'), type: 'textarea' },
         { key: 'sort_order', label: t('Sort order'), type: 'number', half: true },
         { key: 'published', label: t('Published'), type: 'bool', half: true }
       ]
@@ -445,6 +449,7 @@
     applyPermissionVisibility();
     await hideFaqFieldsIfNotMigrated();
     await hideHomeFlagsIfNotMigrated();
+    await hideAboutTextIfNotMigrated();
     await refreshCounts();
     wireRealtimeCounts();
     go('overview');
@@ -479,6 +484,20 @@
       if (error) { res.fields = res.fields.filter(f => f.key !== 'is_featured' && f.key !== 'ready_to_move'); missing = true; }
     }
     if (missing) toast(t('Homepage section switches are hidden: run supabase/add-home-flags.sql once in the Supabase SQL editor to enable them'), 'err');
+  }
+
+  // City/developer paragraphs live in cities|developers.description(+_ar)
+  // (supabase/add-city-developer-text.sql); hidden until that column exists.
+  async function hideAboutTextIfNotMigrated() {
+    if (localMode) return;
+    let missing = false;
+    for (const view of ['cities', 'developers']) {
+      const res = RESOURCES[view];
+      if (!res || !res.fields.some(f => f.key === 'description')) continue;
+      const { error } = await sb.from(res.table).select('description,description_ar').limit(1);
+      if (error) { res.fields = res.fields.filter(f => f.key !== 'description' && f.key !== 'description_ar'); missing = true; }
+    }
+    if (missing) toast(t('City and developer paragraphs are hidden: run supabase/add-city-developer-text.sql once in the Supabase SQL editor to enable them'), 'err');
   }
 
   // keeps sidebar badge counts (and the Overview stat cards / currently-open

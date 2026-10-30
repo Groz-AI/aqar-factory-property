@@ -43,7 +43,8 @@ function cycleGalleries(scopeSel, hoverSel, baseInterval) {
   });
 }
 
-let state = { cat: 'all', city: 'all', q: '', sort: 'featured' };
+let state = { cat: 'all', city: 'all', developer: 'all', q: '', sort: 'featured' };
+let CITIES = [], DEVS = [];
 
 /* build category chips + city dropdown from the loaded dataset */
 function buildFacets() {
@@ -103,6 +104,7 @@ function getFiltered(){
   let list = P.filter(p =>
     (state.cat === 'all' || p.category === state.cat) &&
     (state.city === 'all' || p.city === state.city) &&
+    (state.developer === 'all' || p.developer === state.developer) &&
     (!q || [p.name, p.nameAr, p.city, p.location, p.category, p.developer].join(' ').toLowerCase().includes(q))
   );
   const byNum = (key, dir) => (a, b) => dir * ((Number(a[key]) || 0) - (Number(b[key]) || 0));
@@ -125,10 +127,27 @@ function render(){
   [...grid.children].forEach((el, i) => el.style.animationDelay = `${i * 50}ms`);
   resCount.textContent = list.length;
   emptyState.hidden = list.length !== 0;
-  resetBtn.hidden = !(state.cat !== 'all' || state.city !== 'all' || state.q || state.sort !== 'featured');
+  resetBtn.hidden = !(state.cat !== 'all' || state.city !== 'all' || state.developer !== 'all' || state.q || state.sort !== 'featured');
   searchClear.hidden = !state.q;
   cycleGalleries('#projectsGrid', '.pcard', 4000);
   if (window.cardContact) window.cardContact.wire(grid);
+  renderIntro();
+}
+
+/* the city's / developer's own paragraph (written in the admin), shown above
+   the list while that filter is active. Each language shows only its own
+   text; nothing renders if there isn't one. */
+function renderIntro(){
+  const box = document.getElementById('listingIntro');
+  if (!box) return;
+  const esc = (x) => String(x == null ? '' : x).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const row = state.developer !== 'all' ? DEVS.find(d => d.name === state.developer)
+    : state.city !== 'all' ? CITIES.find(c => c.name === state.city) : null;
+  const text = row ? ((isAr() ? row.description_ar : row.description) || '') : '';
+  if (!row || !text.trim()) { box.hidden = true; box.innerHTML = ''; return; }
+  const paras = text.split(/\n+/).map(x => x.trim()).filter(Boolean).map(x => `<p>${esc(x)}</p>`).join('');
+  box.innerHTML = (state.developer !== 'all' && row.logo ? `<img src="${U(row.logo, 200)}" alt="${esc(row.name)}">` : '') + `<div><h2>${esc(row.name)}</h2>${paras}</div>`;
+  box.hidden = false;
 }
 
 /* ---------- events ---------- */
@@ -151,7 +170,7 @@ searchInput.addEventListener('input', () => {
 searchClear.addEventListener('click', () => { searchInput.value = ''; state.q = ''; render(); searchInput.focus(); });
 
 function resetAll(){
-  state = { ...state, cat: 'all', city: 'all', q: '', sort: 'featured' };
+  state = { ...state, cat: 'all', city: 'all', developer: 'all', q: '', sort: 'featured' };
   catChips.querySelector('.active')?.classList.remove('active');
   catChips.querySelector('[data-cat="all"]').classList.add('active');
   citySelect.value = 'all';
@@ -167,6 +186,8 @@ function applyURLParams() {
   const params = new URLSearchParams(location.search);
   const city = params.get('city');
   const cat = params.get('cat');
+  const dev = params.get('developer');
+  if (dev && P.some(p => p.developer === dev)) state.developer = dev;
   if (city && [...citySelect.options].some(o => o.value === city)) {
     state.city = city;
     citySelect.value = city;
@@ -184,8 +205,8 @@ function applyURLParams() {
 /* ---------- boot: load projects from the data layer ---------- */
 (async function () {
   try {
-    const [projects] = await Promise.all([window.store.getProjects(), window.store.getCategories ? window.store.getCategories() : null]);
-    P = projects;
+    const [projects, cities, devs] = await Promise.all([window.store.getProjects(), window.store.getCities ? window.store.getCities() : [], window.store.getDevelopers ? window.store.getDevelopers() : [], window.store.getCategories ? window.store.getCategories() : null]);
+    P = projects; CITIES = cities || []; DEVS = devs || [];
   } catch (e) { P = window.PROJECTS || []; }
   if (!P || !P.length) P = window.PROJECTS || [];
   buildFacets();
