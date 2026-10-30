@@ -187,6 +187,25 @@ function renderUnitChips() {
 }
 
 /* ============================================================
+   HOME PICKS — "Featured Projects" and "Ready to Move", driven by the
+   per-project / per-unit switches in the admin. Projects first, then units;
+   a section with nothing switched on stays hidden.
+   ============================================================ */
+function renderHomePicks() {
+  [['featured', 'featuredList', 'isFeatured'], ['readynow', 'readyList', 'readyToMove']].forEach(([secId, listId, flag]) => {
+    const sec = document.getElementById(secId), wrap = document.getElementById(listId);
+    if (!sec || !wrap) return;
+    const ps = allProjects.filter(p => p[flag]), us = allUnits.filter(u => u[flag]);
+    if (!ps.length && !us.length) { sec.hidden = true; return; }
+    wrap.innerHTML = ps.map(projectCardHTML).join('') + us.map(unitCardHTML).join('');
+    sec.hidden = false;
+    cycleGalleries('#' + listId, '.project', 3200);
+    if (window.cardContact) window.cardContact.wire(wrap);
+    revealElements([...wrap.querySelectorAll('.reveal')]);
+  });
+}
+
+/* ============================================================
    CITIES
    ============================================================ */
 function renderCities(cities, projectList) {
@@ -211,10 +230,7 @@ function renderCities(cities, projectList) {
 /* ============================================================
    RECENT PROJECTS (first 4) — each card cross-fades its gallery
    ============================================================ */
-function renderProjects(projects) {
-  const wrap = document.getElementById('projectList');
-  if (!wrap || !projects.length) return;
-  wrap.innerHTML = projects.slice(0, 4).map(p => {
+function projectCardHTML(p) {
     const imgs = (p.gallery && p.gallery.length ? p.gallery : [p.cover]).filter(Boolean).slice(0, 5);
     const slides = imgs.map((g, i) =>
       `<div class="pg-slide${i === 0 ? ' active' : ''}" style="background-image:url('${IMG(g, 900)}')"></div>`).join('');
@@ -250,7 +266,12 @@ function renderProjects(projects) {
         <div class="project-foot"><span>${p.city || p.location || ''}</span><span>${p.year || ''}</span></div>
       </div>
     </a>`;
-  }).join('');
+}
+
+function renderProjects(projects) {
+  const wrap = document.getElementById('projectList');
+  if (!wrap || !projects.length) return;
+  wrap.innerHTML = projects.slice(0, 4).map(projectCardHTML).join('');
   cycleGalleries('#projectList', '.project', 3200);
   if (window.cardContact) window.cardContact.wire(wrap);
 }
@@ -627,6 +648,7 @@ function wireReveals() {
     applyContent(content);
     if (window.smartSearch) window.smartSearch.setData(cities || [], allProjects, allUnits);
     initHeroTyping();
+    renderHomePicks();
     renderUnitChips();
     renderUnits();
     renderCities(cities || [], allProjects);

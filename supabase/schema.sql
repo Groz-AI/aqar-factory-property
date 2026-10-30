@@ -701,3 +701,9 @@ create policy "admin write slug redirects" on public.slug_redirects
 -- Then use the "Import starter data" button in the dashboard to
 -- seed all tables from the site's bundled demo content.
 -- ============================================================
+
+-- Homepage "Featured" / "Ready to move" sections (same statements as supabase/add-home-flags.sql)
+alter table public.projects add column if not exists is_featured  boolean not null default false;
+alter table public.projects add column if not exists ready_to_move boolean not null default false;
+alter table public.units    add column if not exists is_featured  boolean not null default false;
+alter table public.units    add column if not exists ready_to_move boolean not null default false;

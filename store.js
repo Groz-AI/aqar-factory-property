@@ -68,6 +68,7 @@
       stats: { price: r.price, units: r.units, floors: r.floors, area: r.area, handover: r.handover },
       seoTitle: r.seo_title || '', seoTitleAr: r.seo_title_ar || '',
       seoDescription: r.seo_description || '', seoDescriptionAr: r.seo_description_ar || '',
+      isFeatured: !!r.is_featured, readyToMove: !!r.ready_to_move,
       createdAt: r.created_at || null, updatedAt: r.updated_at || null
     };
   }
@@ -100,6 +101,7 @@
       developer: r.developer || '', developerId: r.developer_id || null,
       seoTitle: r.seo_title || '', seoTitleAr: r.seo_title_ar || '',
       seoDescription: r.seo_description || '', seoDescriptionAr: r.seo_description_ar || '',
+      isFeatured: !!r.is_featured, readyToMove: !!r.ready_to_move,
       createdAt: r.created_at || null, updatedAt: r.updated_at || null
     };
   }

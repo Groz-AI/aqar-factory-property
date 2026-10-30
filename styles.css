@@ -982,3 +982,6 @@ em{font-style:normal}
   .brand--logo-only .brand-mark{width:52px;height:52px}
   .brand--logo-only .brand-mark svg{width:52px;height:52px}
 }
+
+/* homepage Featured / Ready-to-move sections stay out of the layout until a project or unit is switched on */
+.home-picks[hidden]{display:none}

@@ -223,6 +223,8 @@
         { key: 'floors', label: t('Floors'), type: 'text', half: true },
         { key: 'handover', label: t('Handover'), type: 'text', half: true },
         { key: 'is_rental', label: t('Rental listing'), type: 'bool', half: true },
+        { key: 'is_featured', label: t('Show in “Featured Projects” (homepage)'), type: 'bool', half: true, hint: t('Shows this on the homepage under “Featured Projects”, above “Explore Our Units”.') },
+        { key: 'ready_to_move', label: t('Show in “Ready to Move” (homepage)'), type: 'bool', half: true, hint: t('Shows this on the homepage under “Ready to Move”, above “Explore Our Units”.') },
         { key: 'lat', label: t('Latitude'), type: 'number', half: true },
         { key: 'lng', label: t('Longitude'), type: 'number', half: true },
         { key: 'brochure_pdf', label: t('Brochure (PDF)'), type: 'pdf', hint: t('Shown as a "Download brochure" button on the project page — leave empty to hide it') },
@@ -352,6 +354,8 @@
         { key: 'seo_title_ar', label: t('SEO title (Arabic)'), type: 'text', half: true, hint: t('Used on the /ar/ version — leave empty to fall back to the English SEO title above.') },
         { key: 'seo_description', label: t('SEO meta description'), type: 'textarea', hint: t('Overrides the page\'s search-result snippet — leave empty to use the description text. Aim for under 160 characters.') },
         { key: 'seo_description_ar', label: t('SEO meta description (Arabic)'), type: 'textarea', hint: t('Used on the /ar/ version — leave empty to fall back to the English meta description above.') },
+        { key: 'is_featured', label: t('Show in “Featured Projects” (homepage)'), type: 'bool', half: true, hint: t('Shows this on the homepage under “Featured Projects”, above “Explore Our Units”.') },
+        { key: 'ready_to_move', label: t('Show in “Ready to Move” (homepage)'), type: 'bool', half: true, hint: t('Shows this on the homepage under “Ready to Move”, above “Explore Our Units”.') },
         { key: 'sort_order', label: t('Sort order'), type: 'number', half: true },
         { key: 'published', label: t('Published'), type: 'bool', half: true }
       ]
@@ -440,6 +444,7 @@
     wireChrome();
     applyPermissionVisibility();
     await hideFaqFieldsIfNotMigrated();
+    await hideHomeFlagsIfNotMigrated();
     await refreshCounts();
     wireRealtimeCounts();
     go('overview');
@@ -459,6 +464,21 @@
       if (error) { res.fields = res.fields.filter(f => f.type !== 'faq-i18n'); missing = true; }
     }
     if (missing) toast(t('FAQ fields are hidden: run supabase/add-faqs.sql once in the Supabase SQL editor to enable them'), 'err');
+  }
+
+  // The homepage-section switches save to projects/units.is_featured +
+  // ready_to_move (supabase/add-home-flags.sql). Same reasoning as above: a
+  // missing column would fail every save, so hide them until it exists.
+  async function hideHomeFlagsIfNotMigrated() {
+    if (localMode) return;
+    let missing = false;
+    for (const view of ['projects', 'units']) {
+      const res = RESOURCES[view];
+      if (!res || !res.fields.some(f => f.key === 'is_featured')) continue;
+      const { error } = await sb.from(res.table).select('is_featured,ready_to_move').limit(1);
+      if (error) { res.fields = res.fields.filter(f => f.key !== 'is_featured' && f.key !== 'ready_to_move'); missing = true; }
+    }
+    if (missing) toast(t('Homepage section switches are hidden: run supabase/add-home-flags.sql once in the Supabase SQL editor to enable them'), 'err');
   }
 
   // keeps sidebar badge counts (and the Overview stat cards / currently-open
