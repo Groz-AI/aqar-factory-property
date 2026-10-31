@@ -21,7 +21,7 @@ const KEY = env.SUPABASE_SERVICE_ROLE_KEY;
 if (!KEY) { console.error('SUPABASE_SERVICE_ROLE_KEY missing in .env.local'); process.exit(1); }
 const H = { apikey: KEY, Authorization: `Bearer ${KEY}` };
 
-const OUT = path.join(__dirname, '..', '..', 'backup-export', new Date().toISOString().slice(0, 10));
+const OUT = path.join(__dirname, '..', '..', 'backup-export', new Date().toISOString().slice(0, 10) + (process.env.EXPORT_LABEL ? '-' + process.env.EXPORT_LABEL : ''));
 fs.mkdirSync(path.join(OUT, 'tables'), { recursive: true });
 const sha = (buf) => crypto.createHash('sha256').update(buf).digest('hex');
 const mb = (b) => (b / 1048576).toFixed(2) + ' MB';

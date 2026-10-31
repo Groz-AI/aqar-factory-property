@@ -51,6 +51,7 @@ const MIME = { '.jpeg': 'image/jpeg', '.jpg': 'image/jpeg', '.png': 'image/png',
   // --rewrite: point the new server's rows at R2
   const NEW_URL = (process.env.NEW_URL || '').replace(/\/$/, ''), NEW_KEY = process.env.NEW_KEY || '';
   if (!NEW_URL || !NEW_KEY) { console.error('NEW_URL and NEW_KEY missing'); process.exit(1); }
+  try { const role = JSON.parse(Buffer.from(NEW_KEY.split('.')[1], 'base64url').toString()).role; if (role !== 'service_role') { console.error(`NEW_KEY is a "${role}" key; this step needs the service_role key (SERVICE_ROLE_KEY in the server's .env)`); process.exit(1); } } catch (_) { console.error('NEW_KEY is not a valid key'); process.exit(1); }
   const H = { apikey: NEW_KEY, Authorization: `Bearer ${NEW_KEY}`, 'Content-Type': 'application/json', Prefer: 'return=representation' };
   for (const f of files) { const r = await fetch(`${R2_PUBLIC}/${f.name}`, { method: 'HEAD' }); if (!r.ok) { console.error(`R2 does not serve ${f.name} (HTTP ${r.status}) - run --upload --apply first`); process.exit(1); } }
   const swap = (v) => typeof v === 'string' ? v.split(OLD_BASE).join(R2_PUBLIC + '/') : Array.isArray(v) ? v.map(swap) : v && typeof v === 'object' ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, swap(x)])) : v;
@@ -63,7 +64,9 @@ const MIME = { '.jpeg': 'image/jpeg', '.jpg': 'image/jpeg', '.png': 'image/png',
       if (!Object.keys(patch).length) continue;
       const key = row.id !== undefined ? `id=eq.${row.id}` : `key=eq.${row.key}`;
       console.log(`  ${apply ? 'rewriting' : 'would rewrite'} ${t} ${row.slug || row.id || row.key}: ${Object.keys(patch).join(', ')}`);
-      if (apply) { const r = await fetch(`${NEW_URL}/rest/v1/${t}?${key}`, { method: 'PATCH', headers: H, body: JSON.stringify(patch) }); if (!r.ok) { console.error('  FAILED', r.status, await r.text()); process.exit(1); } }
+      if (apply) { const r = await fetch(`${NEW_URL}/rest/v1/${t}?${key}`, { method: 'PATCH', headers: H, body: JSON.stringify(patch) }); if (!r.ok) { console.error('  FAILED', r.status, await r.text()); process.exit(1); }
+        const done = await r.json();
+        if (!Array.isArray(done) || done.length !== 1) { console.error('  NOT SAVED: the database accepted the request but changed 0 rows - NEW_KEY is probably the anon key, not the service role key'); process.exit(1); } }
       changed++;
     }
   }
