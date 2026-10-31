@@ -19,3 +19,6 @@ scratchpad/
 
 # Google service account credentials (Search Console API)
 .gsc-service-account.json
+
+# full database/storage exports (private data)
+backup-export/
