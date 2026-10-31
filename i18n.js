@@ -38,7 +38,7 @@
 
     // ---------- <title> / <meta description> per page (drives /ar/ SEO) ----------
     'Aqar Factory — Real Estate Done Right': 'Aqar Factory — العقارات كما ينبغي',
-    "Aqar Factory — handpicked residential homes, offices and luxury units for sale, curated for people who refuse to settle.": 'Aqar Factory — منازل سكنية ومكاتب ووحدات فاخرة مختارة بعناية للبيع، لمن يرفضون التنازل.',
+    "Aqar Factory — browse apartments, villas and offices for sale in New Cairo, New Capital, Sheikh Zayed and the North Coast, with developer payment plans.": 'Aqar Factory — تصفح شقق وفيلات ومكاتب للبيع في القاهرة الجديدة والعاصمة الإدارية والشيخ زايد والساحل الشمالي، مع أنظمة تقسيط من كبرى الشركات العقارية.',
     'About Us — Aqar Factory': 'من نحن — Aqar Factory',
     "Aqar Factory is a boutique real-estate house curating homes, offices and luxury spaces across the world's great cities. Meet the team and the philosophy behind the work.": 'Aqar Factory بيت عقاري متخصص يختار المنازل والمكاتب والمساحات الفاخرة في أعظم مدن العالم. تعرّف على الفريق والفلسفة وراء العمل.',
     'Contact — Aqar Factory': 'تواصل معنا — Aqar Factory',

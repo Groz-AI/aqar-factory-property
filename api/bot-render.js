@@ -246,8 +246,8 @@ async function fetchCompany() {
 const STATIC_META = {
   '/': {
     title: 'Aqar Factory — Real Estate Done Right', titleAr: 'Aqar Factory — العقارات كما ينبغي',
-    description: "Aqar Factory — handpicked residential homes, offices and luxury units for sale, curated for people who refuse to settle.",
-    descriptionAr: 'Aqar Factory — منازل سكنية ومكاتب ووحدات فاخرة مختارة بعناية للبيع، لمن يرفضون التنازل.'
+    description: "Aqar Factory — browse apartments, villas and offices for sale in New Cairo, New Capital, Sheikh Zayed and the North Coast, with developer payment plans.",
+    descriptionAr: 'Aqar Factory — تصفح شقق وفيلات ومكاتب للبيع في القاهرة الجديدة والعاصمة الإدارية والشيخ زايد والساحل الشمالي، مع أنظمة تقسيط من كبرى الشركات العقارية.'
   },
   '/projects.html': {
     title: 'Projects — Aqar Factory', titleAr: 'المشاريع — Aqar Factory',
@@ -449,6 +449,10 @@ function pageHTML({ title, description, image, url, canonicalUrl, hreflangEn, hr
 <meta charset="utf-8">
 <title>${esc(title)}</title>
 <meta name="description" content="${esc(description)}">
+<link rel="icon" href="/favicon.ico" sizes="48x48">
+<link rel="icon" type="image/png" href="/icon-96.png" sizes="96x96">
+<link rel="icon" type="image/png" href="/icon-192.png" sizes="192x192">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="canonical" href="${esc(canonicalUrl)}">
 <link rel="alternate" hreflang="en" href="${esc(hreflangEn)}">
 <link rel="alternate" hreflang="ar" href="${esc(hreflangAr)}">
@@ -917,7 +921,11 @@ async function handleDetail(req, res, params) {
     if (tpl) {
       const ogType = table === 'blog_posts' ? 'article' : 'website';
       const head =
-        `<link rel="canonical" href="${esc(canonicalUrl)}">\n` +
+        `<link rel="icon" href="/favicon.ico" sizes="48x48">
+<link rel="icon" type="image/png" href="/icon-96.png" sizes="96x96">
+<link rel="icon" type="image/png" href="/icon-192.png" sizes="192x192">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="canonical" href="${esc(canonicalUrl)}">\n` +
         `<link rel="alternate" hreflang="en" href="${esc(hreflangEn)}">\n<link rel="alternate" hreflang="ar" href="${esc(hreflangAr)}">\n<link rel="alternate" hreflang="x-default" href="${esc(hreflangEn)}">\n` +
         `<meta property="og:type" content="${ogType}">\n<meta property="og:site_name" content="Aqar Factory">\n<meta property="og:title" content="${esc(title)}">\n<meta property="og:description" content="${esc(description)}">\n<meta property="og:url" content="${esc(canonicalUrl)}">\n` +
         (image ? `<meta property="og:image" content="${esc(image)}">\n` : '') +
