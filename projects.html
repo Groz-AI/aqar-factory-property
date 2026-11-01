@@ -26,6 +26,8 @@
      both), and i18n.js's injectSeoLinks() adds the explicit per-language
      canonical + hreflang from the real URL on every load, before paint. -->
 
+<link rel="preconnect" href="https://api.aqar-factory.com" crossorigin />
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Bricolage+Grotesque:opsz,wght@12..96,300..800&family=Hanken+Grotesk:wght@300..700&display=swap" rel="stylesheet" />
@@ -136,7 +138,7 @@
       <div class="city-select compact">
         <select id="citySelect"><option value="all" data-i18n>All cities</option></select>
       </div>
-      <span class="result-count"><b id="resCount">0</b> <span data-i18n>projects</span></span>
+      <span class="result-count"><b id="resCount">…</b> <span data-i18n>projects</span></span>
       <button class="reset-btn" id="resetBtn" hidden data-i18n>Reset</button>
     </div>
   </div>
@@ -145,7 +147,7 @@
 <!-- GRID -->
 <main class="container">
   <div class="listing-intro" id="listingIntro" hidden></div>
-  <div class="projects-grid" id="projectsGrid"></div>
+  <div class="projects-grid" id="projectsGrid"><div class="pcard-skel" aria-hidden="true"></div><div class="pcard-skel" aria-hidden="true"></div><div class="pcard-skel" aria-hidden="true"></div><div class="pcard-skel" aria-hidden="true"></div><div class="pcard-skel" aria-hidden="true"></div><div class="pcard-skel" aria-hidden="true"></div></div>
   <div class="empty-state" id="emptyState" hidden>
     <svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.6"/><path d="m20 20-3-3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
     <h3 data-i18n>No projects match those filters</h3>

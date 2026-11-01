@@ -125,11 +125,36 @@
     };
   }
 
+  // Listing pages only need what a CARD shows. Pulling select('*') used to
+  // download every project's long-form about blocks, FAQs and SEO text on every
+  // page view (~5 MB); the detail pages still fetch the full row (fetchOne).
+  const LIST_COLS = {
+    projects: 'id,slug,slug_ar,name,name_ar,category,city,location,country,year,status,tagline,cover,about,amenities,developer,developer_id,developer_logo,price,units,floors,area,handover,price_value,area_value,is_rental,lat,lng,gallery,sort_order,published,city_id,unit_types,brochure_pdf,consultants,is_featured,ready_to_move,created_at,updated_at',
+    units: 'id,slug,slug_ar,name,name_ar,type,badge,price,price_value,beds,baths,area,area_value,location,description,description_ar,cover,gallery,project_id,city_id,lat,lng,sort_order,published,developer_id,developer,is_featured,ready_to_move,created_at,updated_at'
+  };
+
+  // Short per-tab cache so moving between pages doesn't re-download the same
+  // lists. 60 s keeps admin edits showing up quickly.
+  const CACHE_MS = 60000;
+  function cacheGet(table) {
+    try {
+      const c = JSON.parse(sessionStorage.getItem('rt_list_' + table) || 'null');
+      if (c && Date.now() - c.t < CACHE_MS && Array.isArray(c.d) && c.d.length) return c.d;
+    } catch (_) {}
+    return null;
+  }
+  function cacheSet(table, rows) {
+    try { sessionStorage.setItem('rt_list_' + table, JSON.stringify({ t: Date.now(), d: rows })); } catch (_) {}
+  }
+
   async function fetchTable(table, fallback, map) {
     if (!sb) return fallback;
+    const cached = cacheGet(table);
+    if (cached) return map ? cached.map(map) : cached;
     try {
-      const { data, error } = await sb.from(table).select('*').eq('published', true).order('sort_order', { ascending: true });
+      const { data, error } = await sb.from(table).select(LIST_COLS[table] || '*').eq('published', true).order('sort_order', { ascending: true });
       if (error || !data || !data.length) return fallback;
+      cacheSet(table, data);
       return map ? data.map(map) : data;
     } catch (_) {
       return fallback;

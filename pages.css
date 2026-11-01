@@ -626,3 +626,7 @@
 .listing-intro img{height:56px;width:auto;max-width:140px;object-fit:contain;flex:none}
 .listing-intro h2{font-family:'Fraunces',serif;font-size:clamp(1.3rem,2.2vw,1.8rem);margin:0 0 6px}
 .listing-intro p{margin:.35em 0;line-height:1.75;color:var(--ink-soft)}
+
+/* placeholder cards shown while the lists load (replaced by the real cards) */
+.pcard-skel{height:360px;border-radius:18px;background:linear-gradient(100deg,rgba(128,128,128,.10) 30%,rgba(128,128,128,.20) 50%,rgba(128,128,128,.10) 70%);background-size:200% 100%;animation:pskel 1.2s linear infinite}
+@keyframes pskel{from{background-position:200% 0}to{background-position:-200% 0}}
