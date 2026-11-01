@@ -149,6 +149,9 @@
 
   async function fetchTable(table, fallback, map) {
     if (!sb) return fallback;
+    // rows the server already put in the page (api/preload.js)
+    const pre = window.__PRELOAD && window.__PRELOAD[table];
+    if (Array.isArray(pre) && pre.length) return map ? pre.map(map) : pre;
     const cached = cacheGet(table);
     if (cached) return map ? cached.map(map) : cached;
     // 1) the CDN-cached copy (nearby, instant); 2) the database directly

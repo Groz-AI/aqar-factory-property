@@ -157,6 +157,7 @@ export default async function middleware(request) {
   // trailing slash — the real, trailingSlash:false form of the Arabic
   // homepage — doesn't match startsWith('/ar/').
   const STATIC_HREFLANG_PAGES = new Set(['/', '/projects.html', '/units.html', '/cities.html', '/blog.html', '/about.html', '/contact.html']);
+  const PRELOAD_PAGES = new Set(['/', '/projects.html', '/units.html', '/cities.html']);
   const staticIsAr = url.pathname === '/ar' || url.pathname.startsWith('/ar/');
   const staticEnPath = staticIsAr ? (url.pathname === '/ar' ? '/' : url.pathname.slice(3)) : url.pathname;
   // the header below is api/bot-render.js's OWN internal re-fetch of this
@@ -170,6 +171,11 @@ export default async function middleware(request) {
     if (isNamedBotStatic || looksLikeNonBrowserStatic) {
       const qs = new URLSearchParams({ mode: 'static', page: staticEnPath, lang: staticIsAr ? 'ar' : 'en' });
       return rewrite(new URL(`/api/bot-render?${qs.toString()}`, url.origin));
+    }
+    // real visitors of the pages that draw card lists: the same static page,
+    // with those lists already inlined (api/preload.js) so there is no data wait
+    if (PRELOAD_PAGES.has(staticEnPath) && request.method === 'GET') {
+      return rewrite(new URL(`/api/preload?page=${encodeURIComponent(staticEnPath)}`, url.origin));
     }
     return next();
   }
