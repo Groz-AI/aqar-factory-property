@@ -30,7 +30,9 @@ function cycleGalleries(scopeSel, hoverSel, baseInterval) {
       slides[i].classList.remove('active');
       if (dots[i]) dots[i].classList.remove('on');
       i = (i + 1) % slides.length;
+      window.loadSlide && window.loadSlide(slides[i]);
       slides[i].classList.add('active');
+      window.loadSlide && window.loadSlide(slides[(i + 1) % slides.length]);
       if (dots[i]) dots[i].classList.add('on');
     };
     const run = (ms) => { if (box._tid) clearInterval(box._tid); box._tid = setInterval(advance, ms); };
@@ -72,11 +74,11 @@ function cardHTML(p){
   const stats = p.stats || {};
   const imgs = projectImages(p);
   const slides = imgs.map((g, n) =>
-    `<div class="pg-slide${n === 0 ? ' active' : ''}" style="background-image:url('${U(g, 800)}')"></div>`).join('');
+    `<div class="pg-slide${n === 0 ? ' active' : ''}" data-bg="${U(g, 800)}"></div>`).join('');
   const dots = imgs.length > 1
     ? `<div class="pg-dots">${imgs.map((_, n) => `<i class="${n === 0 ? 'on' : ''}"></i>`).join('')}</div>` : '';
   const devLogo = p.developerLogo
-    ? `<span class="pcard-dev-logo"><img src="${U(p.developerLogo, 100)}" alt="${p.developer || ''}" title="${p.developer || ''}"></span>` : '';
+    ? `<span class="pcard-dev-logo"><img loading="lazy" src="${U(p.developerLogo, 100)}" alt="${p.developer || ''}" title="${p.developer || ''}"></span>` : '';
   return `
   <a class="pcard" href="${window.buildUrl('project', p)}">
     <div class="pcard-img" data-gallery>

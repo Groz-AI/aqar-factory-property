@@ -151,6 +151,16 @@
     if (!sb) return fallback;
     const cached = cacheGet(table);
     if (cached) return map ? cached.map(map) : cached;
+    // 1) the CDN-cached copy (nearby, instant); 2) the database directly
+    if (/^https?:/.test(location.protocol) && !/^(localhost|127.)/.test(location.hostname)) {
+      try {
+        const r = await fetch('/api/list?t=' + table);
+        if (r.ok) {
+          const rows = await r.json();
+          if (Array.isArray(rows) && rows.length) { cacheSet(table, rows); return map ? rows.map(map) : rows; }
+        }
+      } catch (_) { /* fall through to the direct query */ }
+    }
     try {
       const { data, error } = await sb.from(table).select(LIST_COLS[table] || '*').eq('published', true).order('sort_order', { ascending: true });
       if (error || !data || !data.length) return fallback;

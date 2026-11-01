@@ -7,6 +7,31 @@ window.U = (id, w = 900) =>
   /^https?:\/\//.test(id) ? id :
   `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=${w}&q=80`;
 
+/* Card galleries used to load EVERY slide of EVERY card up front (~20 MB on the
+   projects page). Slides now carry data-bg: the visible one loads when its card
+   is near the viewport, and the next one loads as the cross-fade advances. */
+(function () {
+  window.loadSlide = function (el) {
+    const u = el && el.dataset && el.dataset.bg;
+    if (u) { el.style.backgroundImage = "url('" + u + "')"; el.removeAttribute('data-bg'); }
+    if (u && el.classList.contains('active') && el.nextElementSibling) { const n = el.nextElementSibling; setTimeout(() => window.loadSlide(n), 1500); }
+  };
+  const io = 'IntersectionObserver' in window
+    ? new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { io.unobserve(e.target); window.loadSlide(e.target); } }), { rootMargin: '400px 0px' })
+    : null;
+  let queued = false;
+  function scan() {
+    queued = false;
+    document.querySelectorAll('.pg-slide.active[data-bg]').forEach((el) => {
+      if (el._lz) return; el._lz = 1;
+      if (io) io.observe(el); else window.loadSlide(el);
+    });
+  }
+  new MutationObserver(() => { if (!queued) { queued = true; requestAnimationFrame(scan); } })
+    .observe(document.documentElement, { childList: true, subtree: true });
+  document.addEventListener('DOMContentLoaded', scan);
+})();
+
 window.PROJECTS = [
   {
     id: "azure-residences",

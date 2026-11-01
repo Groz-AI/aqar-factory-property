@@ -143,7 +143,7 @@ function unitTypesList() {
 function unitCardHTML(u) {
   const imgs = (u.gallery && u.gallery.length ? u.gallery : [u.cover]).filter(Boolean).slice(0, 5);
   const slides = imgs.map((g, i) =>
-    `<div class="pg-slide${i === 0 ? ' active' : ''}" style="background-image:url('${IMG(g, 900)}')"></div>`).join('');
+    `<div class="pg-slide${i === 0 ? ' active' : ''}" data-bg="${IMG(g, 900)}"></div>`).join('');
   const dots = imgs.length > 1
     ? `<div class="pg-dots">${imgs.map((_, i) => `<i class="${i === 0 ? 'on' : ''}"></i>`).join('')}</div>` : '';
   const specs = [];
@@ -233,7 +233,7 @@ function renderCities(cities, projectList) {
 function projectCardHTML(p) {
     const imgs = (p.gallery && p.gallery.length ? p.gallery : [p.cover]).filter(Boolean).slice(0, 5);
     const slides = imgs.map((g, i) =>
-      `<div class="pg-slide${i === 0 ? ' active' : ''}" style="background-image:url('${IMG(g, 900)}')"></div>`).join('');
+      `<div class="pg-slide${i === 0 ? ' active' : ''}" data-bg="${IMG(g, 900)}"></div>`).join('');
     const dots = imgs.length > 1
       ? `<div class="pg-dots">${imgs.map((_, i) => `<i class="${i === 0 ? 'on' : ''}"></i>`).join('')}</div>` : '';
 
@@ -290,7 +290,9 @@ function cycleGalleries(scopeSel, hoverSel, baseInterval) {
       slides[i].classList.remove('active');
       if (dots[i]) dots[i].classList.remove('on');
       i = (i + 1) % slides.length;
+      window.loadSlide && window.loadSlide(slides[i]);
       slides[i].classList.add('active');
+      window.loadSlide && window.loadSlide(slides[(i + 1) % slides.length]);
       if (dots[i]) dots[i].classList.add('on');
     };
     const run = (ms) => { if (box._tid) clearInterval(box._tid); box._tid = setInterval(advance, ms); };
@@ -325,7 +327,9 @@ function initHeroGallery(cities, content) {
   setInterval(() => {
     slides[i].classList.remove('active');
     i = (i + 1) % slides.length;
+    window.loadSlide && window.loadSlide(slides[i]);
     slides[i].classList.add('active');
+    window.loadSlide && window.loadSlide(slides[(i + 1) % slides.length]);
   }, 5500);
 }
 
