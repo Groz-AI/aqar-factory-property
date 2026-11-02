@@ -134,6 +134,17 @@ function render(){
   cycleGalleries('#projectsGrid', '.pcard', 4000);
   if (window.cardContact) window.cardContact.wire(grid);
   renderIntro();
+  renderHero();
+}
+
+/* a city's own cover replaces the default page banner while that city is the
+   active filter; any other state puts the default banner back */
+const heroEl = document.querySelector('.subpage-hero');
+const DEFAULT_HERO_BG = heroEl ? heroEl.style.getPropertyValue('--bg') : '';
+function renderHero(){
+  if (!heroEl) return;
+  const row = state.city !== 'all' ? CITIES.find(c => c.name === state.city) : null;
+  heroEl.style.setProperty('--bg', row && row.image ? `url('${U(row.image, 1700)}')` : DEFAULT_HERO_BG);
 }
 
 /* the city's / developer's own paragraph (written in the admin), shown above
@@ -149,8 +160,7 @@ function renderIntro(){
   const wrap = document.getElementById('listingWrap');
   if (!row || !text.trim()) { box.hidden = true; box.innerHTML = ''; if (wrap) wrap.classList.remove('has-intro'); return; }
   const paras = text.split(/\n+/).map(x => x.trim()).filter(Boolean).map(x => `<p>${esc(x)}</p>`).join('');
-  const photo = state.developer !== 'all' ? (row.logo ? `<img class="li-logo" src="${U(row.logo, 200)}" alt="${esc(row.name)}">` : '')
-    : (row.image ? `<img class="li-photo" src="${U(row.image, 700)}" alt="${esc(row.name)}">` : '');
+  const photo = state.developer !== 'all' && row.logo ? `<img class="li-logo" src="${U(row.logo, 200)}" alt="${esc(row.name)}">` : '';
   box.innerHTML = photo + `<h2>${esc(row.name)}</h2>${paras}`;
   box.hidden = false;
   if (wrap) wrap.classList.add('has-intro');
