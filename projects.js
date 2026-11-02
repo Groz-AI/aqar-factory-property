@@ -146,10 +146,14 @@ function renderIntro(){
   const row = state.developer !== 'all' ? DEVS.find(d => d.name === state.developer)
     : state.city !== 'all' ? CITIES.find(c => c.name === state.city) : null;
   const text = row ? ((isAr() ? row.description_ar : row.description) || '') : '';
-  if (!row || !text.trim()) { box.hidden = true; box.innerHTML = ''; return; }
+  const wrap = document.getElementById('listingWrap');
+  if (!row || !text.trim()) { box.hidden = true; box.innerHTML = ''; if (wrap) wrap.classList.remove('has-intro'); return; }
   const paras = text.split(/\n+/).map(x => x.trim()).filter(Boolean).map(x => `<p>${esc(x)}</p>`).join('');
-  box.innerHTML = (state.developer !== 'all' && row.logo ? `<img src="${U(row.logo, 200)}" alt="${esc(row.name)}">` : '') + `<div><h2>${esc(row.name)}</h2>${paras}</div>`;
+  const photo = state.developer !== 'all' ? (row.logo ? `<img class="li-logo" src="${U(row.logo, 200)}" alt="${esc(row.name)}">` : '')
+    : (row.image ? `<img class="li-photo" src="${U(row.image, 700)}" alt="${esc(row.name)}">` : '');
+  box.innerHTML = photo + `<h2>${esc(row.name)}</h2>${paras}`;
   box.hidden = false;
+  if (wrap) wrap.classList.add('has-intro');
 }
 
 /* ---------- events ---------- */

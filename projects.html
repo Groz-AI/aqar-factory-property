@@ -146,13 +146,17 @@
 
 <!-- GRID -->
 <main class="container">
-  <div class="listing-intro" id="listingIntro" hidden></div>
+  <div class="listing-wrap" id="listingWrap">
+  <aside class="listing-intro" id="listingIntro" hidden></aside>
+  <div class="listing-main">
   <div class="projects-grid" id="projectsGrid"><div class="pcard-skel" aria-hidden="true"></div><div class="pcard-skel" aria-hidden="true"></div><div class="pcard-skel" aria-hidden="true"></div><div class="pcard-skel" aria-hidden="true"></div><div class="pcard-skel" aria-hidden="true"></div><div class="pcard-skel" aria-hidden="true"></div></div>
   <div class="empty-state" id="emptyState" hidden>
     <svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.6"/><path d="m20 20-3-3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
     <h3 data-i18n>No projects match those filters</h3>
     <p data-i18n>Try a different search, category or city.</p>
     <button class="btn btn-dark" id="emptyReset" style="margin-top:1.2rem" data-i18n>Clear filters</button>
+  </div>
+  </div>
   </div>
 </main>
 

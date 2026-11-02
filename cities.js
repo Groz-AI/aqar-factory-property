@@ -15,17 +15,14 @@ const imgUrl = (ref, w = 900) =>
     const counts = {};
     (projects || []).forEach(p => { if (p.cityId) counts[p.cityId] = (counts[p.cityId] || 0) + 1; });
     wrap.innerHTML = (cities || []).map(c => {
-      const text = (isAr() ? c.description_ar : c.description) || '';
       const n = counts[c.id] || 0;
       const label = n === 1 ? t('1 Project') : `${n.toLocaleString()} ${t('Projects')}`;
-      const paras = String(text).split(/\n{1,}/).map(s => s.trim()).filter(Boolean).map(s => `<p>${esc(s)}</p>`).join('');
       return `
       <article class="city-row">
         <a class="city-row-img" href="projects.html?city=${encodeURIComponent(c.name)}" style="background-image:url('${imgUrl(c.image)}')" aria-label="${esc(c.name)}"></a>
         <div class="city-row-body">
           <h2>${esc(c.name)}</h2>
           <p class="city-row-meta">${esc(c.country || '')}${c.country ? ' · ' : ''}${label}</p>
-          <div class="city-row-text">${paras}</div>
           <a class="view-all" href="projects.html?city=${encodeURIComponent(c.name)}"><span>${t('View projects')}</span>
             <svg viewBox="0 0 24 24" fill="none"><path d="M7 17 17 7M9 7h8v8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
         </div>
