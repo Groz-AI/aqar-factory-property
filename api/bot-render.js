@@ -480,9 +480,9 @@ ${factsList}
 ${amenitiesList}
 ${brochureLink}
 ${consultantsList}
+${faqHtml}
 ${galleryHtml}
 ${projectUnitsHtml}
-${faqHtml}
 ${relatedHtml}
 </main>
 <footer><nav>${siteNav(isAr)}</nav></footer>

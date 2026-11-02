@@ -241,6 +241,9 @@
 /* FAQ — click-to-open questions between the page content and "More ..." */
 .faq-section{padding:56px 0 8px}
 .faq-section[hidden]{display:none}
+/* FAQ now sits inside the detail column, above the gallery */
+.detail-main .faq-section{padding:32px 0 8px}
+.detail-main .faq-section .container{padding:0;max-width:none}
 .faq-title{font-family:"Bricolage Grotesque",sans-serif;font-size:1.6rem;font-weight:700;letter-spacing:-.01em;margin-bottom:1.4rem}
 .faq-list{max-width:820px;display:flex;flex-direction:column;gap:12px}
 .faq-item{border:1px solid var(--line);border-radius:14px;background:#fff;transition:border-color .2s,box-shadow .2s}
