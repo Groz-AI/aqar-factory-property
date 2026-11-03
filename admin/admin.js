@@ -172,27 +172,82 @@
     toastT = setTimeout(() => { toastEl.className = 'toast'; }, 2800);
   }
 
-  // ---------- "Add link" helper for plain-text description fields ----------
-  // Writes [text](address); the website turns that into a real hyperlink.
-  function linkBtn(f, id) {
-    if (!f.links) return '';
-    return `<button type="button" class="btn btn-ghost btn-sm" data-insert-link="${id}" style="margin-top:6px">🔗 ${esc(t('Add link'))}</button>` +
-      `<div class="field-hint">${esc(t('Select some text, press Add link, paste the address. It is saved as [text](address).'))}</div>`;
+  // ---------- linked-text editor for description fields ----------
+  // The text is edited as real text: select words, press Add link, and they
+  // become a visible hyperlink. A hidden textarea keeps the stored form,
+  // [text](address), which the website turns into a real link.
+  const LINK_OK = /^(https?:\/\/|mailto:|tel:|\/(?!\/))/i;
+  function mdToEditorHtml(txt) {
+    return esc(txt || '').replace(/\[([^\[\]]+)\]\(([^()\s]+)\)/g, (m, label, url) => {
+      const u = url.replace(/&amp;/g, '&');
+      return LINK_OK.test(u) ? '<a href="' + esc(u) + '">' + label + '</a>' : m;
+    }).replace(/\r?\n/g, '<br>');
   }
+  function editorToMd(root) {
+    let out = '';
+    (function walk(n) {
+      n.childNodes.forEach(c => {
+        if (c.nodeType === 3) out += c.nodeValue;
+        else if (c.nodeName === 'BR') out += '\n';
+        else if (c.nodeName === 'A' && LINK_OK.test(c.getAttribute('href') || '')) {
+          out += '[' + c.textContent.replace(/[\[\]]/g, '') + '](' + c.getAttribute('href') + ')';
+        } else {
+          const block = /^(DIV|P)$/.test(c.nodeName);
+          if (block && out && !out.endsWith('\n')) out += '\n';
+          walk(c);
+        }
+      });
+    })(root);
+    return out.replace(/ /g, ' ').replace(/\n+$/, '');
+  }
+  function linkedField(f, id, val, hint) {
+    return `<div class="field"><label for="${id}_rte">${esc(f.label)}</label>` +
+      `<textarea id="${id}" style="display:none">${esc(val || '')}</textarea>` +
+      `<div class="rte" id="${id}_rte" contenteditable="true" style="min-height:120px;white-space:pre-wrap">${mdToEditorHtml(val)}</div>` +
+      `<button type="button" class="btn btn-ghost btn-sm" data-insert-link="${id}" style="margin-top:6px">🔗 ${esc(t('Add link'))}</button>` +
+      `<div class="field-hint">${esc(t('Select some words, press Add link and paste the address: the words become a link. Click inside a link and press Add link to change it (leave the address empty to remove it).'))}</div>${hint || ''}</div>`;
+  }
+  function syncLinked(rte) {
+    const ta = document.getElementById(rte.id.replace(/_rte$/, ''));
+    if (ta) ta.value = editorToMd(rte);
+  }
+  document.addEventListener('focusin', (e) => {
+    if (e.target.matches && e.target.matches('.rte[id$="_rte"]')) document.execCommand('defaultParagraphSeparator', false, 'br');
+  });
+  document.addEventListener('input', (e) => {
+    if (e.target.matches && e.target.matches('.rte[id$="_rte"]')) syncLinked(e.target);
+  });
+  document.addEventListener('paste', (e) => {
+    if (!(e.target.matches && e.target.matches('.rte[id$="_rte"]'))) return;
+    e.preventDefault();
+    const txt = (e.clipboardData || window.clipboardData).getData('text/plain');
+    document.execCommand('insertText', false, txt);
+  });
+  document.addEventListener('mousedown', (e) => {
+    if (e.target.closest && e.target.closest('[data-insert-link]')) e.preventDefault();
+  });
   document.addEventListener('click', (e) => {
     const b = e.target.closest && e.target.closest('[data-insert-link]');
     if (!b) return;
-    const ta = document.getElementById(b.dataset.insertLink);
-    if (!ta) return;
-    const a = ta.selectionStart, z = ta.selectionEnd;
-    const picked = ta.value.slice(a, z);
-    const url = (window.prompt(t('Link address (https://…)')) || '').trim();
-    if (!url) return;
-    if (!/^(https?:\/\/|mailto:|tel:|\/(?!\/))/i.test(url)) { toast(t('Use an address that starts with https://'), 'err'); return; }
-    const label = picked || (window.prompt(t('Link text')) || '').trim();
-    if (!label) return;
-    ta.value = ta.value.slice(0, a) + '[' + label + '](' + url + ')' + ta.value.slice(z);
-    ta.focus();
+    const rte = document.getElementById(b.dataset.insertLink + '_rte');
+    if (!rte) return;
+    const sel = window.getSelection();
+    if (!sel.rangeCount || !rte.contains(sel.anchorNode)) { toast(t('Select the words first'), 'err'); return; }
+    const range = sel.getRangeAt(0).cloneRange();
+    const startEl = range.startContainer.nodeType === 1 ? range.startContainer : range.startContainer.parentElement;
+    const existing = startEl && startEl.closest('a');
+    if (range.collapsed && !existing) { toast(t('Select the words first'), 'err'); return; }
+    const url = (window.prompt(t('Link address (https://…)'), existing ? existing.getAttribute('href') : '') || '').trim();
+    rte.focus(); sel.removeAllRanges(); sel.addRange(range);
+    if (existing && !url) {
+      const r = document.createRange(); r.selectNodeContents(existing); sel.removeAllRanges(); sel.addRange(r);
+      document.execCommand('unlink');
+    } else if (url) {
+      if (!LINK_OK.test(url)) { toast(t('Use an address that starts with https://'), 'err'); return; }
+      if (existing) { const r = document.createRange(); r.selectNodeContents(existing); sel.removeAllRanges(); sel.addRange(r); }
+      document.execCommand('createLink', false, url);
+    }
+    syncLinked(rte);
   });
 
   // ============================================================
@@ -959,7 +1014,7 @@
       return `<div class="field"><label for="${id}">${esc(f.label)}</label><select id="${id}">${opts}</select>${hint}</div>`;
     }
     if (f.type === 'textarea') {
-      return `<div class="field"><label for="${id}">${esc(f.label)}</label><textarea id="${id}">${esc(val || '')}</textarea>${linkBtn(f, id)}${hint}</div>`;
+      return f.links ? linkedField(f, id, val, hint) : `<div class="field"><label for="${id}">${esc(f.label)}</label><textarea id="${id}">${esc(val || '')}</textarea>${hint}</div>`;
     }
     if (f.type === 'lines') {
       const text = Array.isArray(val) ? val.join('\n') : (val || '');
@@ -2304,7 +2359,7 @@
           </div>
         </div>${hint}</div>`;
     }
-    if (f.type === 'textarea') return `<div class="field"><label for="${id}">${esc(f.label)}</label><textarea id="${id}">${esc(v)}</textarea>${linkBtn(f, id)}${hint}</div>`;
+    if (f.type === 'textarea') return f.links ? linkedField(f, id, v, hint) : `<div class="field"><label for="${id}">${esc(f.label)}</label><textarea id="${id}">${esc(v)}</textarea>${hint}</div>`;
     const inputType = f.type === 'number' ? 'number' : 'text';
     return `<div class="field"><label for="${id}">${esc(f.label)}</label><input type="${inputType}" id="${id}" value="${esc(v)}">${hint}</div>`;
   }
