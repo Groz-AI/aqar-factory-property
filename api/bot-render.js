@@ -345,7 +345,7 @@ const LISTING_INJECT = {
     table: 'cities', containerId: 'cityRows', limit: 100,
     select: 'name,country,description,description_ar',
     href: (name, ar) => `${ar ? '/ar' : ''}/projects.html?city=${encodeURIComponent(name)}`,
-    row: (r, ar) => ({ slug: r.name, name: r.name, sub: (ar ? r.description_ar : r.description) || r.country || '' })
+    row: (r, ar) => ({ slug: r.name, name: r.name, sub: ((ar ? r.description_ar : r.description) || '').replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, '$1') || r.country || '' })
   }],
   '/blog.html': [{
     table: 'blog_posts', containerId: 'blogGrid',

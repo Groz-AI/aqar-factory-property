@@ -159,7 +159,11 @@ function renderIntro(){
   const text = row ? ((isAr() ? row.description_ar : row.description) || '') : '';
   const wrap = document.getElementById('listingWrap');
   if (!row || !text.trim()) { box.hidden = true; box.innerHTML = ''; if (wrap) wrap.classList.remove('has-intro'); return; }
-  const paras = text.split(/\n+/).map(x => x.trim()).filter(Boolean).map(x => `<p>${esc(x)}</p>`).join('');
+  // [link text](https://…) written in the admin becomes a real link; only
+  // http(s), mailto, tel and site-relative targets are accepted
+  const withLinks = (x) => esc(x).replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (m, label, url) => /^(https?:\/\/|mailto:|tel:|\/(?!\/))/i.test(url)
+    ? `<a href="${url}"${/^https?:/i.test(url) ? ' target="_blank" rel="noopener"' : ''}>${label}</a>` : m);
+  const paras = text.split(/\n+/).map(x => x.trim()).filter(Boolean).map(x => `<p>${withLinks(x)}</p>`).join('');
   const photo = state.developer !== 'all' && row.logo ? `<img class="li-logo" src="${U(row.logo, 200)}" alt="${esc(row.name)}">` : '';
   box.innerHTML = photo + `<h2>${esc(row.name)}</h2>${paras}`;
   box.hidden = false;

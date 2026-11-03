@@ -172,6 +172,29 @@
     toastT = setTimeout(() => { toastEl.className = 'toast'; }, 2800);
   }
 
+  // ---------- "Add link" helper for plain-text description fields ----------
+  // Writes [text](address); the website turns that into a real hyperlink.
+  function linkBtn(f, id) {
+    if (!f.links) return '';
+    return `<button type="button" class="btn btn-ghost btn-sm" data-insert-link="${id}" style="margin-top:6px">🔗 ${esc(t('Add link'))}</button>` +
+      `<div class="field-hint">${esc(t('Select some text, press Add link, paste the address. It is saved as [text](address).'))}</div>`;
+  }
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest && e.target.closest('[data-insert-link]');
+    if (!b) return;
+    const ta = document.getElementById(b.dataset.insertLink);
+    if (!ta) return;
+    const a = ta.selectionStart, z = ta.selectionEnd;
+    const picked = ta.value.slice(a, z);
+    const url = (window.prompt(t('Link address (https://…)')) || '').trim();
+    if (!url) return;
+    if (!/^(https?:\/\/|mailto:|tel:|\/(?!\/))/i.test(url)) { toast(t('Use an address that starts with https://'), 'err'); return; }
+    const label = picked || (window.prompt(t('Link text')) || '').trim();
+    if (!label) return;
+    ta.value = ta.value.slice(0, a) + '[' + label + '](' + url + ')' + ta.value.slice(z);
+    ta.focus();
+  });
+
   // ============================================================
   // RESOURCE DEFINITIONS — one entry drives table + form for a table
   // field types: text | textarea | number | bool | select | tags | lines | image | gallery
@@ -249,8 +272,8 @@
         { key: 'name', label: t('Name'), type: 'text', required: true, half: true },
         { key: 'country', label: t('Country'), type: 'text', half: true },
         { key: 'image', label: t('Image'), type: 'image' },
-        { key: 'description', label: t('About this city (English)'), type: 'textarea', hint: t('A short paragraph shown on the Cities page and above the projects when visitors filter by this city. Each language shows only its own text.') },
-        { key: 'description_ar', label: t('About this city (Arabic)'), type: 'textarea' },
+        { key: 'description', label: t('About this city (English)'), type: 'textarea', links: true, hint: t('Shown on the city\'s own page, beside its projects (not on the Cities list). Each language shows only its own text.') },
+        { key: 'description_ar', label: t('About this city (Arabic)'), type: 'textarea', links: true },
         { key: 'size', label: t('Tile size'), type: 'select', options: ['normal', 'wide', 'big'], half: true, hint: t('controls the tile size in the homepage “By Cities” grid') },
         { key: 'sort_order', label: t('Sort order'), type: 'number', half: true },
         { key: 'published', label: t('Published'), type: 'bool', half: true }
@@ -305,8 +328,8 @@
       fields: [
         { key: 'name', label: t('Name'), type: 'text', required: true },
         { key: 'logo', label: t('Logo (optional)'), type: 'image', hint: t('leave empty to render the name as a wordmark') },
-        { key: 'description', label: t('About this developer (English)'), type: 'textarea', hint: t('A short paragraph shown above the projects when visitors click this developer on the homepage. Each language shows only its own text.') },
-        { key: 'description_ar', label: t('About this developer (Arabic)'), type: 'textarea' },
+        { key: 'description', label: t('About this developer (English)'), type: 'textarea', links: true, hint: t('Shown on the developer\'s own page, beside its projects. Each language shows only its own text.') },
+        { key: 'description_ar', label: t('About this developer (Arabic)'), type: 'textarea', links: true },
         { key: 'sort_order', label: t('Sort order'), type: 'number', half: true },
         { key: 'published', label: t('Published'), type: 'bool', half: true }
       ]
@@ -936,7 +959,7 @@
       return `<div class="field"><label for="${id}">${esc(f.label)}</label><select id="${id}">${opts}</select>${hint}</div>`;
     }
     if (f.type === 'textarea') {
-      return `<div class="field"><label for="${id}">${esc(f.label)}</label><textarea id="${id}">${esc(val || '')}</textarea>${hint}</div>`;
+      return `<div class="field"><label for="${id}">${esc(f.label)}</label><textarea id="${id}">${esc(val || '')}</textarea>${linkBtn(f, id)}${hint}</div>`;
     }
     if (f.type === 'lines') {
       const text = Array.isArray(val) ? val.join('\n') : (val || '');
@@ -2281,7 +2304,7 @@
           </div>
         </div>${hint}</div>`;
     }
-    if (f.type === 'textarea') return `<div class="field"><label for="${id}">${esc(f.label)}</label><textarea id="${id}">${esc(v)}</textarea>${hint}</div>`;
+    if (f.type === 'textarea') return `<div class="field"><label for="${id}">${esc(f.label)}</label><textarea id="${id}">${esc(v)}</textarea>${linkBtn(f, id)}${hint}</div>`;
     const inputType = f.type === 'number' ? 'number' : 'text';
     return `<div class="field"><label for="${id}">${esc(f.label)}</label><input type="${inputType}" id="${id}" value="${esc(v)}">${hint}</div>`;
   }
