@@ -176,6 +176,7 @@
 .detail-layout{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:54px;padding:64px 0}
 .detail-main h2{font-family:"Bricolage Grotesque",sans-serif;font-size:1.6rem;font-weight:700;letter-spacing:-.01em;margin-bottom:1rem}
 .detail-tagline{font-family:"Fraunces",serif;font-style:italic;font-size:clamp(1.3rem,2.4vw,1.7rem);line-height:1.4;color:var(--ink);margin-bottom:2.4rem}
+.detail-main h2:empty,.detail-main h3:empty,.detail-main p:empty{display:none}
 .detail-main p{color:var(--ink-soft);font-size:1.04rem;margin-bottom:1.1rem;line-height:1.7}
 .detail-section{margin-top:3rem}
 
