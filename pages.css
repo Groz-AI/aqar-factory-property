@@ -216,7 +216,12 @@
   background:linear-gradient(155deg, var(--sky) 0%, var(--sky-deep) 100%);
   border:1px solid rgba(255,255,255,.14);border-radius:22px;padding:28px;
   box-shadow:0 24px 50px -24px rgba(158,14,59,.55);color:#fff;
+  max-height:calc(100vh - 116px);overflow-y:auto;scrollbar-width:none;
 }
+.fact-card::-webkit-scrollbar{display:none}
+/* short screens / zoomed-in browsers: the card is taller than the window, so
+   let it scroll with the page instead of sticking and hiding its lower half */
+@media (max-height:900px){.fact-card{position:static;max-height:none;overflow:visible}}
 .fact-card .price{font-family:"Bricolage Grotesque",sans-serif;font-size:2rem;font-weight:700;letter-spacing:-.02em;line-height:1;color:#fff}
 .fact-card .price small{display:block;font-family:"Hanken Grotesk";font-size:.8rem;font-weight:500;color:rgba(255,255,255,.75);letter-spacing:0;margin-bottom:.3rem}
 .fact-list{margin:22px 0;border-top:1px solid rgba(255,255,255,.22)}
