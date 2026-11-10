@@ -103,7 +103,6 @@ module.exports = async function handler(req, res) {
   try { if (ar) html = await toArabicHtml(html); } catch (_) { /* keep English; i18n.js translates it */ }
 
   const head =
-    `<link rel="icon" href="/favicon.ico" sizes="48x48">\n<link rel="icon" type="image/png" href="/icon-96.png" sizes="96x96">\n<link rel="apple-touch-icon" href="/apple-touch-icon.png">\n` +
     `<link rel="canonical" href="${esc(own)}">\n` +
     `<link rel="alternate" hreflang="en" href="${esc(enUrl)}">\n<link rel="alternate" hreflang="ar" href="${esc(arUrl)}">\n<link rel="alternate" hreflang="x-default" href="${esc(enUrl)}">\n` +
     `<meta property="og:type" content="website">\n<meta property="og:site_name" content="Aqar Factory">\n<meta property="og:title" content="${esc(title)}">\n<meta property="og:description" content="${esc(description)}">\n<meta property="og:url" content="${esc(own)}">\n` +
