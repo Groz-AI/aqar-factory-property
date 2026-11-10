@@ -17,10 +17,26 @@ const SUPA_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIs
 
 // same slim column lists as store.js's LIST_COLS (cards only, no long-form text)
 const COLS = {
-  projects: 'id,slug,slug_ar,name,name_ar,category,city,location,country,year,status,tagline,cover,about,amenities,developer,developer_id,developer_logo,price,units,floors,area,handover,price_value,area_value,is_rental,lat,lng,gallery,sort_order,published,city_id,unit_types,brochure_pdf,consultants,is_featured,ready_to_move,created_at,updated_at',
-  units: 'id,slug,slug_ar,name,name_ar,type,badge,price,price_value,beds,baths,area,area_value,location,description,description_ar,cover,gallery,project_id,city_id,lat,lng,sort_order,published,developer_id,developer,is_featured,ready_to_move,created_at,updated_at',
+  projects: 'id,slug,slug_ar,name,name_ar,category,city,location,country,year,status,tagline,cover,about,developer,developer_id,developer_logo,price,units,floors,area,handover,price_value,area_value,is_rental,lat,lng,gallery,sort_order,published,city_id,unit_types,consultants,is_featured,ready_to_move',
+  units: 'id,slug,slug_ar,name,name_ar,type,badge,price,price_value,beds,baths,area,area_value,location,description,cover,gallery,project_id,city_id,lat,lng,sort_order,published,developer_id,developer,is_featured,ready_to_move',
   cities: '*', developers: '*', categories: '*', testimonials: '*', blog_posts: '*'
 };
+
+// cards show at most 6 photos and the AI helper reads only the first
+// paragraph / first 200 characters, so long fields are cut here (detail
+// pages fetch their own full row)
+function slimRows(t, rows) {
+  if (!Array.isArray(rows)) return rows;
+  if (t === 'projects') rows.forEach(r => {
+    if (Array.isArray(r.gallery)) r.gallery = r.gallery.slice(0, 6);
+    if (Array.isArray(r.about)) r.about = r.about.slice(0, 1).map(s => String(s).slice(0, 300));
+  });
+  if (t === 'units') rows.forEach(r => {
+    if (Array.isArray(r.gallery)) r.gallery = r.gallery.slice(0, 6);
+    if (typeof r.description === 'string') r.description = r.description.slice(0, 200);
+  });
+  return rows;
+}
 
 module.exports = async function handler(req, res) {
   const t = String((req.query && req.query.t) || '');
@@ -29,7 +45,7 @@ module.exports = async function handler(req, res) {
     const r = await fetch(`${SUPA_URL}/rest/v1/${t}?select=${COLS[t]}&published=eq.true&order=sort_order.asc`,
       { headers: { apikey: SUPA_ANON_KEY, Authorization: `Bearer ${SUPA_ANON_KEY}` } });
     if (!r.ok) throw new Error('upstream ' + r.status);
-    const body = await r.text();
+    const body = JSON.stringify(slimRows(t, await r.json()));
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=60, stale-while-revalidate=86400');
     res.statusCode = 200;

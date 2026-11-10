@@ -129,8 +129,8 @@
   // download every project's long-form about blocks, FAQs and SEO text on every
   // page view (~5 MB); the detail pages still fetch the full row (fetchOne).
   const LIST_COLS = {
-    projects: 'id,slug,slug_ar,name,name_ar,category,city,location,country,year,status,tagline,cover,about,amenities,developer,developer_id,developer_logo,price,units,floors,area,handover,price_value,area_value,is_rental,lat,lng,gallery,sort_order,published,city_id,unit_types,brochure_pdf,consultants,is_featured,ready_to_move,created_at,updated_at',
-    units: 'id,slug,slug_ar,name,name_ar,type,badge,price,price_value,beds,baths,area,area_value,location,description,description_ar,cover,gallery,project_id,city_id,lat,lng,sort_order,published,developer_id,developer,is_featured,ready_to_move,created_at,updated_at'
+    projects: 'id,slug,slug_ar,name,name_ar,category,city,location,country,year,status,tagline,cover,about,developer,developer_id,developer_logo,price,units,floors,area,handover,price_value,area_value,is_rental,lat,lng,gallery,sort_order,published,city_id,unit_types,consultants,is_featured,ready_to_move',
+    units: 'id,slug,slug_ar,name,name_ar,type,badge,price,price_value,beds,baths,area,area_value,location,description,cover,gallery,project_id,city_id,lat,lng,sort_order,published,developer_id,developer,is_featured,ready_to_move'
   };
 
   // Short per-tab cache so moving between pages doesn't re-download the same

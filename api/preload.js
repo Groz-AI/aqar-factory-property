@@ -17,8 +17,8 @@ const SUPA_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIs
 
 // must stay in step with store.js's LIST_COLS and api/list.js
 const COLS = {
-  projects: 'id,slug,slug_ar,name,name_ar,category,city,location,country,year,status,tagline,cover,about,amenities,developer,developer_id,developer_logo,price,units,floors,area,handover,price_value,area_value,is_rental,lat,lng,gallery,sort_order,published,city_id,unit_types,brochure_pdf,consultants,is_featured,ready_to_move,created_at,updated_at',
-  units: 'id,slug,slug_ar,name,name_ar,type,badge,price,price_value,beds,baths,area,area_value,location,description,description_ar,cover,gallery,project_id,city_id,lat,lng,sort_order,published,developer_id,developer,is_featured,ready_to_move,created_at,updated_at',
+  projects: 'id,slug,slug_ar,name,name_ar,category,city,location,country,year,status,tagline,cover,about,developer,developer_id,developer_logo,price,units,floors,area,handover,price_value,area_value,is_rental,lat,lng,gallery,sort_order,published,city_id,unit_types,consultants,is_featured,ready_to_move',
+  units: 'id,slug,slug_ar,name,name_ar,type,badge,price,price_value,beds,baths,area,area_value,location,description,cover,gallery,project_id,city_id,lat,lng,sort_order,published,developer_id,developer,is_featured,ready_to_move',
   cities: '*', developers: '*', categories: '*', testimonials: '*'
 };
 
@@ -30,11 +30,35 @@ const PAGE_TABLES = {
   '/cities.html': ['cities', 'projects']
 };
 
-async function fetchTable(t) {
-  const r = await fetch(`${SUPA_URL}/rest/v1/${t}?select=${COLS[t]}&published=eq.true&order=sort_order.asc`,
+// cards show at most 6 photos and the AI helper reads only the first
+// paragraph / first 200 characters, so long fields are cut here (detail
+// pages fetch their own full row)
+function slimRows(t, rows) {
+  if (!Array.isArray(rows)) return rows;
+  if (t === 'projects') rows.forEach(r => {
+    if (Array.isArray(r.gallery)) r.gallery = r.gallery.slice(0, 6);
+    if (Array.isArray(r.about)) r.about = r.about.slice(0, 1).map(s => String(s).slice(0, 300));
+  });
+  if (t === 'units') rows.forEach(r => {
+    if (Array.isArray(r.gallery)) r.gallery = r.gallery.slice(0, 6);
+    if (typeof r.description === 'string') r.description = r.description.slice(0, 200);
+  });
+  return rows;
+}
+
+// pages that only show city / developer cards (no intro text) skip the long
+// description columns; /projects.html still gets the full rows for its intro
+const SLIM_COLS = {
+  cities: 'id,name,image,size,country,sort_order,published,created_at,updated_at',
+  developers: 'id,name,logo,sort_order,published,created_at,updated_at'
+};
+
+async function fetchTable(t, page) {
+  const cols = (page !== '/projects.html' && SLIM_COLS[t]) || COLS[t];
+  const r = await fetch(`${SUPA_URL}/rest/v1/${t}?select=${cols}&published=eq.true&order=sort_order.asc`,
     { headers: { apikey: SUPA_ANON_KEY, Authorization: `Bearer ${SUPA_ANON_KEY}` } });
   if (!r.ok) throw new Error('upstream ' + r.status);
-  return r.json();
+  return slimRows(t, await r.json());
 }
 
 module.exports = async function handler(req, res) {
@@ -55,7 +79,7 @@ module.exports = async function handler(req, res) {
 
   let out = html, cache = 'public, max-age=0, s-maxage=10';
   try {
-    const rows = await Promise.all(tables.map(fetchTable));
+    const rows = await Promise.all(tables.map(t => fetchTable(t, page)));
     const data = {}; tables.forEach((t, i) => { if (Array.isArray(rows[i]) && rows[i].length) data[t] = rows[i]; });
     // "<" escaped so no row can close the script tag; the JSON is valid JS
     const json = JSON.stringify(data).split('<').join('\\u003c');
