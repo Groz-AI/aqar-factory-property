@@ -38,9 +38,49 @@ function isBlocked(text) {
   return BLOCKED_PATTERNS.some(re => re.test(text));
 }
 
+// ---- abuse protection ----------------------------------------------
+// 1) only accept browser requests that come from this site
+// 2) per-IP limit: 20 messages per hour. The counter lives in the memory of
+//    the running serverless instance, so it is a best-effort brake (a bot
+//    that lands on several instances gets a few extra messages); for a hard
+//    limit add a Vercel Firewall rate-limit rule on /api/ai-chat.
+const RATE_MAX = 20;
+const RATE_WINDOW_MS = 60 * 60 * 1000;
+const hits = new Map();
+function rateLimited(ip) {
+  const now = Date.now();
+  if (hits.size > 5000) {
+    for (const [k, v] of hits) if (now - v.start > RATE_WINDOW_MS) hits.delete(k);
+  }
+  const h = hits.get(ip);
+  if (!h || now - h.start > RATE_WINDOW_MS) { hits.set(ip, { start: now, n: 1 }); return false; }
+  h.n += 1;
+  return h.n > RATE_MAX;
+}
+function allowedOrigin(req) {
+  const src = req.headers.origin || req.headers.referer || '';
+  if (!src) return false;
+  let host;
+  try { host = new URL(src).hostname; } catch (_) { return false; }
+  return host === 'aqar-factory.com' || host.endsWith('.aqar-factory.com') ||
+    host === 'localhost' || host === '127.0.0.1' ||
+    /^aqar-factory-property[a-z0-9-]*\.vercel\.app$/.test(host);
+}
+
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'method_not_allowed' });
+    return;
+  }
+
+  if (!allowedOrigin(req)) {
+    res.status(403).json({ error: 'forbidden' });
+    return;
+  }
+  const ip = String(req.headers['x-forwarded-for'] || req.socket && req.socket.remoteAddress || 'unknown').split(',')[0].trim();
+  if (rateLimited(ip)) {
+    res.setHeader('Retry-After', '3600');
+    res.status(429).json({ error: 'rate_limited', reply: "You've sent a lot of messages in a short time. Please try again in a little while, or use the contact page and we'll get back to you." });
     return;
   }
 

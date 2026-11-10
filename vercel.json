@@ -36,6 +36,8 @@
     { "source": "/ar/:path*", "destination": "/:path*" }
   ],
   "headers": [
+    { "source": "/admin/(.*)", "headers": [ { "key": "X-Robots-Tag", "value": "noindex, nofollow" } ] },
+    { "source": "/ar/admin/(.*)", "headers": [ { "key": "X-Robots-Tag", "value": "noindex, nofollow" } ] },
     {
       "source": "/(.*).html",
       "headers": [

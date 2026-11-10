@@ -22,6 +22,13 @@
       form.insertAdjacentElement('afterend', msg);
     }
 
+    // honeypot: hidden field that real visitors never fill; bots do
+    const trap = document.createElement('input');
+    trap.type = 'text'; trap.name = 'website'; trap.tabIndex = -1; trap.autocomplete = 'off';
+    trap.setAttribute('aria-hidden', 'true');
+    trap.style.cssText = 'position:absolute;left:-9999px;width:1px;height:1px;opacity:0';
+    form.appendChild(trap);
+
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const email = input.value.trim();
@@ -37,7 +44,8 @@
 
       let res = { error: { message: 'not configured' } };
       try {
-        if (window.store && window.store.submitNewsletter) res = await window.store.submitNewsletter(email);
+        if (trap.value) res = { error: null };
+        else if (window.store && window.store.submitNewsletter) res = await window.store.submitNewsletter(email);
       } catch (_) {
         res = { error: { message: 'network' } };
       }
