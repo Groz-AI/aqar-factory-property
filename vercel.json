@@ -4,6 +4,7 @@
   "trailingSlash": false,
   "regions": ["fra1"],
   "redirects": [
+    { "source": "/", "has": [{ "type": "host", "value": "aqar-factory-property.vercel.app" }], "destination": "https://www.aqar-factory.com/", "permanent": true },
     { "source": "/:path*", "has": [{ "type": "host", "value": "aqar-factory-property.vercel.app" }], "destination": "https://www.aqar-factory.com/:path*", "permanent": true },
     { "source": "/projects", "destination": "/projects.html", "permanent": true },
     { "source": "/ar/projects", "destination": "/ar/projects.html", "permanent": true },
