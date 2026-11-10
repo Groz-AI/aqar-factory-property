@@ -1096,6 +1096,7 @@
     // value here previously confused which URL Google treats as canonical
     const enHref = ar ? origin + basePath + '/' + otherSeg : ownHref;
     const arHref = ar ? ownHref : origin + '/ar' + basePath + '/' + otherSeg;
+    document.querySelectorAll('a.lang-switch').forEach(a => a.setAttribute('href', (ar ? enHref : arHref).replace(origin, '') + location.search));
 
     const setTag = (sel, href) => { const el = document.querySelector(sel); if (el) el.setAttribute('href', href); };
     setTag('link[rel="canonical"]', ownHref);
@@ -1110,11 +1111,30 @@
       btn.innerHTML = '<span class="ls-thumb"></span><span class="ls-opt ls-en">EN</span><span class="ls-opt ls-ar">AR</span>';
       btn.setAttribute('aria-label', lang === 'ar' ? 'Switch to English' : 'التبديل إلى العربية');
       btn.setAttribute('aria-pressed', lang === 'ar' ? 'true' : 'false');
-      btn.addEventListener('click', () => setLang(lang === 'ar' ? 'en' : 'ar'));
+      // a real link: the target is the same page in the other language
+      // (setCrossLangSlug() refines it on project/unit/blog pages whose slug
+      // differs per language); the click still records the visitor's choice
+      btn.setAttribute('href', toggledPath(lang === 'ar' ? 'en' : 'ar', location.pathname) + location.search);
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const other = lang === 'ar' ? 'en' : 'ar';
+        if (isAdminPath()) { setLang(other); return; }
+        try { localStorage.setItem(PUBLIC_LANG_KEY, other); } catch (_) { /* ignore */ }
+        location.href = btn.getAttribute('href') + location.hash;
+      });
     });
   }
 
-  document.addEventListener('DOMContentLoaded', () => { applyStatic(); initSwitchers(); injectSeoLinks(); });
+  // internal links to the home page are written once as "/" (no index.html
+  // 301 hop); on the Arabic site they must point at /ar instead
+  function localizeHomeLinks() {
+    if (isAdminPath() || !isArPath(location.pathname)) return;
+    document.querySelectorAll('a[href="/"], a[href^="/#"]').forEach(a => {
+      a.setAttribute('href', '/ar' + a.getAttribute('href').slice(1));
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', () => { applyStatic(); initSwitchers(); localizeHomeLinks(); injectSeoLinks(); });
 
   window.i18n = { lang, t, setLang, getLang, applyStatic, setCrossLangSlug };
   window.t = t;

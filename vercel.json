@@ -3,6 +3,21 @@
   "cleanUrls": false,
   "trailingSlash": false,
   "regions": ["fra1"],
+  "redirects": [
+    { "source": "/:path*", "has": [{ "type": "host", "value": "aqar-factory-property.vercel.app" }], "destination": "https://www.aqar-factory.com/:path*", "permanent": true },
+    { "source": "/projects", "destination": "/projects.html", "permanent": true },
+    { "source": "/ar/projects", "destination": "/ar/projects.html", "permanent": true },
+    { "source": "/units", "destination": "/units.html", "permanent": true },
+    { "source": "/ar/units", "destination": "/ar/units.html", "permanent": true },
+    { "source": "/cities", "destination": "/cities.html", "permanent": true },
+    { "source": "/ar/cities", "destination": "/ar/cities.html", "permanent": true },
+    { "source": "/blog", "destination": "/blog.html", "permanent": true },
+    { "source": "/ar/blog", "destination": "/ar/blog.html", "permanent": true },
+    { "source": "/about", "destination": "/about.html", "permanent": true },
+    { "source": "/ar/about", "destination": "/ar/about.html", "permanent": true },
+    { "source": "/contact", "destination": "/contact.html", "permanent": true },
+    { "source": "/ar/contact", "destination": "/ar/contact.html", "permanent": true }
+  ],
   "rewrites": [
     { "source": "/sitemap.xml", "destination": "/api/sitemap" },
     { "source": "/robots.txt", "destination": "/api/robots" },

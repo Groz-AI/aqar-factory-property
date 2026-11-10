@@ -186,7 +186,7 @@ em{font-style:normal}
 .lang-switch{
   position:relative;direction:ltr;display:inline-flex;align-items:center;flex:none;
   width:60px;height:30px;padding:3px;border-radius:999px;cursor:pointer;
-  font-family:inherit;background:rgba(255,255,255,.14);
+  font-family:inherit;background:rgba(255,255,255,.14);box-sizing:border-box;text-decoration:none;
   border:1px solid rgba(255,255,255,.32);transition:background .25s,border-color .25s;
 }
 .lang-switch:hover{background:rgba(255,255,255,.26)}
