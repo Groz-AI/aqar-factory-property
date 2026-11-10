@@ -942,6 +942,14 @@ async function handleDetail(req, res, params) {
         .replace(/<meta name="description" content="[^"]*"[^>]*>/, `<meta name="description" content="${esc(description)}">`)
         .replace('</head>', head);
       if (isAr) page = page.replace('<html lang="en">', '<html lang="ar" dir="rtl">');
+      // the visible heading is a placeholder in the template ("Project",
+      // "Unit", "Article") that the page script fills in; put the real name
+      // in the HTML itself so crawlers and slow connections see it at once
+      const h1Text = table === 'blog_posts' ? pick('title', 'title_ar') : pick('name', 'name_ar');
+      if (h1Text) {
+        page = page.replace(/(<h1 id="(?:projName|unitName|postTitle)")([^>]*>)[^<]*(<\/h1>)/,
+          (m, a, b, c) => a + b.replace(/\s+data-i18n(?=[\s>])/, '') + esc(String(h1Text)) + c);
+      }
       if (manualFaqs.length) {
         // the FAQ section is hidden and empty in the template; fill and show
         // it here so the answers are in the raw HTML, not only added by
