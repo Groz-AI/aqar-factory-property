@@ -23,6 +23,10 @@
   "rewrites": [
     { "source": "/sitemap.xml", "destination": "/api/sitemap" },
     { "source": "/robots.txt", "destination": "/api/robots" },
+    { "source": "/city/:slug", "destination": "/api/landing?kind=city&slug=:slug" },
+    { "source": "/ar/city/:slug", "destination": "/api/landing?kind=city&slug=:slug&lang=ar" },
+    { "source": "/developer/:slug", "destination": "/api/landing?kind=developer&slug=:slug" },
+    { "source": "/ar/developer/:slug", "destination": "/api/landing?kind=developer&slug=:slug&lang=ar" },
     { "source": "/project/:slug", "destination": "/project.html?id=:slug" },
     { "source": "/unit/:slug", "destination": "/unit.html?id=:slug" },
     { "source": "/blog/:slug", "destination": "/blog-post.html?slug=:slug" },

@@ -345,7 +345,7 @@ const LISTING_INJECT = {
   '/cities.html': [{
     table: 'cities', containerId: 'cityRows', limit: 100,
     select: 'name,country,description,description_ar',
-    href: (name, ar) => `${ar ? '/ar' : ''}/projects.html?city=${encodeURIComponent(name)}`,
+    href: (name, ar) => `${ar ? '/ar' : ''}/city/${encodeURIComponent(SchemaHelpers.entitySlug(name))}`,
     row: (r, ar) => ({ slug: r.name, name: r.name, sub: ((ar ? r.description_ar : r.description) || '').replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, '$1') || r.country || '' })
   }],
   '/blog.html': [{
@@ -377,7 +377,7 @@ const LISTING_INJECT = {
       // (script.js's renderCities())
       table: 'cities', containerId: 'cityGrid', limit: 20,
       select: 'name,country',
-      href: (name, ar) => `${ar ? '/ar' : ''}/projects.html?city=${encodeURIComponent(name)}`,
+      href: (name, ar) => `${ar ? '/ar' : ''}/city/${encodeURIComponent(SchemaHelpers.entitySlug(name))}`,
       row: (r) => ({ slug: r.name, name: r.name, sub: r.country || '' })
     }
   ]

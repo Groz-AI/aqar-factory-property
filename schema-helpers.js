@@ -211,7 +211,14 @@
     };
   }
 
-  const api = { SITE, ORG_ID, WEBSITE_ID, htmlToLines, extractFaq, normalizeFaqs, pageFaq, faqItemsHtml, faqNode, breadcrumbNode, companyNode, websiteNode, parseHours, parseAddress };
+  // URL piece for a city / developer landing page (/city/<slug>, /developer/<slug>),
+  // derived from its name so no extra column is needed
+  function entitySlug(name) {
+    return String(name || '').toLowerCase().replace(/,?\s*egypt\b/g, '')
+      .replace(/[^a-z0-9\u0600-\u06ff]+/g, '-').replace(/^-+|-+$/g, '');
+  }
+
+  const api = { entitySlug, SITE, ORG_ID, WEBSITE_ID, htmlToLines, extractFaq, normalizeFaqs, pageFaq, faqItemsHtml, faqNode, breadcrumbNode, companyNode, websiteNode, parseHours, parseAddress };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.SchemaHelpers = api;
 })(typeof window !== 'undefined' ? window : globalThis);

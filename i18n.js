@@ -1148,7 +1148,7 @@
       if (u.origin !== location.origin) return null;
       const p = u.pathname;
       if (isArPath(p) || /^\/(admin|api)(\/|$)/.test(p)) return null;
-      if (!(p === '/' || /\.html$/.test(p) || /^\/(project|unit|blog)\//.test(p))) return null;
+      if (!(p === '/' || /\.html$/.test(p) || /^\/(project|unit|blog|city|developer)\//.test(p))) return null;
       return (p === '/' ? '/ar' : '/ar' + p) + u.search + u.hash;
     } catch (_) { return null; }
   }

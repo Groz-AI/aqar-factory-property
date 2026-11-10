@@ -5,6 +5,14 @@
    ============================================================ */
 
 /* ---------- image helper ---------- */
+/* city / developer landing page address (falls back to the old filter link) */
+function landingHref(kind, name) {
+  const S = window.SchemaHelpers;
+  const slug = S && S.entitySlug ? S.entitySlug(name) : '';
+  const pre = window.i18n && window.i18n.lang === 'ar' ? '/ar' : '';
+  return slug ? `${pre}/${kind}/${encodeURIComponent(slug)}` : `projects.html?${kind}=${encodeURIComponent(name)}`;
+}
+
 const IMG = (ref, w = 800) =>
   !ref ? '' :
   /^https?:\/\//.test(ref) ? ref :
@@ -220,7 +228,7 @@ function renderCities(cities, projectList) {
     const w = size ? 900 : 700;
     const n = counts[c.id] || 0;
     const label = n === 1 ? t('1 Project') : `${n.toLocaleString()} ${t('Projects')}`;
-    return `<a class="city-card${size} reveal" href="projects.html?city=${encodeURIComponent(c.name)}" aria-label="${t('View projects in')} ${c.name}" style="--img:url('${IMG(c.image, w)}')">
+    return `<a class="city-card${size} reveal" href="${landingHref('city', c.name)}" aria-label="${t('View projects in')} ${c.name}" style="--img:url('${IMG(c.image, w)}')">
       <div class="city-meta"><h3>${c.name}</h3><p>${c.country || ''}</p></div>
       <span class="city-count">${label}</span>
     </a>`;
@@ -340,7 +348,8 @@ function renderDevelopers(devs) {
   const wrap = document.getElementById('logoWall');
   if (!wrap || !devs.length) return;
   // each logo opens that developer's projects (with its paragraph, if any)
-  const href = d => `projects.html?developer=${encodeURIComponent(d.name)}`;
+  const href = d => (typeof allProjects !== 'undefined' && allProjects.some(p => p.developer === d.name))
+    ? landingHref('developer', d.name) : `projects.html?developer=${encodeURIComponent(d.name)}`;
   const item = d => d.logo
     ? `<a class="logo" href="${href(d)}"><img src="${IMG(d.logo, 240)}" alt="${d.name}" loading="lazy"></a>`
     : `<a class="logo" href="${href(d)}">${d.name}</a>`;

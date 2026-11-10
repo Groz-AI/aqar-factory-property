@@ -207,6 +207,10 @@ function applyURLParams() {
   const city = params.get('city');
   const cat = params.get('cat');
   const dev = params.get('developer');
+  // /city/<slug> and /developer/<slug> pages start with their city / developer selected
+  const L = window.__LANDING;
+  if (L && L.kind === 'developer' && P.some(p => p.developer === L.name)) state.developer = L.name;
+  if (L && L.kind === 'city' && [...citySelect.options].some(o => o.value === L.name)) { state.city = L.name; citySelect.value = L.name; }
   if (dev && P.some(p => p.developer === dev)) state.developer = dev;
   if (city && [...citySelect.options].some(o => o.value === city)) {
     state.city = city;
