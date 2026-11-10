@@ -107,6 +107,19 @@ module.exports = async function handler(req, res) {
     } catch (_) { /* keep the English source; i18n.js translates it in the browser */ }
   }
 
+  // canonical + hreflang in the first HTML (i18n.js writes the same values
+  // later; this is for anything that reads the raw page)
+  if (!/rel="canonical"/.test(html)) {
+    const enU = 'https://www.aqar-factory.com' + page;
+    const arU = 'https://www.aqar-factory.com' + (page === '/' ? '/ar' : '/ar' + page);
+    const own = ar ? arU : enU;
+    html = html.replace('</head>', () => `<link rel="canonical" href="${own}">
+<link rel="alternate" hreflang="en" href="${enU}">
+<link rel="alternate" hreflang="ar" href="${arU}">
+<link rel="alternate" hreflang="x-default" href="${enU}">
+</head>`);
+  }
+
   let out = html, cache = 'public, max-age=0, s-maxage=10';
   if (!tables.length) {
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
