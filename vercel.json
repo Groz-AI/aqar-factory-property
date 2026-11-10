@@ -3,6 +3,7 @@
   "cleanUrls": false,
   "trailingSlash": false,
   "regions": ["fra1"],
+  "functions": { "api/preload.js": { "includeFiles": "i18n.js" } },
   "redirects": [
     { "source": "/", "has": [{ "type": "host", "value": "aqar-factory-property.vercel.app" }], "destination": "https://www.aqar-factory.com/", "permanent": true },
     { "source": "/:path*", "has": [{ "type": "host", "value": "aqar-factory-property.vercel.app" }], "destination": "https://www.aqar-factory.com/:path*", "permanent": true },

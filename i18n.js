@@ -961,7 +961,9 @@
   if (!isAdminPath()) {
     let storedPref = null;
     try { storedPref = localStorage.getItem(PUBLIC_LANG_KEY); } catch (_) { /* ignore */ }
-    const preferredLang = (storedPref === 'en' || storedPref === 'ar') ? storedPref : 'ar';
+    // no automatic redirect for a visitor who never chose: the URL decides.
+    // Only an explicit choice made with the language switch is remembered.
+    const preferredLang = (storedPref === 'en' || storedPref === 'ar') ? storedPref : (isArPath(location.pathname) ? 'ar' : 'en');
     const currentIsAr = isArPath(location.pathname);
     if ((preferredLang === 'ar') !== currentIsAr) {
       const target = toggledPath(preferredLang, location.pathname);
@@ -1135,16 +1137,36 @@
     });
   }
 
-  // internal links to the home page are written once as "/" (no index.html
-  // 301 hop); on the Arabic site they must point at /ar instead
-  function localizeHomeLinks() {
-    if (isAdminPath() || !isArPath(location.pathname)) return;
-    document.querySelectorAll('a[href="/"], a[href^="/#"]').forEach(a => {
-      a.setAttribute('href', '/ar' + a.getAttribute('href').slice(1));
+  // The pages are written with language-neutral internal links ("/", relative
+  // "projects.html", and detail pages use <base href="/">), which on an Arabic
+  // page would lead to the English site. On /ar/ pages every internal link,
+  // present or added later by a script, is pointed at its /ar/ version.
+  // (The language switch itself links to the other language and is left alone.)
+  function arHref(href) {
+    try {
+      const u = new URL(href, document.baseURI);
+      if (u.origin !== location.origin) return null;
+      const p = u.pathname;
+      if (isArPath(p) || /^\/(admin|api)(\/|$)/.test(p)) return null;
+      if (!(p === '/' || /\.html$/.test(p) || /^\/(project|unit|blog)\//.test(p))) return null;
+      return (p === '/' ? '/ar' : '/ar' + p) + u.search + u.hash;
+    } catch (_) { return null; }
+  }
+  function localizeLinks(root) {
+    (root.matches && root.matches('a[href]') ? [root] : []).concat([...root.querySelectorAll ? root.querySelectorAll('a[href]') : []]).forEach(a => {
+      if (a.classList.contains('lang-switch') || a.hasAttribute('hreflang')) return;
+      const to = arHref(a.getAttribute('href'));
+      if (to) a.setAttribute('href', to);
     });
   }
+  function localizeLinksOnArabicPages() {
+    if (isAdminPath() || !isArPath(location.pathname)) return;
+    localizeLinks(document);
+    new MutationObserver(muts => muts.forEach(m => m.addedNodes.forEach(n => { if (n.nodeType === 1) localizeLinks(n); })))
+      .observe(document.body, { childList: true, subtree: true });
+  }
 
-  document.addEventListener('DOMContentLoaded', () => { applyStatic(); initSwitchers(); localizeHomeLinks(); injectSeoLinks(); });
+  document.addEventListener('DOMContentLoaded', () => { applyStatic(); initSwitchers(); localizeLinksOnArabicPages(); injectSeoLinks(); });
 
   window.i18n = { lang, t, setLang, getLang, applyStatic, setCrossLangSlug };
   window.t = t;

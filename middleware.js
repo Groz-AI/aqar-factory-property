@@ -158,6 +158,8 @@ export default async function middleware(request) {
   // homepage — doesn't match startsWith('/ar/').
   const STATIC_HREFLANG_PAGES = new Set(['/', '/projects.html', '/units.html', '/cities.html', '/blog.html', '/about.html', '/contact.html']);
   const PRELOAD_PAGES = new Set(['/', '/projects.html', '/units.html', '/cities.html']);
+  // pages with no card lists: only worth a detour for Arabic visitors (Arabic text in the first HTML)
+  const AR_TEXT_PAGES = new Set(['/about.html', '/contact.html', '/blog.html']);
   const staticIsAr = url.pathname === '/ar' || url.pathname.startsWith('/ar/');
   const staticEnPath = staticIsAr ? (url.pathname === '/ar' ? '/' : url.pathname.slice(3)) : url.pathname;
   // the header below is api/bot-render.js's OWN internal re-fetch of this
@@ -174,8 +176,8 @@ export default async function middleware(request) {
     }
     // real visitors of the pages that draw card lists: the same static page,
     // with those lists already inlined (api/preload.js) so there is no data wait
-    if (PRELOAD_PAGES.has(staticEnPath) && request.method === 'GET') {
-      return rewrite(new URL(`/api/preload?page=${encodeURIComponent(staticEnPath)}`, url.origin));
+    if ((PRELOAD_PAGES.has(staticEnPath) || (staticIsAr && AR_TEXT_PAGES.has(staticEnPath))) && request.method === 'GET') {
+      return rewrite(new URL(`/api/preload?page=${encodeURIComponent(staticEnPath)}${staticIsAr ? '&lang=ar' : ''}`, url.origin));
     }
     return next();
   }

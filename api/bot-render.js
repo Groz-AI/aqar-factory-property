@@ -31,6 +31,7 @@
 // shared with project.js/unit.js/blog-post.js (loaded there as a plain
 // <script>) so crawler and browser JSON-LD are built by the same code
 const SchemaHelpers = require('../schema-helpers.js');
+const { localizeLinksAr } = require('./_i18n-server.js');
 
 const SUPA_URL = 'https://api.aqar-factory.com';
 const SUPA_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzkzNDE0OTE4LCJleHAiOjE5NTEwOTQ5MTh9.mD68-Zl0D11mxbFhuckIpEouBs3DPjjesSQjJ1ouj84';
@@ -941,7 +942,7 @@ async function handleDetail(req, res, params) {
         .replace(/<title[^>]*>[^<]*<\/title>/, `<title>${esc(title)}</title>`)
         .replace(/<meta name="description" content="[^"]*"[^>]*>/, `<meta name="description" content="${esc(description)}">`)
         .replace('</head>', head);
-      if (isAr) page = page.replace('<html lang="en">', '<html lang="ar" dir="rtl">');
+      if (isAr) page = localizeLinksAr(page.replace('<html lang="en">', '<html lang="ar" dir="rtl">'));
       // the visible heading is a placeholder in the template ("Project",
       // "Unit", "Article") that the page script fills in; put the real name
       // in the HTML itself so crawlers and slow connections see it at once

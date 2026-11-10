@@ -12,6 +12,8 @@
    own data exactly as before.
    ============================================================ */
 
+const { toArabicHtml } = require('./_i18n-server.js');
+
 const SUPA_URL = 'https://api.aqar-factory.com';
 const SUPA_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzkzNDE0OTE4LCJleHAiOjE5NTEwOTQ5MTh9.mD68-Zl0D11mxbFhuckIpEouBs3DPjjesSQjJ1ouj84';
 
@@ -27,7 +29,9 @@ const PAGE_TABLES = {
   '/': ['projects', 'units', 'cities', 'developers', 'testimonials', 'categories'],
   '/projects.html': ['projects', 'cities', 'developers', 'categories'],
   '/units.html': ['units', 'projects', 'cities', 'categories'],
-  '/cities.html': ['cities', 'projects']
+  '/cities.html': ['cities', 'projects'],
+  // no lists: these only need the Arabic text for visitors of /ar/ pages
+  '/about.html': [], '/contact.html': [], '/blog.html': []
 };
 
 // cards show at most 6 photos and the AI helper reads only the first
@@ -61,10 +65,27 @@ async function fetchTable(t, page) {
   return slimRows(t, await r.json());
 }
 
+// the home hero title / subtitle are editable in the admin (content block "hero")
+async function arabicHero(html) {
+  const r = await fetch(`${SUPA_URL}/rest/v1/content_blocks?key=eq.hero&select=value`,
+    { headers: { apikey: SUPA_ANON_KEY, Authorization: `Bearer ${SUPA_ANON_KEY}` } });
+  if (!r.ok) return html;
+  const rows = await r.json();
+  const v = rows && rows[0] && rows[0].value;
+  if (!v) return html;
+  const esc = (x) => String(x).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const a = v.titleA_ar || v.titleA, b = v.titleB_ar || v.titleB;
+  let out = html;
+  if (a || b) out = out.replace(/(<h1 class="hero-title[^"]*">)[\s\S]*?(<\/h1>)/, (m, o, c) => `${o}${esc(a || '')} <span>${esc(b || '')}</span>${c}`);
+  if (v.sub_ar) out = out.replace(/(<p class="hero-sub[^"]*">)[\s\S]*?(<\/p>)/, (m, o, c) => `${o}${esc(v.sub_ar)}${c}`);
+  return out;
+}
+
 module.exports = async function handler(req, res) {
   const page = String((req.query && req.query.page) || '/');
   const tables = PAGE_TABLES[page];
   if (!tables) { res.statusCode = 400; res.end('bad page'); return; }
+  const ar = String((req.query && req.query.lang) || '') === 'ar';
 
   let html = '';
   try {
@@ -77,7 +98,23 @@ module.exports = async function handler(req, res) {
     res.statusCode = 502; res.end('<!DOCTYPE html><title>Aqar Factory</title>'); return;
   }
 
+  // Arabic visitors: the page arrives in Arabic (title, headings, text),
+  // not English that the browser translates afterwards
+  if (ar) {
+    try {
+      html = await toArabicHtml(html);
+      if (page === '/') html = await arabicHero(html);
+    } catch (_) { /* keep the English source; i18n.js translates it in the browser */ }
+  }
+
   let out = html, cache = 'public, max-age=0, s-maxage=10';
+  if (!tables.length) {
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=30, stale-while-revalidate=120');
+    res.statusCode = 200;
+    res.end(html);
+    return;
+  }
   try {
     const rows = await Promise.all(tables.map(t => fetchTable(t, page)));
     const data = {}; tables.forEach((t, i) => { if (Array.isArray(rows[i]) && rows[i].length) data[t] = rows[i]; });
