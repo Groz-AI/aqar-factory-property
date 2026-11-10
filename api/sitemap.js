@@ -30,11 +30,15 @@ async function fetchSlugs(table, select) {
       `${SUPA_URL}/rest/v1/${table}?select=${select}&published=eq.true`,
       { headers: { apikey: SUPA_ANON_KEY, Authorization: `Bearer ${SUPA_ANON_KEY}` } }
     );
-    if (!res.ok) return [];
+    if (!res.ok) throw new Error(table + ' ' + res.status);
     const rows = await res.json();
-    return Array.isArray(rows) ? rows.filter(r => r && r.slug) : [];
-  } catch (_) {
-    return [];
+    if (!Array.isArray(rows)) throw new Error(table + ' bad response');
+    return rows.filter(r => r && r.slug);
+  } catch (e) {
+    // a failed read must NOT turn into an empty list: that would publish a
+    // sitemap with the pages missing. The handler answers 503 instead, so
+    // the search engine keeps the sitemap it already has and retries later.
+    throw e;
   }
 }
 
@@ -78,11 +82,21 @@ module.exports = async function handler(req, res) {
   const host = req.headers['x-forwarded-host'] || req.headers.host;
   const SITE_URL = `https://${host}`;
 
-  const [projects, units, posts] = await Promise.all([
-    fetchSlugs('projects', 'slug,slug_ar,updated_at'),
-    fetchSlugs('units', 'slug,slug_ar,updated_at'),
-    fetchSlugs('blog_posts', 'slug,updated_at')
-  ]);
+  let projects, units, posts;
+  try {
+    [projects, units, posts] = await Promise.all([
+      fetchSlugs('projects', 'slug,slug_ar,updated_at'),
+      fetchSlugs('units', 'slug,slug_ar,updated_at'),
+      fetchSlugs('blog_posts', 'slug,updated_at')
+    ]);
+    // the site always has projects; an empty result means the read failed quietly
+    if (!projects.length) throw new Error('no projects returned');
+  } catch (_) {
+    res.setHeader('Retry-After', '300');
+    res.setHeader('Cache-Control', 'no-store');
+    res.status(503).send('Sitemap temporarily unavailable');
+    return;
+  }
 
   const staticPages = [
     { path: '/', priority: '1.0' },

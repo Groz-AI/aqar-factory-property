@@ -403,10 +403,12 @@ function siteNav(isAr) {
 // the page's own rich content with its structure kept (headings stay
 // headings, each line its own paragraph) - always re-escaped as plain
 // text, never the stored HTML itself
-function blocksToSafeHtml(blocks, altText) {
+function blocksToSafeHtml(blocks, altText, word) {
+  let imgN = 0;
   return (Array.isArray(blocks) ? blocks : []).map(b => {
     if (!b) return '';
-    if (b.type === 'image' && b.image) return `<img src="${esc(img(b.image, 800))}" alt="${esc(altText)}">`;
+    // a different description per image (name + running number), not one repeated alt
+    if (b.type === 'image' && b.image) return `<img src="${esc(img(b.image, 800))}" alt="${esc(altText + ' – ' + (word || 'image') + ' ' + (++imgN))}">`;
     if (!b.text) return '';
     const lines = SchemaHelpers.htmlToLines(b.text);
     if (!lines.length) return '';
@@ -425,7 +427,7 @@ function pageHTML({ title, description, image, url, canonicalUrl, hreflangEn, hr
     ? `<h2>Consultants</h2><ul>${consultants.map(c => `<li>${esc(c)}</li>`).join('')}</ul>` : '';
   const brochureLink = brochurePdf ? `<p><a href="${esc(brochurePdf)}">Brochure (PDF)</a></p>` : '';
   const galleryHtml = (gallery && gallery.length)
-    ? `<h2>Gallery (${gallery.length} photos)</h2>` + gallery.map((g, i) => `<img src="${esc(g)}" alt="photo ${i + 1}">`).join('')
+    ? `<h2>Gallery (${gallery.length} photos)</h2>` + gallery.map((g, i) => `<img src="${esc(g)}" alt="${esc(title)} – ${isAr ? 'صورة' : 'photo'} ${i + 1}">`).join('')
     : '';
   const projectUnitsHtml = (projectUnits && projectUnits.length)
     ? `<h2>Units in this project</h2><ul>${projectUnits.map(r => `<li><a href="${esc(r.url)}">${esc(r.name)}</a></li>`).join('')}</ul>`
@@ -442,7 +444,7 @@ function pageHTML({ title, description, image, url, canonicalUrl, hreflangEn, hr
   const crumbHtml = crumb
     ? `<nav aria-label="breadcrumb">${crumb.map(c => `<a href="${esc(c.item)}">${esc(c.name)}</a>`).join(' / ')}</nav>`
     : '';
-  const contentHtml = blocksToSafeHtml(bodyBlocks, title);
+  const contentHtml = blocksToSafeHtml(bodyBlocks, title, isAr ? 'صورة' : 'image');
   const otherLangUrl = isAr ? hreflangEn : hreflangAr;
   return `<!DOCTYPE html>
 <html lang="${isAr ? 'ar' : 'en'}" dir="${isAr ? 'rtl' : 'ltr'}"><head>
@@ -873,7 +875,9 @@ async function handleDetail(req, res, params) {
       offers: {
         '@type': 'Offer', url: canonicalUrl, priceCurrency: 'EGP',
         price: priceValue > 0 ? priceValue : undefined,
-        availability: 'https://schema.org/InStock',
+        // off-plan projects and units that are not ready to move in are
+        // pre-orders; only delivered stock is "in stock"
+        availability: 'https://schema.org/' + ((kindPath === 'unit' ? !row.ready_to_move : row.status === 'Off-plan') ? 'PreOrder' : 'InStock'),
         seller: orgRef
       }
     };

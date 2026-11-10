@@ -129,7 +129,7 @@ function populate() {
     offers: {
       '@type': 'Offer', url: location.href, priceCurrency: 'EGP',
       price: project.priceValue > 0 ? project.priceValue : undefined,
-      availability: 'https://schema.org/InStock',
+      availability: 'https://schema.org/' + (project.status === 'Off-plan' ? 'PreOrder' : 'InStock'),
       seller: orgRef
     }
   };

@@ -115,7 +115,7 @@ function populate() {
     offers: {
       '@type': 'Offer', url: location.href, priceCurrency: 'EGP',
       price: unit.priceValue > 0 ? unit.priceValue : undefined,
-      availability: 'https://schema.org/InStock',
+      availability: 'https://schema.org/' + (unit.readyToMove ? 'InStock' : 'PreOrder'),
       seller: orgRef
     }
   };
