@@ -63,29 +63,58 @@ module.exports = async function handler(req, res) {
   }
 
   const list = kind === 'city' ? cities : developers;
-  const ent = list.find(e => e && e.name && SchemaHelpers.entitySlug(e.name) === slug);
-  const mine = ent ? projects.filter(p => (kind === 'city' ? p.city : p.developer) === ent.name) : [];
+  // the stored slug first; rows without one (before the slug column exists)
+  // answer to the slug derived from their name
+  let ent = list.find(e => e && e.slug && e.slug === slug) || list.find(e => e && !e.slug && e.name && SchemaHelpers.entitySlug(e.name) === slug);
+  if (!ent) {
+    // a slug this city / developer used to have: send the visitor (and Google) to the current address
+    try {
+      const table = kind === 'city' ? 'cities' : 'developers';
+      const r = await fetch(`${SUPA_URL}/rest/v1/slug_redirects?select=row_id&table_name=eq.${table}&old_slug=eq.${encodeURIComponent(slug)}`,
+        { headers: { apikey: SUPA_ANON_KEY, Authorization: `Bearer ${SUPA_ANON_KEY}` } });
+      const rows = r.ok ? await r.json() : [];
+      const moved = rows[0] && list.find(e => e.id === rows[0].row_id);
+      if (moved) {
+        res.statusCode = 301;
+        res.setHeader('Location', `${SITE}${ar ? '/ar' : ''}/${kind}/${encodeURIComponent(SchemaHelpers.entityUrlSlug(moved))}`);
+        res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=300');
+        res.end();
+        return;
+      }
+    } catch (_) { /* fall through to 404 */ }
+  }
+  const mine = ent ? SchemaHelpers.entityProjects(kind, ent, projects) : [];
   if (!ent || !mine.length) return notFound(res, ar);
 
-  const name = ent.name;
-  const own = `${SITE}${ar ? '/ar' : ''}/${kind}/${encodeURIComponent(slug)}`;
-  const enUrl = `${SITE}/${kind}/${encodeURIComponent(slug)}`;
-  const arUrl = `${SITE}/ar/${kind}/${encodeURIComponent(slug)}`;
+  const slugNow = SchemaHelpers.entityUrlSlug(ent);
+  const name = (ar && ent.name_ar) || ent.name;
+  const own = `${SITE}${ar ? '/ar' : ''}/${kind}/${encodeURIComponent(slugNow)}`;
+  const enUrl = `${SITE}/${kind}/${encodeURIComponent(slugNow)}`;
+  const arUrl = `${SITE}/ar/${kind}/${encodeURIComponent(slugNow)}`;
   const n = mine.length;
+  // offered to Google only when it has its own text (300+ characters) and 3+ projects, per language
+  const indexableEn = SchemaHelpers.landingIndexable(ent, n, false);
+  const indexableAr = SchemaHelpers.landingIndexable(ent, n, true);
+  const indexable = ar ? indexableAr : indexableEn;
 
-  const title = kind === 'city'
+  // text written in the admin (page title / heading / search description) wins
+  // over the standard wording; empty fields keep the standard wording
+  const custom = (en, arKey) => String((ar ? ent[arKey] : ent[en]) || '').trim();
+  const title = custom('seo_title', 'seo_title_ar') || (kind === 'city'
     ? (ar ? `مشاريع عقارية في ${name} | Aqar Factory` : `Real Estate Projects in ${name} | Aqar Factory`)
-    : (ar ? `مشاريع ${name} | Aqar Factory` : `${name} Projects | Aqar Factory`);
-  const h1Html = kind === 'city'
+    : (ar ? `مشاريع ${name} | Aqar Factory` : `${name} Projects | Aqar Factory`));
+  const customH1 = custom('seo_h1', 'seo_h1_ar');
+  const h1Html = customH1 ? esc(customH1) : (kind === 'city'
     ? (ar ? `مشاريع في <em>${esc(name)}</em>` : `Projects in <em>${esc(name)}</em>`)
-    : (ar ? `مشاريع <em>${esc(name)}</em>` : `<em>${esc(name)}</em> Projects`);
+    : (ar ? `مشاريع <em>${esc(name)}</em>` : `<em>${esc(name)}</em> Projects`));
   const intro = clip(plain(ar ? (ent.description_ar || '') : (ent.description || '')), 155);
   const generic = kind === 'city'
     ? (ar ? `تصفح ${n} مشروعاً عقارياً في ${name}: الأسعار وخطط السداد والمطورون على Aqar Factory.`
           : `Browse ${n} real estate project${n === 1 ? '' : 's'} in ${name}: prices, payment plans and developers on Aqar Factory.`)
     : (ar ? `تصفح ${n} مشروعاً من مشاريع ${name}: الأسعار وخطط السداد والمواقع على Aqar Factory.`
           : `Browse ${n} project${n === 1 ? '' : 's'} by ${name}: prices, payment plans and locations on Aqar Factory.`);
-  const description = intro.length >= 60 ? intro : generic;
+  const customDesc = custom('seo_description', 'seo_description_ar');
+  const description = customDesc || (intro.length >= 60 ? intro : generic);
 
   const projName = (p) => (ar && p.name_ar) || p.name;
   const projPath = (p) => `${ar ? '/ar' : ''}/project/${encodeURIComponent((ar && p.slug_ar) || p.slug)}`;
@@ -102,9 +131,13 @@ module.exports = async function handler(req, res) {
 
   try { if (ar) html = await toArabicHtml(html); } catch (_) { /* keep English; i18n.js translates it */ }
 
+  // hreflang only when BOTH language versions are offered to Google
+  const alternates = (indexableEn && indexableAr)
+    ? `<link rel="alternate" hreflang="en" href="${esc(enUrl)}">\n<link rel="alternate" hreflang="ar" href="${esc(arUrl)}">\n<link rel="alternate" hreflang="x-default" href="${esc(enUrl)}">\n`
+    : '';
   const head =
-    `<link rel="canonical" href="${esc(own)}">\n` +
-    `<link rel="alternate" hreflang="en" href="${esc(enUrl)}">\n<link rel="alternate" hreflang="ar" href="${esc(arUrl)}">\n<link rel="alternate" hreflang="x-default" href="${esc(enUrl)}">\n` +
+    `<link rel="canonical" href="${esc(own)}">\n` + alternates +
+    (indexable ? '' : `<meta name="robots" content="noindex,follow">\n`) +
     `<meta property="og:type" content="website">\n<meta property="og:site_name" content="Aqar Factory">\n<meta property="og:title" content="${esc(title)}">\n<meta property="og:description" content="${esc(description)}">\n<meta property="og:url" content="${esc(own)}">\n` +
     `<script type="application/ld+json" id="ldJson">${JSON.stringify(jsonLd).replace(/</g, '\\u003c')}</script>\n</head>`;
 
@@ -125,7 +158,7 @@ module.exports = async function handler(req, res) {
   page = page.replace(/(<div class="projects-grid" id="projectsGrid">)/, (m) => m + links);
 
   const json = JSON.stringify({ projects, cities, developers, categories }).split('<').join('\\u003c');
-  const landing = JSON.stringify({ kind, name }).split('<').join('\\u003c');
+  const landing = JSON.stringify({ kind, name: ent.name }).split('<').join('\\u003c');
   const tag = `<script>window.__LANDING=${landing};window.__PRELOAD=${json};</script>\n`;
   const anchor = '<script src="store.js"></script>';
   if (page.includes(anchor)) page = page.replace(anchor, () => tag + anchor);

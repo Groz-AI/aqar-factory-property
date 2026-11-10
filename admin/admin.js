@@ -325,10 +325,18 @@
       ],
       fields: [
         { key: 'name', label: t('Name'), type: 'text', required: true, half: true },
+        { key: 'name_ar', label: t('Name (Arabic)'), type: 'text', half: true, hint: t('Shown when the site is set to Arabic — leave empty to fall back to the English name above.') },
         { key: 'country', label: t('Country'), type: 'text', half: true },
         { key: 'image', label: t('Image'), type: 'image' },
         { key: 'description', label: t('About this city (English)'), type: 'textarea', links: true, hint: t('Shown on the city\'s own page, beside its projects (not on the Cities list). Each language shows only its own text.') },
         { key: 'description_ar', label: t('About this city (Arabic)'), type: 'textarea', links: true },
+        { key: 'slug', label: t('Page address (slug)'), type: 'text', hint: t('Fixed after it is created: renaming the city does not change it. If you change it by hand, the old address redirects to the new one automatically. Leave empty to create it from the name.') },
+        { key: 'seo_title', label: t('Page title (English)'), type: 'text', half: true, hint: t('The title shown in Google. Empty = standard wording. Aim for under 60 characters.') },
+        { key: 'seo_title_ar', label: t('Page title (Arabic)'), type: 'text', half: true },
+        { key: 'seo_h1', label: t('Main heading (English)'), type: 'text', half: true, hint: t('The big heading at the top of the page. Empty = standard wording.') },
+        { key: 'seo_h1_ar', label: t('Main heading (Arabic)'), type: 'text', half: true },
+        { key: 'seo_description', label: t('Search description (English)'), type: 'textarea', hint: t('The short text under the title in Google. Empty = standard wording. Aim for under 160 characters.') },
+        { key: 'seo_description_ar', label: t('Search description (Arabic)'), type: 'textarea', hint: t('The page is offered to Google only when its text is about 300 characters or more and it has 3 or more projects. English and Arabic are decided separately.') },
         { key: 'size', label: t('Tile size'), type: 'select', options: ['normal', 'wide', 'big'], half: true, hint: t('controls the tile size in the homepage “By Cities” grid') },
         { key: 'sort_order', label: t('Sort order'), type: 'number', half: true },
         { key: 'published', label: t('Published'), type: 'bool', half: true }
@@ -381,10 +389,18 @@
         { key: 'published', label: t('Status'), type: 'pill' }
       ],
       fields: [
-        { key: 'name', label: t('Name'), type: 'text', required: true },
+        { key: 'name', label: t('Name'), type: 'text', required: true, half: true },
+        { key: 'name_ar', label: t('Name (Arabic)'), type: 'text', half: true, hint: t('Shown when the site is set to Arabic — leave empty to fall back to the English name above.') },
         { key: 'logo', label: t('Logo (optional)'), type: 'image', hint: t('leave empty to render the name as a wordmark') },
         { key: 'description', label: t('About this developer (English)'), type: 'textarea', links: true, hint: t('Shown on the developer\'s own page, beside its projects. Each language shows only its own text.') },
         { key: 'description_ar', label: t('About this developer (Arabic)'), type: 'textarea', links: true },
+        { key: 'slug', label: t('Page address (slug)'), type: 'text', hint: t('Fixed after it is created: renaming the developer does not change it. If you change it by hand, the old address redirects to the new one automatically. Leave empty to create it from the name.') },
+        { key: 'seo_title', label: t('Page title (English)'), type: 'text', half: true, hint: t('The title shown in Google. Empty = standard wording. Aim for under 60 characters.') },
+        { key: 'seo_title_ar', label: t('Page title (Arabic)'), type: 'text', half: true },
+        { key: 'seo_h1', label: t('Main heading (English)'), type: 'text', half: true, hint: t('The big heading at the top of the page. Empty = standard wording.') },
+        { key: 'seo_h1_ar', label: t('Main heading (Arabic)'), type: 'text', half: true },
+        { key: 'seo_description', label: t('Search description (English)'), type: 'textarea', hint: t('The short text under the title in Google. Empty = standard wording. Aim for under 160 characters.') },
+        { key: 'seo_description_ar', label: t('Search description (Arabic)'), type: 'textarea', hint: t('The page is offered to Google only when its text is about 300 characters or more and it has 3 or more projects. English and Arabic are decided separately.') },
         { key: 'sort_order', label: t('Sort order'), type: 'number', half: true },
         { key: 'published', label: t('Published'), type: 'bool', half: true }
       ]

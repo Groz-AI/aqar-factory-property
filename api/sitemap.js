@@ -21,7 +21,7 @@
    Vercel project — no code edit needed at migration time.
    ============================================================ */
 
-const { entitySlug } = require('../schema-helpers.js');
+const SchemaHelpers = require('../schema-helpers.js');
 
 const SUPA_URL = 'https://api.aqar-factory.com';
 const SUPA_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzkzNDE0OTE4LCJleHAiOjE5NTEwOTQ5MTh9.mD68-Zl0D11mxbFhuckIpEouBs3DPjjesSQjJ1ouj84';
@@ -80,6 +80,25 @@ function urlPairSlugged(SITE_URL, base, enSlug, arSlug, lastmod, priority) {
   ];
 }
 
+// sitemap entries for one city / developer landing page. A language is listed
+// only if that version is complete; the hreflang pair is written only when
+// both languages are listed (the incomplete one is marked noindex by landing.js)
+function landingEntries(SITE_URL, kind, ent, projects, priority) {
+  const n = SchemaHelpers.entityProjects(kind, ent, projects).length;
+  const slug = encodeURIComponent(SchemaHelpers.entityUrlSlug(ent));
+  const enOk = SchemaHelpers.landingIndexable(ent, n, false);
+  const arOk = SchemaHelpers.landingIndexable(ent, n, true);
+  const enUrl = `${SITE_URL}/${kind}/${slug}`;
+  const arUrl = `${SITE_URL}/ar/${kind}/${slug}`;
+  const alt = (enOk && arOk)
+    ? `\n    <xhtml:link rel="alternate" hreflang="en" href="${esc(enUrl)}"/>\n    <xhtml:link rel="alternate" hreflang="ar" href="${esc(arUrl)}"/>\n    <xhtml:link rel="alternate" hreflang="x-default" href="${esc(enUrl)}"/>`
+    : '';
+  const out = [];
+  if (enOk) out.push(`  <url>\n    <loc>${esc(enUrl)}</loc>${alt}\n    <priority>${priority}</priority>\n  </url>`);
+  if (arOk) out.push(`  <url>\n    <loc>${esc(arUrl)}</loc>${alt}\n    <priority>${priority}</priority>\n  </url>`);
+  return out;
+}
+
 module.exports = async function handler(req, res) {
   const host = req.headers['x-forwarded-host'] || req.headers.host;
   const SITE_URL = `https://${host}`;
@@ -87,11 +106,11 @@ module.exports = async function handler(req, res) {
   let projects, units, posts, cityRows, devRows;
   try {
     [projects, units, posts, cityRows, devRows] = await Promise.all([
-      fetchSlugs('projects', 'slug,slug_ar,updated_at,city,developer'),
+      fetchSlugs('projects', 'slug,slug_ar,updated_at,city,developer,city_id,developer_id'),
       fetchSlugs('units', 'slug,slug_ar,updated_at'),
       fetchSlugs('blog_posts', 'slug,updated_at'),
-      fetchSlugs('cities', 'name', 'name'),
-      fetchSlugs('developers', 'name', 'name')
+      fetchSlugs('cities', '*', 'name'),
+      fetchSlugs('developers', '*', 'name')
     ]);
     // the site always has projects; an empty result means the read failed quietly
     if (!projects.length) throw new Error('no projects returned');
@@ -116,9 +135,10 @@ module.exports = async function handler(req, res) {
     ...staticPages.flatMap(p => urlPair(SITE_URL, p.path, null, p.priority)),
     ...projects.flatMap(p => urlPairSlugged(SITE_URL, '/project', p.slug, p.slug_ar, (p.updated_at || '').slice(0, 10) || null, '0.8')),
     ...units.flatMap(u => urlPairSlugged(SITE_URL, '/unit', u.slug, u.slug_ar, (u.updated_at || '').slice(0, 10) || null, '0.75')),
-    // one landing page per city / developer that has at least one published project
-    ...cityRows.map(c => c.name).filter(n => projects.some(p => p.city === n)).flatMap(c => urlPair(SITE_URL, `/city/${encodeURIComponent(entitySlug(c))}`, null, '0.7')),
-    ...devRows.map(d => d.name).filter(n => projects.some(p => p.developer === n)).flatMap(d => urlPair(SITE_URL, `/developer/${encodeURIComponent(entitySlug(d))}`, null, '0.6')),
+    // city / developer landing pages: only the language versions that are
+    // complete (own text of 300+ characters and 3+ projects) are listed
+    ...cityRows.flatMap(c => landingEntries(SITE_URL, 'city', c, projects, '0.7')),
+    ...devRows.flatMap(d => landingEntries(SITE_URL, 'developer', d, projects, '0.6')),
     ...posts.flatMap(p => urlPair(SITE_URL, `/blog/${encodeURIComponent(stripSlashes(p.slug))}`, (p.updated_at || '').slice(0, 10) || null, '0.7'))
   ];
 

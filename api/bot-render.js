@@ -344,9 +344,9 @@ const LISTING_INJECT = {
   }],
   '/cities.html': [{
     table: 'cities', containerId: 'cityRows', limit: 100,
-    select: 'name,country,description,description_ar',
-    href: (name, ar) => `${ar ? '/ar' : ''}/city/${encodeURIComponent(SchemaHelpers.entitySlug(name))}`,
-    row: (r, ar) => ({ slug: r.name, name: r.name, sub: ((ar ? r.description_ar : r.description) || '').replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, '$1') || r.country || '' })
+    select: 'slug,name,name_ar,country,description,description_ar',
+    href: (slug, ar) => `${ar ? '/ar' : ''}/city/${encodeURIComponent(slug)}`,
+    row: (r, ar) => ({ slug: SchemaHelpers.entityUrlSlug(r), name: (ar && r.name_ar) || r.name, sub: ((ar ? r.description_ar : r.description) || '').replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, '$1') || r.country || '' })
   }],
   '/blog.html': [{
     table: 'blog_posts', containerId: 'blogGrid',
@@ -376,9 +376,9 @@ const LISTING_INJECT = {
       // scheme as the real <a href> fix shipped for these cards
       // (script.js's renderCities())
       table: 'cities', containerId: 'cityGrid', limit: 20,
-      select: 'name,country',
-      href: (name, ar) => `${ar ? '/ar' : ''}/city/${encodeURIComponent(SchemaHelpers.entitySlug(name))}`,
-      row: (r) => ({ slug: r.name, name: r.name, sub: r.country || '' })
+      select: 'slug,name,name_ar,country',
+      href: (slug, ar) => `${ar ? '/ar' : ''}/city/${encodeURIComponent(slug)}`,
+      row: (r, ar) => ({ slug: SchemaHelpers.entityUrlSlug(r), name: (ar && r.name_ar) || r.name, sub: r.country || '' })
     }
   ]
 };

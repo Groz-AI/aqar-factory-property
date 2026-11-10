@@ -4,9 +4,10 @@
    link to that city's projects.
    ============================================================ */
 /* city / developer landing page address (falls back to the old filter link) */
-function landingHref(kind, name) {
+function landingHref(kind, ent) {
   const S = window.SchemaHelpers;
-  const slug = S && S.entitySlug ? S.entitySlug(name) : '';
+  const name = ent && ent.name;
+  const slug = S && S.entityUrlSlug ? S.entityUrlSlug(ent) : '';
   const pre = window.i18n && window.i18n.lang === 'ar' ? '/ar' : '';
   return slug ? `${pre}/${kind}/${encodeURIComponent(slug)}` : `projects.html?${kind}=${encodeURIComponent(name)}`;
 }
@@ -27,11 +28,11 @@ const imgUrl = (ref, w = 900) =>
       const label = n === 1 ? t('1 Project') : `${n.toLocaleString()} ${t('Projects')}`;
       return `
       <article class="city-row">
-        <a class="city-row-img" href="${landingHref('city', c.name)}" style="background-image:url('${imgUrl(c.image)}')" aria-label="${esc(c.name)}"></a>
+        <a class="city-row-img" href="${landingHref('city', c)}" style="background-image:url('${imgUrl(c.image)}')" aria-label="${esc(c.name)}"></a>
         <div class="city-row-body">
           <h2>${esc(c.name)}</h2>
           <p class="city-row-meta">${esc(c.country || '')}${c.country ? ' · ' : ''}${label}</p>
-          <a class="view-all" href="${landingHref('city', c.name)}"><span>${t('View projects')}</span>
+          <a class="view-all" href="${landingHref('city', c)}"><span>${t('View projects')}</span>
             <svg viewBox="0 0 24 24" fill="none"><path d="M7 17 17 7M9 7h8v8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
         </div>
       </article>`;

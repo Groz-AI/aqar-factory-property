@@ -218,7 +218,34 @@
       .replace(/[^a-z0-9\u0600-\u06ff]+/g, '-').replace(/^-+|-+$/g, '');
   }
 
-  const api = { entitySlug, SITE, ORG_ID, WEBSITE_ID, htmlToLines, extractFaq, normalizeFaqs, pageFaq, faqItemsHtml, faqNode, breadcrumbNode, companyNode, websiteNode, parseHours, parseAddress };
+  // the address piece actually used for a city / developer: its stored, stable
+  // slug when the row has one, else the one derived from its name (rows
+  // saved before the slug column existed)
+  function entityUrlSlug(ent) {
+    return (ent && (ent.slug || entitySlug(ent.name))) || '';
+  }
+
+  // A landing page is offered to Google only when it has real text of its
+  // own (about 300 characters or more, in the language of the page) and at
+  // least 3 projects. Each language is decided on its own.
+  const LANDING_MIN_CHARS = 300;
+  const LANDING_MIN_PROJECTS = 3;
+  function landingIndexable(ent, projectCount, ar) {
+    const raw = ent ? (ar ? ent.description_ar : ent.description) : '';
+    const text = String(raw || '').replace(/\[([^\]]+)\]\([^)]*\)/g, '$1').replace(/\s+/g, ' ').trim();
+    return text.length >= LANDING_MIN_CHARS && projectCount >= LANDING_MIN_PROJECTS;
+  }
+
+  // the projects that belong to a city / developer: linked by id (immune to
+  // renames), or by the name text for rows that were never linked
+  function entityProjects(kind, ent, projects) {
+    if (!ent) return [];
+    const idKey = kind === 'city' ? 'city_id' : 'developer_id';
+    const nameKey = kind === 'city' ? 'city' : 'developer';
+    return (projects || []).filter(p => p[idKey] ? p[idKey] === ent.id : (ent.name && p[nameKey] === ent.name));
+  }
+
+  const api = { entitySlug, entityUrlSlug, entityProjects, landingIndexable, landingIndexable, LANDING_MIN_CHARS, LANDING_MIN_PROJECTS, SITE, ORG_ID, WEBSITE_ID, htmlToLines, extractFaq, normalizeFaqs, pageFaq, faqItemsHtml, faqNode, breadcrumbNode, companyNode, websiteNode, parseHours, parseAddress };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.SchemaHelpers = api;
 })(typeof window !== 'undefined' ? window : globalThis);

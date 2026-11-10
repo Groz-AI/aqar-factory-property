@@ -53,8 +53,8 @@ function slimRows(t, rows) {
 // pages that only show city / developer cards (no intro text) skip the long
 // description columns; /projects.html still gets the full rows for its intro
 const SLIM_COLS = {
-  cities: 'id,name,image,size,country,sort_order,published,created_at,updated_at',
-  developers: 'id,name,logo,sort_order,published,created_at,updated_at'
+  cities: 'id,slug,name,name_ar,image,size,country,sort_order,published,created_at,updated_at',
+  developers: 'id,slug,name,name_ar,logo,sort_order,published,created_at,updated_at'
 };
 
 async function fetchTable(t, page) {
