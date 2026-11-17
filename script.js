@@ -357,6 +357,13 @@ function renderDevelopers(devs) {
   // render the set twice so the -50% marquee loops seamlessly
   const set = devs.map(item).join('');
   wrap.innerHTML = `<div class="logo-track">${set}${set}</div>`;
+  // Duration scales with content width so the scroll speed (~60px/s) stays
+  // comfortable to read no matter how many developers are listed — a fixed
+  // duration got faster every time more logos were added. Clamped so a
+  // short list doesn't rush by and a long one doesn't crawl to a near-stop.
+  const track = wrap.querySelector('.logo-track');
+  const singleSetWidth = track.scrollWidth / 2;
+  track.style.animationDuration = Math.min(150, Math.max(20, singleSetWidth / 60)) + 's';
 }
 
 /* ============================================================
