@@ -669,6 +669,13 @@ em{font-style:normal}
   position:relative;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:#fff;
   -webkit-mask-image:linear-gradient(90deg,transparent,#000 9%,#000 91%,transparent);
   mask-image:linear-gradient(90deg,transparent,#000 9%,#000 91%,transparent);
+  /* .logo-track is wider than this box on purpose (duplicated logo set for
+     a seamless loop). Under dir="rtl" the browser anchors that overflow to
+     the right edge instead of the left, so combined with logoMarquee's
+     always-leftward translateX() the track sat off-screen almost the whole
+     time on Arabic pages. Logo names/images aren't translated, so forcing
+     ltr here is safe. */
+  direction:ltr;
 }
 .logo-track{display:flex;width:max-content;animation:logoMarquee 34s linear infinite}
 .logo-wall:hover .logo-track{animation-play-state:paused}
