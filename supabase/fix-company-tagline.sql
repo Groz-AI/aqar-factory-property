@@ -7,9 +7,14 @@
 -- this file, but the ACTUAL text every visitor sees on the site (footer
 -- tagline, and anywhere else branding.js paints company.tagline) comes
 -- from this row in the database — it was seeded once on 2026-07-02 and
--- never edited, so it still had the old wording. Run this once in the
--- Supabase/self-hosted SQL editor (safe to re-run; it's a no-op after
--- the first time).
+-- never edited, so it still had the old wording.
+--
+-- This is plain Postgres SQL, run directly against the self-hosted
+-- database on the Oracle server (there's no Supabase Studio dashboard
+-- for a self-hosted PostgREST stack), e.g. from an SSH session there:
+--   docker exec -it supabase-db psql -U postgres -d postgres -f -  <  this file
+-- or paste the UPDATE statement into an interactive psql session.
+-- Safe to re-run — it's a no-op once the row no longer matches.
 -- ============================================================
 update public.content_blocks
 set value = jsonb_set(
