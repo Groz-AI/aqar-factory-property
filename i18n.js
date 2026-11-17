@@ -40,7 +40,7 @@
     'Aqar Factory — Real Estate Done Right': 'Aqar Factory — العقارات كما ينبغي',
     "Aqar Factory — browse apartments, villas and offices for sale in New Cairo, New Capital, Sheikh Zayed and the North Coast, with developer payment plans.": 'Aqar Factory — تصفح شقق وفيلات ومكاتب للبيع في القاهرة الجديدة والعاصمة الإدارية والشيخ زايد والساحل الشمالي، مع أنظمة تقسيط من كبرى الشركات العقارية.',
     'About Us — Aqar Factory': 'من نحن — Aqar Factory',
-    "Aqar Factory is a boutique real-estate house curating homes, offices and luxury spaces across the world's great cities. Meet the team and the philosophy behind the work.": 'Aqar Factory بيت عقاري متخصص يختار المنازل والمكاتب والمساحات الفاخرة في أعظم مدن العالم. تعرّف على الفريق والفلسفة وراء العمل.',
+    "Aqar Factory is a boutique real-estate house curating homes, offices and luxury spaces. Meet the team and the philosophy behind the work.": 'Aqar Factory بيت عقاري متخصص يختار المنازل والمكاتب والمساحات الفاخرة. تعرّف على الفريق والفلسفة وراء العمل.',
     'Contact — Aqar Factory': 'تواصل معنا — Aqar Factory',
     'Get in touch with Aqar Factory. Book a viewing, ask about a listing, or talk to an advisor — our team replies within one business day.': 'تواصل مع Aqar Factory. احجز معاينة، اسأل عن عقار، أو تحدث مع مستشار — يرد فريقنا خلال يوم عمل واحد.',
     'Blog — Aqar Factory': 'المدونة — Aqar Factory',
@@ -151,7 +151,7 @@
     'Get in touch': 'تواصل معنا',
 
     // ---------- footer ----------
-    "Real estate done right — handpicked homes, offices and luxury units across the world's great cities.": 'العقارات كما ينبغي — منازل ومكاتب ووحدات فاخرة مختارة بعناية في أعظم مدن العالم.',
+    "Real estate done right — handpicked homes, offices and luxury units.": 'العقارات كما ينبغي — منازل ومكاتب ووحدات فاخرة مختارة بعناية.',
     'Instagram': 'إنستغرام', 'X': 'إكس', 'LinkedIn': 'لينكدإن', 'Facebook': 'فيسبوك', 'TikTok': 'تيك توك',
     'Explore': 'استكشف',
     'Cities': 'المدن',
@@ -166,7 +166,7 @@
     'Privacy · Terms · Cookies': 'الخصوصية · الشروط · ملفات تعريف الارتباط',
 
     // ---------- projects listing page ----------
-    "Developments across the world's great cities": 'مشاريع في أعظم مدن العالم',
+    "Our developments": 'مشاريعنا',
     "From skyline residences to grade-A offices and beachfront villas — explore the developments we've delivered and the ones taking shape now. Filter by category or city to find yours.": 'من الوحدات السكنية المطلة على الأفق إلى المكاتب الفاخرة والفلل الساحلية — استكشف المشاريع التي أنجزناها والأخرى قيد التنفيذ. صفِّ حسب الفئة أو المدينة لتجد مشروعك.',
     'Search by name, city or location…': 'ابحث بالاسم أو المدينة أو الموقع…',
     'Search projects': 'ابحث في المشاريع',

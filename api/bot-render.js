@@ -272,8 +272,8 @@ const STATIC_META = {
   },
   '/about.html': {
     title: 'About Us — Aqar Factory', titleAr: 'من نحن — Aqar Factory',
-    description: "Aqar Factory is a boutique real-estate house curating homes, offices and luxury spaces across the world's great cities. Meet the team and the philosophy behind the work.",
-    descriptionAr: 'Aqar Factory بيت عقاري متخصص يختار المنازل والمكاتب والمساحات الفاخرة في أعظم مدن العالم. تعرّف على الفريق والفلسفة وراء العمل.'
+    description: "Aqar Factory is a boutique real-estate house curating homes, offices and luxury spaces. Meet the team and the philosophy behind the work.",
+    descriptionAr: 'Aqar Factory بيت عقاري متخصص يختار المنازل والمكاتب والمساحات الفاخرة. تعرّف على الفريق والفلسفة وراء العمل.'
   },
   '/contact.html': {
     title: 'Contact — Aqar Factory', titleAr: 'تواصل معنا — Aqar Factory',

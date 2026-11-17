@@ -49,9 +49,9 @@ body{
    of inheriting rtl, which otherwise visually scrambles punctuation/word order */
 [dir="rtl"] .hero-eyebrow, [dir="rtl"] .hero-title, [dir="rtl"] .hero-sub,
 [dir="rtl"] .journey-lead, [dir="rtl"] .cta-text h2, [dir="rtl"] .cta-text p,
-[dir="rtl"] .stats p, [dir="rtl"] .pcard-body h3, [dir="rtl"] .pcard-tag,
+[dir="rtl"] .pcard-body h3, [dir="rtl"] .pcard-tag,
 [dir="rtl"] .project-body h3, [dir="rtl"] .project-body p,
-[dir="rtl"] .testi-card .tc-quote, [dir="rtl"] .city-meta h3,
+[dir="rtl"] .city-meta h3,
 [dir="rtl"] .project-tag, [dir="rtl"] .card-desc,
 [dir="rtl"] .footer-brand > p, [dir="rtl"] .footer-bottom p:first-child,
 [dir="rtl"] .brand-name, [dir="rtl"] .project-dev b, [dir="rtl"] .pc-names,
@@ -593,16 +593,7 @@ em{font-style:normal}
    JOURNEY / STATS
    ============================================================ */
 .journey .display-head{margin-bottom:20px}
-.journey-lead{max-width:620px;margin-inline:auto;color:var(--ink-soft);margin-bottom:48px}
-.journey-card{position:relative;border-radius:28px;overflow:hidden;box-shadow:var(--shadow-md)}
-.journey-photo{aspect-ratio:24/9;background-size:cover;background-position:center 35%;min-height:340px}
-.journey-card::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,rgba(8,16,28,.45))}
-.stats{
-  position:absolute;left:24px;right:24px;bottom:24px;display:grid;grid-template-columns:repeat(3,1fr);gap:16px;
-}
-.stat{background:rgba(255,255,255,.92);backdrop-filter:blur(10px);border-radius:18px;padding:22px 24px}
-.stat-num{font-family:"Bricolage Grotesque",sans-serif;font-size:2.4rem;font-weight:700;color:var(--ink);line-height:1;letter-spacing:-.02em}
-.stat p{font-size:.82rem;color:var(--ink-soft);margin-top:.6rem;line-height:1.45}
+.journey-lead{max-width:620px;margin-inline:auto;color:var(--ink-soft)}
 
 /* ============================================================
    RECENT PROJECTS
@@ -692,29 +683,6 @@ em{font-style:normal}
 /* ============================================================
    TESTIMONIALS
    ============================================================ */
-.testimonials .display-head{margin-bottom:46px}
-/* four review cards in a row, fading between pages */
-.testi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:22px;align-items:stretch}
-.testi-card{
-  display:flex;flex-direction:column;gap:1rem;text-align:start;
-  background:#fff;border:1px solid var(--line);border-radius:20px;padding:26px 24px;
-  box-shadow:var(--shadow-sm);
-  opacity:0;transform:translateY(20px) scale(.98);
-  transition:opacity .55s var(--ease),transform .55s var(--ease),box-shadow .4s var(--ease);
-  transition-delay:var(--d,0ms);
-}
-.testi-grid.in .testi-card{opacity:1;transform:none}
-.testi-card:hover{transform:translateY(-6px);box-shadow:var(--shadow-md);transition-delay:0ms}
-.tc-stars{display:flex;gap:.18rem;color:var(--gold)}
-.tc-stars svg{width:18px;height:18px}
-.tc-quote{
-  font-family:"Fraunces",serif;font-size:1.04rem;line-height:1.5;color:var(--ink);font-weight:400;
-  flex:1;display:-webkit-box;-webkit-line-clamp:6;-webkit-box-orient:vertical;overflow:hidden;
-}
-.tc-person{display:flex;align-items:center;gap:.7rem;border-top:1px solid var(--line);padding-top:1rem}
-.tc-person img{width:44px;height:44px;border-radius:50%;object-fit:cover;flex:none}
-.tc-person h4{font-family:"Bricolage Grotesque",sans-serif;font-size:.95rem;font-weight:600}
-.tc-person p{font-size:.8rem;color:var(--ink-soft)}
 .testi-nav{display:flex;align-items:center;justify-content:center;gap:1.4rem;margin-top:2.6rem}
 .round-btn{
   width:46px;height:46px;border-radius:50%;border:1px solid var(--line);background:#fff;
@@ -935,7 +903,6 @@ em{font-style:normal}
   .cta-banner{grid-template-columns:1fr}
   .cta-img{min-height:200px;-webkit-mask-image:linear-gradient(180deg,transparent,#000 30%);mask-image:linear-gradient(180deg,transparent,#000 30%)}
   .footer-grid{grid-template-columns:1fr 1fr}
-  .testi-grid{grid-template-columns:repeat(2,1fr)}
 }
 @media(max-width:760px){
   .nav{
@@ -969,14 +936,10 @@ em{font-style:normal}
   .smart-results-grid{grid-template-columns:1fr}
   .city-grid{grid-template-columns:1fr}
   .city-card.wide,.city-card.big{grid-column:auto;grid-row:auto}
-  .stats{position:static;grid-template-columns:1fr;margin-top:16px;left:0;right:0}
-  .journey-card{background:var(--paper)}
-  .journey-card::before{display:none}
   .project{grid-template-columns:1fr}
   .logo-wall{grid-template-columns:repeat(2,1fr)}
   .footer-grid{grid-template-columns:1fr}
   .footer-bottom{flex-direction:column;gap:.4rem;text-align:center}
-  .testi-grid{grid-template-columns:1fr}
   .section{padding:70px 0}
   .hero-ai-badge{font-size:.78rem;text-align:start;padding:.55em 1em}
   .ai-widget{inset-inline-end:14px}

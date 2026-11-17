@@ -19,9 +19,6 @@ const IMG = (ref, w = 800) =>
   /^https?:\/\//.test(ref) ? ref :
   `https://images.unsplash.com/photo-${ref}?auto=format&fit=crop&w=${w}&q=80`;
 
-/* ---------- inline icons ---------- */
-const starSVG = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.6 1.4 6.8L12 17.8 5.9 20.4l1.4-6.8L2.2 9l6.9-.7L12 2Z"/></svg>`;
-
 const escHTML = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 const emLast = (s) => {
@@ -367,62 +364,6 @@ function renderDevelopers(devs) {
 }
 
 /* ============================================================
-   TESTIMONIALS
-   ============================================================ */
-function renderTestimonials(testimonials) {
-  const grid = document.getElementById('testiGrid');
-  if (!grid || !testimonials.length) return;
-
-  const perPage = 4;
-  const pages = Math.max(1, Math.ceil(testimonials.length / perPage));
-  let page = 0;
-  const idxEl = document.getElementById('testiIndex');
-  const pagesEl = document.getElementById('testiPages');
-  if (pagesEl) pagesEl.textContent = String(pages).padStart(2, '0');
-
-  const cardHTML = (t, i) => {
-    const rating = Math.max(0, Math.min(5, Math.round(Number(t.rating) || 5)));
-    return `
-    <article class="testi-card" style="--d:${i * 90}ms">
-      <div class="tc-stars">${starSVG.repeat(rating)}</div>
-      <p class="tc-quote">"${escHTML(t.quote)}"</p>
-      <div class="tc-person">
-        <img src="${IMG(t.avatar, 120)}" alt="${escHTML(t.name)}" loading="lazy" />
-        <div class="who"><h4>${escHTML(t.name)}</h4><p>${escHTML(t.location || '')}</p></div>
-      </div>
-    </article>`;
-  };
-
-  const paint = (p) => {
-    const slice = testimonials.slice(p * perPage, p * perPage + perPage);
-    grid.innerHTML = slice.map(cardHTML).join('');
-    void grid.offsetWidth;       // reflow so the entrance transition replays
-    grid.classList.add('in');
-    if (idxEl) idxEl.textContent = String(p + 1).padStart(2, '0');
-  };
-
-  function show(n) {
-    const next = (n + pages) % pages;
-    if (next === page && grid.children.length) return;
-    page = next;
-    grid.classList.remove('in');                 // fade current cards out
-    setTimeout(() => paint(page), 280);
-  }
-
-  paint(0); // initial render (no fade-out wait)
-
-  let timer = setInterval(() => show(page + 1), 5200);
-  const reset = () => { clearInterval(timer); timer = setInterval(() => show(page + 1), 5200); };
-  document.getElementById('testiNext')?.addEventListener('click', () => { show(page + 1); reset(); });
-  document.getElementById('testiPrev')?.addEventListener('click', () => { show(page - 1); reset(); });
-  const wrap = document.querySelector('.testimonials');
-  if (wrap) {
-    wrap.addEventListener('mouseenter', () => clearInterval(timer));
-    wrap.addEventListener('mouseleave', reset);
-  }
-}
-
-/* ============================================================
    EDITABLE SITE CONTENT (hero / stats / cta)
    ============================================================ */
 function applyContent(c) {
@@ -447,16 +388,6 @@ function applyContent(c) {
     const lead = document.querySelector('.journey-lead');
     const leadText = pick(c.stats, 'lead');
     if (lead && leadText) lead.textContent = leadText;
-    const nodes = document.querySelectorAll('.stats .stat');
-    (c.stats.items || []).forEach((it, i) => {
-      const n = nodes[i];
-      if (!n) return;
-      const num = n.querySelector('.stat-num');
-      const p = n.querySelector('p');
-      if (num) { num.dataset.count = it.value; num.dataset.suffix = it.suffix || ''; }
-      const label = pick(it, 'label');
-      if (p && label) p.textContent = label;
-    });
   }
   if (c.cta) {
     const banner = document.querySelector('.cta-text');
@@ -662,8 +593,8 @@ function wireReveals() {
 (async function init() {
   const S = window.store;
   try {
-    const [cities, projects, units, devs, testis, content] = await Promise.all([
-      S.getCities(), S.getProjects(), S.getUnits ? S.getUnits() : [], S.getDevelopers(), S.getTestimonials(), S.getContent(),
+    const [cities, projects, units, devs, content] = await Promise.all([
+      S.getCities(), S.getProjects(), S.getUnits ? S.getUnits() : [], S.getDevelopers(), S.getContent(),
       S.getCategories ? S.getCategories() : null
     ]);
     allProjects = projects || [];
@@ -678,7 +609,6 @@ function wireReveals() {
     initHeroGallery(cities || [], content);
     renderProjects(projects || []);
     renderDevelopers(devs || []);
-    renderTestimonials(testis || []);
   } catch (e) {
     console.error('Realteek: data load failed', e);
   }

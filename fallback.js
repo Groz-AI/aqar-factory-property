@@ -791,7 +791,7 @@ window.FALLBACK = {
     company: {
       name: "Aqar Factory",
       logo: "",
-      tagline: "Real estate done right — handpicked homes, offices and luxury units across the world's great cities.",
+      tagline: "Real estate done right — handpicked homes, offices and luxury units.",
       email: "hello@aqar-factory.com",
       emailSecondary: "press@aqar-factory.com",
       phone: "+971 4 555 0100",
