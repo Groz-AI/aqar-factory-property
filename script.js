@@ -148,8 +148,9 @@ function unitTypesList() {
 
 function unitCardHTML(u) {
   const imgs = (u.gallery && u.gallery.length ? u.gallery : [u.cover]).filter(Boolean).slice(0, 5);
+  const altName = escHTML(pick(u, 'name', 'nameAr'));
   const slides = imgs.map((g, i) =>
-    `<div class="pg-slide${i === 0 ? ' active' : ''}" data-bg="${IMG(g, 900)}"></div>`).join('');
+    `<img class="pg-slide${i === 0 ? ' active' : ''}" src="${IMG(g, 900)}" alt="${altName}" width="900" height="600" loading="lazy">`).join('');
   const dots = imgs.length > 1
     ? `<div class="pg-dots">${imgs.map((_, i) => `<i class="${i === 0 ? 'on' : ''}"></i>`).join('')}</div>` : '';
   const specs = [];
@@ -226,7 +227,8 @@ function renderCities(cities, projectList) {
     const w = size ? 900 : 700;
     const n = counts[c.id] || 0;
     const label = n === 1 ? t('1 Project') : `${n.toLocaleString()} ${t('Projects')}`;
-    return `<a class="city-card${size} reveal" href="${landingHref('city', c)}" aria-label="${t('View projects in')} ${c.name}" style="--img:url('${IMG(c.image, w)}')">
+    return `<a class="city-card${size} reveal" href="${landingHref('city', c)}" aria-label="${t('View projects in')} ${c.name}">
+      <img class="city-card-img" src="${IMG(c.image, w)}" alt="${escHTML(c.name)}" width="${w}" height="${Math.round(w * 0.72)}" loading="lazy">
       <div class="city-meta"><h3>${c.name}</h3><p>${c.country || ''}</p></div>
       <span class="city-count">${label}</span>
     </a>`;
@@ -238,8 +240,9 @@ function renderCities(cities, projectList) {
    ============================================================ */
 function projectCardHTML(p) {
     const imgs = (p.gallery && p.gallery.length ? p.gallery : [p.cover]).filter(Boolean).slice(0, 5);
+    const altName = escHTML(pick(p, 'name', 'nameAr'));
     const slides = imgs.map((g, i) =>
-      `<div class="pg-slide${i === 0 ? ' active' : ''}" data-bg="${IMG(g, 900)}"></div>`).join('');
+      `<img class="pg-slide${i === 0 ? ' active' : ''}" src="${IMG(g, 900)}" alt="${altName}" width="900" height="600" loading="lazy">`).join('');
     const dots = imgs.length > 1
       ? `<div class="pg-dots">${imgs.map((_, i) => `<i class="${i === 0 ? 'on' : ''}"></i>`).join('')}</div>` : '';
 
@@ -324,18 +327,15 @@ function initHeroGallery(cities, content) {
         '1496442226666-8d4d0e62e6e9', '1513635269975-59663e0ac1ad', '1540959733332-eab4deabeeaf'
       ])).filter(Boolean);
   if (!imgs.length) return;
-  box.classList.remove('solo');
   box.innerHTML = imgs.map((g, i) =>
-    `<div class="hero-slide${i === 0 ? ' active' : ''}" style="background-image:url('${IMG(g, 1600)}')"></div>`).join('');
+    `<img class="hero-slide${i === 0 ? ' active' : ''}" src="${IMG(g, 1600)}" alt="" width="1600" height="900" loading="${i === 0 ? 'eager' : 'lazy'}"${i === 0 ? ' fetchpriority="high"' : ''}>`).join('');
   const slides = box.querySelectorAll('.hero-slide');
   if (slides.length < 2) return;
   let i = 0;
   setInterval(() => {
     slides[i].classList.remove('active');
     i = (i + 1) % slides.length;
-    window.loadSlide && window.loadSlide(slides[i]);
     slides[i].classList.add('active');
-    window.loadSlide && window.loadSlide(slides[(i + 1) % slides.length]);
   }, 5500);
 }
 

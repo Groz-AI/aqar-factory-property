@@ -28,7 +28,9 @@ const imgUrl = (ref, w = 900) =>
       const label = n === 1 ? t('1 Project') : `${n.toLocaleString()} ${t('Projects')}`;
       return `
       <article class="city-row">
-        <a class="city-row-img" href="${landingHref('city', c)}" style="background-image:url('${imgUrl(c.image)}')" aria-label="${esc(c.name)}"></a>
+        <a class="city-row-img" href="${landingHref('city', c)}" aria-label="${esc(c.name)}">
+          <img src="${imgUrl(c.image, 900)}" alt="${esc(c.name)}" width="900" height="563" loading="lazy">
+        </a>
         <div class="city-row-body">
           <h2>${esc(c.name)}</h2>
           <p class="city-row-meta">${esc(c.country || '')}${c.country ? ' · ' : ''}${label}</p>

@@ -323,16 +323,11 @@ em{font-style:normal}
   mask-image:linear-gradient(180deg,#000 0%,#000 80%,transparent 100%);
 }
 .hero-slide{
-  position:absolute;inset:0;background-size:cover;background-position:center 22%;
+  position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 22%;
   opacity:0;transform:scale(1.05);transition:opacity 1.6s ease;
 }
 .hero-slide.active{opacity:.92;animation:heroKen 7.5s ease-out forwards}
 @keyframes heroKen{from{transform:scale(1.05)}to{transform:scale(1.18)}}
-/* fallback single image until the gallery script runs */
-.hero-skyline.solo{
-  background-image:url("https://images.unsplash.com/photo-1486325212027-8081e485255e?auto=format&fit=crop&w=1600&q=80");
-  background-size:cover;background-position:center 22%;opacity:.92;
-}
 .hero::after{
   content:"";position:absolute;left:0;right:0;bottom:0;height:26%;z-index:-1;
   background:linear-gradient(180deg,transparent,var(--paper) 92%);
@@ -572,14 +567,14 @@ em{font-style:normal}
 }
 .city-card{
   position:relative;border-radius:var(--r);overflow:hidden;cursor:pointer;
-  background-image:linear-gradient(180deg,rgba(8,16,28,0) 35%,rgba(8,16,28,.78)),var(--img);
-  background-size:cover;background-position:center;color:#fff;
+  background-image:linear-gradient(180deg,rgba(8,16,28,0) 35%,rgba(8,16,28,.78));
+  color:#fff;
   display:flex;flex-direction:column;justify-content:flex-end;padding:22px;
   transition:transform .5s var(--ease),box-shadow .5s var(--ease);
 }
-.city-card::after{content:"";position:absolute;inset:0;background:var(--img);background-size:cover;background-position:center;z-index:-1;transition:transform .8s var(--ease)}
+.city-card-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:-1;transition:transform .8s var(--ease)}
 .city-card:hover{box-shadow:var(--shadow-md)}
-.city-card:hover::after{transform:scale(1.08)}
+.city-card:hover .city-card-img{transform:scale(1.08)}
 .city-card.big{grid-row:span 2}
 .city-card.wide{grid-column:span 2}
 .city-meta h3{font-family:"Bricolage Grotesque",sans-serif;font-size:1.5rem;font-weight:700}
@@ -605,7 +600,7 @@ em{font-style:normal}
 }
 .project:hover{transform:translateY(-6px);box-shadow:var(--shadow-md)}
 .project-img{position:relative;min-height:220px;overflow:hidden;background:#dfe6ec}
-.pg-slide{position:absolute;inset:0;background-size:cover;background-position:center;opacity:0;
+.pg-slide{position:absolute;inset:0;width:100%;height:100%;background-size:cover;background-position:center;object-fit:cover;object-position:center;opacity:0;
   transform:scale(1.04);transition:opacity 1s var(--ease),transform 6s linear}
 .pg-slide.active{opacity:1;transform:scale(1.12)}
 .project:hover .pg-slide.active{transform:scale(1.16)}
