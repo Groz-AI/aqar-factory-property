@@ -26,7 +26,7 @@
 .breadcrumb a:hover{color:var(--ink)}
 .breadcrumb span{opacity:.5}
 .page-hero h1{
-  font-family:"Bricolage Grotesque",sans-serif;font-weight:700;letter-spacing:-.03em;
+  font-family:"Hanken Grotesk",sans-serif;font-weight:700;letter-spacing:-.03em;
   font-size:clamp(2.4rem,5.5vw,4rem);line-height:1.02;color:var(--ink);
 }
 .page-hero h1 em{font-family:"Fraunces",serif;font-style:italic;font-weight:400;color:var(--sky-deep)}
@@ -77,7 +77,7 @@
 .city-select select:hover{border-color:var(--ink)}
 .city-select::after{content:"";position:absolute;inset-inline-end:1.1em;top:50%;width:9px;height:9px;border-right:2px solid var(--ink-soft);border-bottom:2px solid var(--ink-soft);transform:translateY(-65%) rotate(45deg);pointer-events:none}
 .result-count{font-size:.9rem;color:var(--ink-soft);flex:none}
-.result-count b{color:var(--ink);font-family:"Bricolage Grotesque",sans-serif}
+.result-count b{color:var(--ink);font-family:"Hanken Grotesk",sans-serif}
 .reset-btn{background:none;border:none;color:var(--sky-deep);font-family:inherit;font-size:.88rem;font-weight:600;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
 .reset-btn:hover{color:var(--ink)}
 
@@ -116,7 +116,7 @@
 .pcard-img .card-contact{top:14px;inset-inline-start:auto;inset-inline-end:14px}
 .pcard-img:has(.pcard-dev-logo) .card-contact{top:60px}
 .pcard-body{padding:22px 24px 24px;display:flex;flex-direction:column;flex:1}
-.pcard-body h3{font-family:"Bricolage Grotesque",sans-serif;font-size:1.3rem;font-weight:700;letter-spacing:-.01em}
+.pcard-body h3{font-family:"Hanken Grotesk",sans-serif;font-size:1.3rem;font-weight:700;letter-spacing:-.01em}
 .pcard-loc{display:flex;align-items:center;gap:.4rem;color:var(--sky-deep);font-size:.86rem;margin:.45rem 0 .7rem}
 .pcard-loc svg{width:15px;height:15px;flex:none}
 .pcard-tag{color:var(--ink-soft);font-size:.92rem;flex:1}
@@ -129,7 +129,7 @@
 /* empty state */
 .empty-state{text-align:center;padding:80px 20px;color:var(--ink-soft)}
 .empty-state svg{width:54px;height:54px;color:var(--line);margin-bottom:1rem}
-.empty-state h3{font-family:"Bricolage Grotesque",sans-serif;color:var(--ink);font-size:1.4rem;margin-bottom:.4rem}
+.empty-state h3{font-family:"Hanken Grotesk",sans-serif;color:var(--ink);font-size:1.4rem;margin-bottom:.4rem}
 
 /* ============================================================
    PROJECT DETAIL
@@ -144,7 +144,7 @@
 .detail-badges{display:flex;gap:.6rem;margin-bottom:1.1rem;flex-wrap:wrap}
 .dbadge{background:rgba(255,255,255,.16);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.28);padding:.45em 1em;border-radius:999px;font-size:.8rem;font-weight:600}
 .dbadge.dark{background:var(--black);border-color:var(--black)}
-.detail-hero h1{font-family:"Bricolage Grotesque",sans-serif;font-weight:700;letter-spacing:-.03em;font-size:clamp(2.2rem,5vw,3.8rem);line-height:1.02;text-shadow:0 6px 40px rgba(0,0,0,.4)}
+.detail-hero h1{font-family:"Hanken Grotesk",sans-serif;font-weight:700;letter-spacing:-.03em;font-size:clamp(2.2rem,5vw,3.8rem);line-height:1.02;text-shadow:0 6px 40px rgba(0,0,0,.4)}
 .detail-hero .d-loc{display:flex;align-items:center;gap:.5rem;margin-top:.8rem;font-size:1.05rem;opacity:.95}
 .detail-hero .d-loc svg{width:18px;height:18px}
 
@@ -154,7 +154,7 @@
    styles.css for the homepage testimonials carousel) for the arrow
    controls, so this stays visually consistent for free. */
 .unit-carousel-aside{margin-bottom:22px}
-.unit-carousel-aside h3{font-family:"Bricolage Grotesque",sans-serif;font-size:1.15rem;font-weight:700;letter-spacing:-.01em;margin-bottom:1rem}
+.unit-carousel-aside h3{font-family:"Hanken Grotesk",sans-serif;font-size:1.15rem;font-weight:700;letter-spacing:-.01em;margin-bottom:1rem}
 .unit-carousel-track{
   display:grid;grid-template-columns:1fr;
   opacity:0;transform:translateY(14px);transition:opacity .5s var(--ease),transform .5s var(--ease);
@@ -174,7 +174,7 @@
 .project-link-banner svg{width:16px;height:16px;flex:none}
 
 .detail-layout{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:54px;padding:64px 0}
-.detail-main h2{font-family:"Bricolage Grotesque",sans-serif;font-size:1.6rem;font-weight:700;letter-spacing:-.01em;margin-bottom:1rem}
+.detail-main h2{font-family:"Hanken Grotesk",sans-serif;font-size:1.6rem;font-weight:700;letter-spacing:-.01em;margin-bottom:1rem}
 .detail-tagline{font-family:"Fraunces",serif;font-style:italic;font-size:clamp(1.3rem,2.4vw,1.7rem);line-height:1.4;color:var(--ink);margin-bottom:2.4rem}
 .detail-main h2:empty,.detail-main h3:empty,.detail-main p:empty{display:none}
 .detail-main p{color:var(--ink-soft);font-size:1.04rem;margin-bottom:1.1rem;line-height:1.7}
@@ -223,7 +223,7 @@
 /* short screens / zoomed-in browsers: the card is taller than the window, so
    let it scroll with the page instead of sticking and hiding its lower half */
 @media (max-height:900px){.fact-card{position:static;max-height:none;overflow:visible}}
-.fact-card .price{font-family:"Bricolage Grotesque",sans-serif;font-size:2rem;font-weight:700;letter-spacing:-.02em;line-height:1;color:#fff}
+.fact-card .price{font-family:"Hanken Grotesk",sans-serif;font-size:2rem;font-weight:700;letter-spacing:-.02em;line-height:1;color:#fff}
 .fact-card .price small{display:block;font-family:"Hanken Grotesk";font-size:.8rem;font-weight:500;color:rgba(255,255,255,.75);letter-spacing:0;margin-bottom:.3rem}
 .fact-list{margin:22px 0;border-top:1px solid rgba(255,255,255,.22)}
 .fact-list div{display:flex;justify-content:space-between;gap:1rem;padding:.7rem 0;border-bottom:1px solid rgba(255,255,255,.18);font-size:.92rem}
@@ -232,8 +232,8 @@
 .fact-card .btn{width:100%;margin-top:.4rem}
 .fact-card .btn + .btn{margin-top:.7rem}
 .dev-line{display:flex;align-items:center;gap:.7rem;margin-top:22px;padding-top:18px;border-top:1px solid rgba(255,255,255,.22);font-size:.9rem;color:rgba(255,255,255,.8)}
-.dev-line b{color:#fff;font-family:"Bricolage Grotesque",sans-serif}
-.dev-line .av{width:38px;height:38px;border-radius:10px;background:rgba(255,255,255,.18);color:#fff;display:grid;place-items:center;font-weight:700;font-family:"Bricolage Grotesque"}
+.dev-line b{color:#fff;font-family:"Hanken Grotesk",sans-serif}
+.dev-line .av{width:38px;height:38px;border-radius:10px;background:rgba(255,255,255,.18);color:#fff;display:grid;place-items:center;font-weight:700;font-family:"Hanken Grotesk"}
 .dev-line .av.has-logo{background:#fff;border:1px solid rgba(255,255,255,.3);padding:5px}
 .dev-line .av.has-logo img{width:100%;height:100%;object-fit:contain}
 
@@ -250,7 +250,7 @@
 /* FAQ now sits inside the detail column, above the gallery */
 .detail-main .faq-section{padding:32px 0 8px}
 .detail-main .faq-section .container{padding:0;max-width:none;width:auto;margin:0}
-.faq-title{font-family:"Bricolage Grotesque",sans-serif;font-size:1.6rem;font-weight:700;letter-spacing:-.01em;margin-bottom:1.4rem}
+.faq-title{font-family:"Hanken Grotesk",sans-serif;font-size:1.6rem;font-weight:700;letter-spacing:-.01em;margin-bottom:1.4rem}
 .faq-list{max-width:820px;display:flex;flex-direction:column;gap:12px}
 .faq-item{border:1px solid var(--line);border-radius:14px;background:#fff;transition:border-color .2s,box-shadow .2s}
 .faq-item:hover{border-color:var(--sky)}
@@ -281,7 +281,7 @@
 .blog-card-body{padding:22px 24px 24px;display:flex;flex-direction:column;flex:1}
 .blog-card-tags{display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:.9rem}
 .blog-tag{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--sky-deep);background:var(--sky-soft);padding:.35em .8em;border-radius:999px}
-.blog-card-body h3{font-family:"Bricolage Grotesque",sans-serif;font-size:1.22rem;font-weight:700;letter-spacing:-.01em;line-height:1.28;margin-bottom:.6rem}
+.blog-card-body h3{font-family:"Hanken Grotesk",sans-serif;font-size:1.22rem;font-weight:700;letter-spacing:-.01em;line-height:1.28;margin-bottom:.6rem}
 .blog-card-excerpt{color:var(--ink-soft);font-size:.92rem;line-height:1.6;flex:1;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 .blog-card-foot{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-top:1.2rem;padding-top:1rem;border-top:1px solid var(--line)}
 .blog-card-author{display:flex;align-items:center;gap:.55rem;font-size:.85rem;font-weight:600;color:var(--ink);min-width:0}
@@ -295,7 +295,7 @@
 .blog-post-hero{height:52vh;min-height:380px}
 .blog-post-tags{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem}
 .blog-post-byline{display:flex;align-items:center;gap:.7rem;margin-top:1.3rem;font-size:.92rem}
-.blog-post-byline b{display:block;font-family:"Bricolage Grotesque",sans-serif}
+.blog-post-byline b{display:block;font-family:"Hanken Grotesk",sans-serif}
 .blog-post-date{opacity:.85;font-size:.85rem}
 
 /* article body — .rich-content is the shared base typography for any
@@ -307,14 +307,14 @@
 
 /* blog posts: the post title is its own h1 above, so a block heading is
    the primary tier here and keeps a bold, prominent treatment */
-.blog-article h2{font-family:"Bricolage Grotesque",sans-serif;font-size:1.5rem;font-weight:700;letter-spacing:-.01em;margin:2.3rem 0 1.1rem;color:var(--ink)}
+.blog-article h2{font-family:"Hanken Grotesk",sans-serif;font-size:1.5rem;font-weight:700;letter-spacing:-.01em;margin:2.3rem 0 1.1rem;color:var(--ink)}
 .blog-article h2:first-child{margin-top:0}
 
 /* project "about" section: block headings sit *under* the page's own
    "About this development" h2 (.detail-main h2, 1.6rem/700), so they read
    as a quiet subsection marker — smaller, accent-colored, dot-prefixed —
    instead of a second near-identical headline stacked right beneath it */
-.rich-content h2{display:flex;align-items:center;gap:.65em;font-family:"Bricolage Grotesque",sans-serif;font-size:1.12rem;font-weight:700;color:var(--sky-deep);margin:2.8rem 0 1rem}
+.rich-content h2{display:flex;align-items:center;gap:.65em;font-family:"Hanken Grotesk",sans-serif;font-size:1.12rem;font-weight:700;color:var(--sky-deep);margin:2.8rem 0 1rem}
 .rich-content h2:first-child{margin-top:0}
 .rich-content h2::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--sky);flex:none}
 
@@ -323,14 +323,14 @@
    hierarchy exactly as pasted (h1 bigger than h2, h3 smaller, etc.) rather
    than flattening it, but still give every level a proper styled look
    instead of raw browser defaults. Same dot-marker family as h2 above. */
-.rich-content :where(h1,h3,h4,h5,h6){display:flex;align-items:center;gap:.65em;font-family:"Bricolage Grotesque",sans-serif;font-weight:700;color:var(--sky-deep);margin:2.8rem 0 1rem}
+.rich-content :where(h1,h3,h4,h5,h6){display:flex;align-items:center;gap:.65em;font-family:"Hanken Grotesk",sans-serif;font-weight:700;color:var(--sky-deep);margin:2.8rem 0 1rem}
 .rich-content :where(h1,h3,h4,h5,h6):first-child{margin-top:0}
 .rich-content :where(h1,h3,h4,h5,h6)::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--sky);flex:none}
 .rich-content h1{font-size:1.38rem}
 .rich-content h3{font-size:1.02rem}
 .rich-content :where(h4,h5,h6){font-size:.92rem}
 
-.blog-article :where(h1,h3,h4,h5,h6){font-family:"Bricolage Grotesque",sans-serif;font-weight:700;letter-spacing:-.01em;margin:2.3rem 0 1.1rem;color:var(--ink)}
+.blog-article :where(h1,h3,h4,h5,h6){font-family:"Hanken Grotesk",sans-serif;font-weight:700;letter-spacing:-.01em;margin:2.3rem 0 1.1rem;color:var(--ink)}
 .blog-article :where(h1,h3,h4,h5,h6):first-child{margin-top:0}
 .blog-article h1{font-size:1.75rem}
 .blog-article h3{font-size:1.25rem}
@@ -454,7 +454,7 @@
 .breadcrumb.light b{color:#fff}
 .sub-eyebrow{font-size:.78rem;text-transform:uppercase;letter-spacing:.22em;font-weight:600;color:rgba(255,255,255,.9);margin-bottom:1rem}
 .subpage-hero h1{
-  font-family:"Bricolage Grotesque",sans-serif;font-weight:700;letter-spacing:-.03em;
+  font-family:"Hanken Grotesk",sans-serif;font-weight:700;letter-spacing:-.03em;
   font-size:clamp(2.5rem,6vw,4.4rem);line-height:1.02;color:#fff;text-shadow:0 8px 40px rgba(0,0,0,.35);
 }
 .subpage-hero h1 em{font-family:"Fraunces",serif;font-style:italic;font-weight:400;color:#aee0ff}
@@ -471,7 +471,7 @@
   position:absolute;inset-inline-start:32px;bottom:-30px;background:var(--black);color:#fff;border-radius:18px;
   padding:22px 26px;max-width:300px;display:flex;align-items:center;gap:18px;box-shadow:var(--shadow-lg);
 }
-.afb-num{font-family:"Bricolage Grotesque",sans-serif;font-weight:700;font-size:2.6rem;line-height:1;flex:none}
+.afb-num{font-family:"Hanken Grotesk",sans-serif;font-weight:700;font-size:2.6rem;line-height:1;flex:none}
 .afb-num i{font-family:"Fraunces",serif;font-style:italic;font-weight:400;font-size:1rem;color:var(--sky);margin-inline-start:3px}
 .afb-label{font-size:.86rem;color:rgba(255,255,255,.8);line-height:1.45}
 
@@ -482,7 +482,7 @@
 .value-card:hover{transform:translateY(-6px);box-shadow:var(--shadow-md)}
 .value-ic{width:50px;height:50px;border-radius:14px;display:grid;place-items:center;background:var(--sky-soft);color:var(--sky-deep);margin-bottom:18px}
 .value-ic svg{width:26px;height:26px}
-.value-card h3{font-family:"Bricolage Grotesque",sans-serif;font-size:1.2rem;margin-bottom:.5rem}
+.value-card h3{font-family:"Hanken Grotesk",sans-serif;font-size:1.2rem;margin-bottom:.5rem}
 .value-card p{color:var(--ink-soft);font-size:.96rem}
 
 /* timeline */
@@ -490,8 +490,8 @@
 .timeline li{position:relative;padding:0;padding-bottom:36px;padding-inline-start:34px}
 .timeline li:last-child{padding-bottom:0}
 .timeline li::before{content:"";position:absolute;inset-inline-start:-9px;top:4px;width:16px;height:16px;border-radius:50%;background:var(--sky);border:3px solid var(--paper);box-shadow:0 0 0 1px var(--sky)}
-.tl-year{display:inline-block;font-family:"Bricolage Grotesque",sans-serif;font-weight:700;color:var(--sky-deep);font-size:1.05rem;margin-bottom:.3rem}
-.timeline h4{font-family:"Bricolage Grotesque",sans-serif;font-size:1.12rem;margin-bottom:.25rem}
+.tl-year{display:inline-block;font-family:"Hanken Grotesk",sans-serif;font-weight:700;color:var(--sky-deep);font-size:1.05rem;margin-bottom:.3rem}
+.timeline h4{font-family:"Hanken Grotesk",sans-serif;font-size:1.12rem;margin-bottom:.25rem}
 .timeline p{color:var(--ink-soft);font-size:.98rem;max-width:58ch}
 
 /* ============================================================
@@ -504,7 +504,7 @@
 .contact-card:hover{border-color:transparent;box-shadow:var(--shadow-md)}
 .cc-ic{width:44px;height:44px;border-radius:12px;flex:none;display:grid;place-items:center;background:var(--sky-soft);color:var(--sky-deep)}
 .cc-ic svg{width:22px;height:22px}
-.contact-card h4{font-family:"Bricolage Grotesque",sans-serif;font-size:1.02rem;margin-bottom:.2rem}
+.contact-card h4{font-family:"Hanken Grotesk",sans-serif;font-size:1.02rem;margin-bottom:.2rem}
 .contact-card p{color:var(--ink-soft);font-size:.95rem;line-height:1.5}
 .contact-card a{color:var(--ink-soft);transition:color .2s}
 .contact-card a:hover{color:var(--sky)}
@@ -515,7 +515,7 @@
 
 /* form */
 .contact-form-wrap{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:38px;box-shadow:var(--shadow-md)}
-.contact-form h3{font-family:"Bricolage Grotesque",sans-serif;font-size:1.4rem;margin-bottom:1.6rem}
+.contact-form h3{font-family:"Hanken Grotesk",sans-serif;font-size:1.4rem;margin-bottom:1.6rem}
 .cf-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
 .cf-field{display:block;margin-bottom:1.1rem}
 .cf-field>span{display:block;font-size:.82rem;font-weight:600;color:var(--ink);margin-bottom:.45rem}
@@ -562,7 +562,7 @@
 .qc-wa .qc-ring{--ring-rgb:37,211,102;animation-delay:.3s}
 @keyframes qcRing{0%{box-shadow:0 0 0 0 rgba(var(--ring-rgb),.4)}70%,100%{box-shadow:0 0 0 10px rgba(var(--ring-rgb),0)}}
 .qc-text{display:flex;flex-direction:column;gap:.15rem;min-width:0}
-.qc-text b{font-family:"Bricolage Grotesque",sans-serif;font-size:1rem;font-weight:700}
+.qc-text b{font-family:"Hanken Grotesk",sans-serif;font-size:1rem;font-weight:700}
 .qc-text small{color:var(--ink-soft);font-size:.82rem}
 .qc-arrow{margin-inline-start:auto;width:34px;height:34px;border-radius:50%;background:var(--paper);display:grid;place-items:center;color:var(--ink);flex:none;transition:.3s}
 .qc-arrow svg{width:16px;height:16px}
