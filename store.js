@@ -27,7 +27,26 @@
   window.sb = sb;
   window.SUPA_READY = configured;
 
-  const F = window.FALLBACK || {};
+  // fallback.js (the bundled demo/offline dataset, ~129 KB) is no longer a
+  // static <script> tag on every page — it's only ever read here, in a
+  // failure branch, so it's fetched on demand the first time one is hit and
+  // cached as a promise (a second failure on the same page reuses it instead
+  // of injecting the script twice).
+  let fallbackPromise = null;
+  function ensureFallback() {
+    if (window.FALLBACK) return Promise.resolve(window.FALLBACK);
+    if (!fallbackPromise) {
+      fallbackPromise = new Promise((resolve) => {
+        const s = document.createElement('script');
+        s.src = 'fallback.js';
+        s.onload = () => resolve(window.FALLBACK || {});
+        s.onerror = () => resolve({});
+        document.head.appendChild(s);
+      });
+    }
+    return fallbackPromise;
+  }
+  const getF = () => window.FALLBACK || {};
 
   // shared clean-URL builder for project/unit/blog detail links — prefers
   // the item's Arabic slug on /ar/ pages when the admin set one, otherwise
@@ -147,8 +166,13 @@
     try { sessionStorage.setItem('rt_list_' + table, JSON.stringify({ t: Date.now(), d: rows })); } catch (_) {}
   }
 
-  async function fetchTable(table, fallback, map) {
-    if (!sb) return fallback;
+  async function fetchTable(table, fallbackKey, map) {
+    async function fallback() {
+      await ensureFallback();
+      const d = getF()[fallbackKey] || [];
+      return map ? d.map(map) : d;
+    }
+    if (!sb) return fallback();
     // rows the server already put in the page (api/preload.js)
     const pre = window.__PRELOAD && window.__PRELOAD[table];
     if (Array.isArray(pre) && pre.length) return map ? pre.map(map) : pre;
@@ -166,11 +190,11 @@
     }
     try {
       const { data, error } = await sb.from(table).select(LIST_COLS[table] || '*').eq('published', true).order('sort_order', { ascending: true });
-      if (error || !data || !data.length) return fallback;
+      if (error || !data || !data.length) return fallback();
       cacheSet(table, data);
       return map ? data.map(map) : data;
     } catch (_) {
-      return fallback;
+      return fallback();
     }
   }
 
@@ -182,8 +206,12 @@
   // which doesn't implement .or()/.maybeSingle(). Falls back to a plain
   // array search over the bundled fallback data (already in public shape,
   // same as fetchTable's fallback branch above) when no backend is configured.
-  async function fetchOne(table, slug, fallback, map) {
-    if (!sb) return (fallback || []).find(r => r.id === slug || r.slugAr === slug) || null;
+  async function fetchOne(table, slug, fallbackKey, map) {
+    if (!sb) {
+      await ensureFallback();
+      const d = getF()[fallbackKey] || [];
+      return d.find(r => r.id === slug || r.slugAr === slug) || null;
+    }
     try {
       const [bySlug, bySlugAr] = await Promise.all([
         sb.from(table).select('*').eq('published', true).eq('slug', slug).limit(1),
@@ -206,17 +234,18 @@
   // SAME row four times over.
   let contentPromise = null;
   async function getContent() {
-    if (!sb) return F.content || {};
+    if (!sb) { await ensureFallback(); return getF().content || {}; }
     if (!contentPromise) {
       contentPromise = (async () => {
         try {
           const { data, error } = await sb.from('content_blocks').select('key,value');
-          if (error || !data || !data.length) return F.content || {};
-          const out = { ...(F.content || {}) };
+          if (error || !data || !data.length) { await ensureFallback(); return getF().content || {}; }
+          const out = { ...(getF().content || {}) };
           data.forEach(row => { out[row.key] = row.value; });
           return out;
         } catch (_) {
-          return F.content || {};
+          await ensureFallback();
+          return getF().content || {};
         }
       })();
     }
@@ -228,7 +257,8 @@
   // of adding another
   async function getCompany() {
     const content = await getContent();
-    return Object.assign({}, (F.content && F.content.company) || {}, content.company || {});
+    const fc = getF().content;
+    return Object.assign({}, (fc && fc.company) || {}, content.company || {});
   }
 
   // project categories + unit types are plain text on each project/unit row
@@ -239,7 +269,7 @@
   // picks it up automatically — no per-page changes needed.
   function mapCategory(r) { return { name: r.name, nameAr: r.name_ar || '', kind: r.kind }; }
   async function getCategories() {
-    const rows = await fetchTable('categories', F.categories || [], mapCategory);
+    const rows = await fetchTable('categories', 'categories', mapCategory);
     const map = window.CATEGORY_NAMES_AR || {};
     (rows || []).forEach(c => { if (c.nameAr) map[c.name] = c.nameAr; });
     window.CATEGORY_NAMES_AR = map;
@@ -298,14 +328,14 @@
 
   window.store = {
     configured,
-    getProjects:     () => fetchTable('projects', F.projects || [], mapProject),
-    getCities:       () => fetchTable('cities', F.cities || []),
-    getTestimonials: () => fetchTable('testimonials', F.testimonials || []),
-    getDevelopers:   () => fetchTable('developers', F.developers || []),
-    getBlogPosts:    () => fetchTable('blog_posts', F.blogPosts || [], mapBlogPost),
-    getUnits:        () => fetchTable('units', F.units || [], mapUnit),
-    getProjectBySlug: (slug) => fetchOne('projects', slug, F.projects || [], mapProject),
-    getUnitBySlug:    (slug) => fetchOne('units', slug, F.units || [], mapUnit),
+    getProjects:     () => fetchTable('projects', 'projects', mapProject),
+    getCities:       () => fetchTable('cities', 'cities'),
+    getTestimonials: () => fetchTable('testimonials', 'testimonials'),
+    getDevelopers:   () => fetchTable('developers', 'developers'),
+    getBlogPosts:    () => fetchTable('blog_posts', 'blogPosts', mapBlogPost),
+    getUnits:        () => fetchTable('units', 'units', mapUnit),
+    getProjectBySlug: (slug) => fetchOne('projects', slug, 'projects', mapProject),
+    getUnitBySlug:    (slug) => fetchOne('units', slug, 'units', mapUnit),
     getCategories,
     getContent,
     getCompany,

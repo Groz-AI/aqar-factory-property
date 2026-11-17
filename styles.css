@@ -1,6 +1,9 @@
 /* ============================================================
    REALTEEK — Refined luxury real-estate
    Fonts: Fraunces (display serif) · Bricolage Grotesque (head) · Hanken Grotesk (body)
+   · Cairo (Arabic, all roles under [dir="rtl"]) — loaded via each page's own
+   Google Fonts <link>, not an @import here (that forced a slow serial
+   fetch: HTML -> this stylesheet -> the @import's own stylesheet -> the font).
    ============================================================ */
 
 :root{
@@ -22,8 +25,6 @@
   --container:1200px;
   --ease:cubic-bezier(.22,.61,.36,1);
 }
-
-@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap');
 
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
