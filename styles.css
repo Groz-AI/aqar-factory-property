@@ -249,12 +249,18 @@ em{font-style:normal}
   background:var(--sky-soft);color:var(--sky-deep);border-color:transparent;backdrop-filter:none;
 }
 .site-header.scrolled .follow-header-btn:hover,.site-header.solid .follow-header-btn:hover{background:#f8d3dc}
-/* The header row is already full below ~1015px (the nav pill squeezes first), so
-   the button only lives there when there is room: labelled from 1240px, icon-only
-   from 1080px. On narrower screens the same action is a drawer item (phones) and
-   a footer link (everywhere) — all open the same modal via [data-follow-open]. */
-@media(max-width:1079px){.follow-header-btn{display:none}}
-@media(min-width:1080px) and (max-width:1239px){.follow-header-btn{padding:.7em .8em}.follow-header-btn span{display:none}}
+/* Labelled from 1240px, icon-only down to 481px; on phones (header too tight) the
+   same action is a drawer item, and a footer link everywhere — all open the same
+   modal via [data-follow-open]. */
+@media(max-width:1239px){.follow-header-btn{padding:.7em .8em}.follow-header-btn span{display:none}}
+@media(max-width:480px){
+  .follow-header-btn{display:none}
+  .header-inner{gap:.6rem}
+  .header-actions{gap:.5rem}
+  .wa-header-btn{padding:.6em .9em;font-size:.8rem;gap:.4rem}
+  .wa-header-btn svg{width:16px;height:16px}
+}
+@media(max-width:340px){.wa-header-btn{padding:.55em .7em;font-size:.74rem}.wa-header-btn svg{display:none}}
 .nav-follow{display:none}
 .footer-link-btn{display:block;width:100%;text-align:start;background:none;border:0;cursor:pointer;font-family:inherit;font-size:.92rem;color:#9aa6b4;padding:.32rem 0;transition:.2s}
 .footer-link-btn:hover{color:#fff;padding-inline-start:.3rem}
@@ -1010,7 +1016,10 @@ em{font-style:normal}
   .cta-img{min-height:200px;-webkit-mask-image:linear-gradient(180deg,transparent,#000 30%);mask-image:linear-gradient(180deg,transparent,#000 30%)}
   .footer-grid{grid-template-columns:1fr 1fr}
 }
-@media(max-width:760px){
+/* The header row (brand + 7-link nav pill + price-quote CTA + language switch) needs ~930px,
+   so below 1080px the nav collapses into the slide-in drawer instead of squeezing the nav and
+   pushing the language switch / hamburger off-screen (it used to collapse only at 760px). */
+@media(max-width:1079px){
   .nav{
     /* explicit viewport-relative height instead of top:0;bottom:0 auto-sizing —
        .site-header.scrolled's backdrop-filter makes it a new containing block
@@ -1033,6 +1042,8 @@ em{font-style:normal}
   .nav a{color:var(--ink)!important;background:none!important;box-shadow:none!important;font-size:1.1rem;padding:.7em 0;border-bottom:1px solid var(--line);border-radius:0}
   .nav-toggle{display:flex}
   .nav-follow{display:block;width:100%;text-align:start;background:none;border:0;border-bottom:1px solid var(--line);cursor:pointer;font-family:inherit;font-weight:500;font-size:1.1rem;padding:.7em 0;color:var(--sky-deep)}
+}
+@media(max-width:760px){
   .search-bar{flex-direction:column;border-radius:24px;align-items:stretch}
   .search-field{border-left:none!important;border-bottom:1px solid var(--line)}
   .search-adv-btn{justify-content:center}

@@ -1,19 +1,18 @@
 -- ============================================================
 -- Spam brake for the contact form and the newsletter signup
 -- ------------------------------------------------------------
--- The two forms write straight into the database from the visitor's
--- browser, so the limit has to live here. A visitor (identified by the
--- IP the proxy forwards) can add at most 10 contact messages and 10
--- newsletter signups per hour; the 11th is refused with an error and the
+-- The forms write straight into the database from the visitor's browser,
+-- so the limit has to live here. A visitor (identified by the IP the proxy
+-- forwards) can add at most 10 contact messages, 10 newsletter signups and
+-- 30 project follows per hour; the next one is refused with an error and the
 -- form shows its normal "something went wrong, try again" message.
 --
 -- Run once, safe to re-run. Take a pg_dump first. Optional but advised.
 --
--- BEFORE relying on it, check that the IP reaches the database (see the
--- check at the bottom): Caddy must pass X-Forwarded-For to PostgREST.
--- If the check shows 'unknown', every visitor would share one counter
--- and real people would be blocked: in that case do NOT keep this on
--- (drop the two triggers at the bottom).
+-- If the proxy does NOT forward the visitor's IP, the trigger does nothing
+-- (no limit, nothing logged) instead of making every visitor share one
+-- counter - so it can never block real people. See the check at the bottom
+-- to confirm the IP does arrive (form_hits gets rows with a real address).
 -- ============================================================
 
 begin;
@@ -43,7 +42,8 @@ begin
     hdrs := null;
   end;
   v_ip := btrim(split_part(coalesce(hdrs->>'x-forwarded-for', ''), ',', 1));
-  if v_ip = '' then v_ip := 'unknown'; end if;
+  -- no visitor IP available: fail open rather than lump everyone together
+  if v_ip = '' then return new; end if;
 
   -- the staff (signed in admins) are never limited
   if coalesce(current_setting('request.jwt.claim.role', true), '') = 'authenticated' then
@@ -72,12 +72,25 @@ drop trigger if exists newsletter_rate_limit on public.newsletter_subscribers;
 create trigger newsletter_rate_limit before insert on public.newsletter_subscribers
   for each row execute function public.form_rate_limit('10');
 
+-- one row is written per followed project, hence the higher limit
+-- (needs supabase/add-project-follow-and-timeline.sql to have created the table)
+do $$
+begin
+  if to_regclass('public.project_followers') is not null then
+    drop trigger if exists followers_rate_limit on public.project_followers;
+    create trigger followers_rate_limit before insert on public.project_followers
+      for each row execute function public.form_rate_limit('30');
+  end if;
+end $$;
+
 commit;
 
 -- ---------- check (do this after running) ----------
--- 1. send one test message from the contact page, then:
+-- 1. follow a project from the website (or send a contact message), then:
 --      select kind, ip, at from public.form_hits order by id desc limit 5;
---    ip must be a real address, not 'unknown'.
+--    a row with a real address means the limit is active. NO row means the
+--    proxy is not forwarding the IP, so nothing is being limited (harmless).
 -- 2. to switch the limit off:
 --      drop trigger if exists inquiries_rate_limit on public.inquiries;
 --      drop trigger if exists newsletter_rate_limit on public.newsletter_subscribers;
+--      drop trigger if exists followers_rate_limit on public.project_followers;
