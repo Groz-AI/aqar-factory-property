@@ -760,3 +760,20 @@ begin
 end $$;
 revoke all on function public.unfollow_project(uuid, text) from public;
 grant execute on function public.unfollow_project(uuid, text) to anon, authenticated;
+
+-- "My projects" by phone number (same statements as supabase/add-follow-lookup.sql)
+create or replace function public.my_followed_projects(p_phone text)
+returns table (project_id uuid)
+language plpgsql stable security definer set search_path = public as $$
+declare d text;
+begin
+  d := regexp_replace(coalesce(p_phone, ''), '\D', '', 'g');
+  if length(d) < 8 or length(d) > 15 then return; end if;
+  return query
+    select f.project_id
+      from public.project_followers f
+     where right(regexp_replace(f.phone, '\D', '', 'g'), 10) = right(d, 10)
+     order by f.created_at;
+end $$;
+revoke all on function public.my_followed_projects(text) from public;
+grant execute on function public.my_followed_projects(text) to anon, authenticated;

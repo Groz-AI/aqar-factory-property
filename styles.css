@@ -401,6 +401,8 @@ em{font-style:normal}
 .follow-unfollow.arm{background:#9E0E3B;border-color:#9E0E3B;color:#fff}
 .follow-unfollow:disabled{opacity:.6;cursor:default}
 .follow-note-sm{margin-top:.8rem;font-size:.8rem}
+.follow-note-warn{padding:.6rem .8rem;border-radius:10px;background:var(--bg-soft,#f6f3ee);color:var(--ink)}
+.follow-linkbtn{background:none;border:0;padding:0;font:inherit;color:var(--brand,#b0123a);text-decoration:underline;cursor:pointer}
 @media(max-width:480px){
   .follow-row{flex-wrap:wrap}
   .follow-item-link{flex:1 1 100%}

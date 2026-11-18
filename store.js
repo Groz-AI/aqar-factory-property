@@ -362,6 +362,27 @@
     }
   }
 
+  // Which projects does this phone number follow? Returns { ids } or { error }.
+  // Cloud: the my_followed_projects() function (ids only; see add-follow-lookup.sql).
+  async function getFollowedIdsByPhone(phone) {
+    if (!sb) return { error: { message: 'No backend configured' } };
+    const digits = String(phone || '').replace(/\D/g, '');
+    if (digits.length < 8) return { ids: [] };
+    try {
+      if (cloud) {
+        const { data, error } = await sb.rpc('my_followed_projects', { p_phone: phone });
+        if (error) return { error };
+        return { ids: [...new Set((data || []).map(r => r.project_id).filter(Boolean))] };
+      }
+      const { data, error } = await sb.from('project_followers').select('project_id,phone');
+      if (error) return { error };
+      const tail = (s) => String(s || '').replace(/\D/g, '').slice(-10);
+      return { ids: [...new Set((data || []).filter(r => tail(r.phone) === tail(phone)).map(r => r.project_id))] };
+    } catch (e) {
+      return { error: { message: (e && e.message) || String(e) } };
+    }
+  }
+
   // full rows (incl. the timeline) for just the projects a visitor follows —
   // the list endpoints stay slim, so this is its own small query
   async function getFollowedProjects(dbIds) {
@@ -421,6 +442,7 @@
     submitNewsletter,
     followProjects,
     unfollowProject,
+    getFollowedIdsByPhone,
     getFollowedProjects
   };
 })();

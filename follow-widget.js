@@ -74,6 +74,7 @@
   const selected = new Set();
   let followedNow = [];
   let lastFocus = null;
+  let lookupNote = '';         // message shown above the phone form ("no projects for this number")
 
   function ensureProjects() {
     if (!projectsPromise) {
@@ -122,7 +123,8 @@
     followedNow = [];
     const pre = opts && opts.preselect;
     if (pre && !saved.ids.includes(pre)) { selected.add(pre); view = 'pick'; }
-    else view = saved.ids.length ? 'mine' : 'pick';
+    else view = (saved.ids.length || saved.phone) ? 'mine' : 'pick';
+    lookupNote = '';
     lastFocus = document.activeElement;
     root.classList.add('open');
     document.body.style.overflow = 'hidden';
@@ -136,29 +138,91 @@
   }
 
   function render() {
-    const showTabs = (view === 'mine' || view === 'pick') && saved.ids.length > 0;
+    const showTabs = view === 'mine' || view === 'pick' || view === 'lookup';
     tabsEl.hidden = !showTabs;
     if (showTabs) {
       tabsEl.innerHTML = `
-        <button type="button" class="follow-tab${view === 'mine' ? ' on' : ''}" data-tab="mine">${esc(t('My projects'))} (${saved.ids.length})</button>
+        <button type="button" class="follow-tab${view !== 'pick' ? ' on' : ''}" data-tab="mine">${esc(t('My projects'))}${saved.ids.length ? ` (${saved.ids.length})` : ''}</button>
         <button type="button" class="follow-tab${view === 'pick' ? ' on' : ''}" data-tab="pick">${esc(t('Follow a project'))}</button>`;
       tabsEl.querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', () => { view = b.dataset.tab; render(); }));
     }
     footEl.hidden = true;
     footEl.innerHTML = '';
     if (view === 'mine') renderMine();
+    else if (view === 'lookup') renderLookup();
     else if (view === 'pick') renderPick();
     else if (view === 'details') renderDetails();
     else renderDone();
   }
 
   // ---------- My projects ----------
+  // Ask for a phone number and look up what it follows (works on any device). The
+  // number is the identity: with no follows yet, the visitor is sent to the picker,
+  // whose next step asks for name + number and makes them a follower.
+  function renderLookup() {
+    bodyEl.innerHTML = `
+      <p class="follow-note">${esc(t('Enter the phone number you follow with to see your projects.'))}</p>
+      ${lookupNote ? `<p class="follow-note follow-note-warn">${esc(lookupNote)}</p>` : ''}
+      <form id="lookupForm" novalidate>
+        <label class="wa-field"><span>${esc(t('Phone / WhatsApp'))}</span><input type="tel" name="phone" inputmode="tel" required autocomplete="tel" value="${esc(saved.phone)}" dir="ltr"></label>
+        <p class="follow-error" role="alert" hidden></p>
+      </form>`;
+    footEl.hidden = false;
+    footEl.innerHTML = `
+      <button type="button" class="follow-back">${esc(t('Follow a project'))}</button>
+      <button type="submit" form="lookupForm" class="follow-primary">${esc(t('Show my projects'))}</button>`;
+    footEl.querySelector('.follow-back').addEventListener('click', () => { view = 'pick'; render(); });
+    const form = bodyEl.querySelector('#lookupForm');
+    const err = bodyEl.querySelector('.follow-error');
+    const btn = footEl.querySelector('.follow-primary');
+    setTimeout(() => { try { form.phone.focus(); } catch (_) {} }, 120);
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      err.hidden = true;
+      const phone = normPhone(form.phone.value);
+      if (!phone) { err.textContent = t('Please enter a valid phone number.'); err.hidden = false; return; }
+      const label = btn.textContent;
+      btn.disabled = true; btn.textContent = t('Loading…');
+      const res = await window.store.getFollowedIdsByPhone(phone);
+      if (res.error) {
+        btn.disabled = false; btn.textContent = label;
+        err.textContent = t("Sorry, we couldn't look that up just now. Please try again."); err.hidden = false;
+        return;
+      }
+      applyServerIds(phone, res.ids);
+      lookupNote = res.ids.length ? '' : t('No projects are followed with this number yet. Pick a project to follow it.');
+      view = res.ids.length ? 'mine' : 'pick';
+      render();
+    });
+  }
+
+  // the server list is the truth for a phone number: keep the per-browser unfollow
+  // secrets only for projects that are still followed
+  function applyServerIds(phone, ids) {
+    const tokens = {};
+    ids.forEach(id => { if (saved.tokens && saved.tokens[id]) tokens[id] = saved.tokens[id]; });
+    saved = { ids, tokens, name: saved.name, phone };
+    writeSaved(saved);
+  }
+
   async function renderMine() {
+    if (!saved.phone && !saved.ids.length) { view = 'lookup'; render(); return; }
     bodyEl.innerHTML = `<p class="follow-note">${esc(t('Loading…'))}</p>`;
+    if (saved.phone && window.store && window.store.getFollowedIdsByPhone) {
+      const res = await window.store.getFollowedIdsByPhone(saved.phone);   // on error keep this browser's own list
+      if (view !== 'mine') return;
+      if (!res.error) {
+        applyServerIds(saved.phone, res.ids);
+        const tab = tabsEl.querySelector('[data-tab="mine"]');
+        if (tab) tab.textContent = t('My projects') + (saved.ids.length ? ` (${saved.ids.length})` : '');
+      }
+    }
     const list = await (window.store ? window.store.getFollowedProjects(saved.ids) : Promise.resolve([]));
     if (view !== 'mine') return;
     if (!list.length) {
-      bodyEl.innerHTML = `<p class="follow-note">${esc(t('You are not following any project yet.'))}</p>`;
+      bodyEl.innerHTML = `<p class="follow-note">${esc(t('You are not following any project yet.'))}</p>
+        <p class="follow-note follow-note-sm"><button type="button" class="follow-linkbtn" data-lookup>${esc(t('Use a different number'))}</button></p>`;
+      bodyEl.querySelector('[data-lookup]').addEventListener('click', () => { view = 'lookup'; render(); });
       return;
     }
     const order = new Map(saved.ids.map((id, i) => [id, i]));
@@ -184,6 +248,8 @@
       </div>`;
     }).join('') + '</div>' + (list.some(p => !(saved.tokens && saved.tokens[p.dbId])) ? `<p class="follow-note follow-note-sm">${esc(t('A project without an Unfollow button was followed earlier or from another device. Contact us to stop following it.'))}</p>` : '');
     bodyEl.querySelectorAll('[data-unfollow]').forEach(b => b.addEventListener('click', () => onUnfollow(b)));
+    bodyEl.insertAdjacentHTML('beforeend', `<p class="follow-note follow-note-sm"><button type="button" class="follow-linkbtn" data-lookup>${esc(t('Use a different number'))}</button></p>`);
+    bodyEl.querySelector('[data-lookup]').addEventListener('click', () => { view = 'lookup'; render(); });
   }
 
   // two taps: the first arms the button, the second removes the follow
@@ -227,6 +293,7 @@
     if (view !== 'pick') return;
     paintList();
     paintPickFoot();
+    if (lookupNote) { search.insertAdjacentHTML('beforebegin', `<p class="follow-note follow-note-warn">${esc(lookupNote)}</p>`); lookupNote = ''; }
     if (!selected.size) setTimeout(() => { try { search.focus(); } catch (_) {} }, 120);
   }
 
