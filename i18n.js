@@ -200,6 +200,7 @@
     'City (optional)': 'المدينة (اختياري)',
     '— No linked city —': '— بدون مدينة —',
     'Market update': 'تحديث السوق',
+    'Tracked project': 'مشروع للمتابعة',
     'Page address (after /market_update/)': 'عنوان الصفحة (بعد /market_update/)',
     'Short summary': 'ملخص قصير',
     'Short summary (Arabic)': 'ملخص قصير (بالعربية)',

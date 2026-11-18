@@ -487,7 +487,7 @@
       ]
     },
     market_updates: {
-      label: t('Market updates'), singular: t('Market update'), table: 'market_updates', icon: 'post',
+      label: t('Track Your Project'), singular: t('Tracked project'), table: 'market_updates', icon: 'post',
       columns: [
         { key: 'photos', label: '', type: 'thumb' },
         { key: 'title', label: t('Title'), type: 'name', sub: 'slug' },
@@ -529,7 +529,7 @@
   const PAGE_LABELS = () => ({
     projects: t('Projects'), units: t('Units'), cities: t('Cities'), categories: t('Categories'), testimonials: t('Testimonials'),
     developers: t('Developers'), posts: t('Blog'), inquiries: t('Inquiries'),
-    newsletter: t('Newsletter'), followers: t('Followers'), market_updates: t('Market updates'), content: t('Site content')
+    newsletter: t('Newsletter'), followers: t('Followers'), market_updates: t('Track Your Project'), content: t('Site content')
   });
 
   // ============================================================
