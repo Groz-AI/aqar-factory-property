@@ -154,7 +154,9 @@
   Query.prototype.delete = function () { this.op = 'delete'; return this; };
   Query.prototype.upsert = function (rows, opts) { this.op = 'upsert'; this._payload = rows; this._conflict = opts && opts.onConflict; return this; };
 
-  Query.prototype._match = function (row) { return this._filters.every(([c, v]) => row[c] === v); };
+  Query.prototype.in = function (col, vals) { this._filters.push([col, null, vals || []]); return this; };
+
+  Query.prototype._match = function (row) { return this._filters.every(([c, v, set]) => set ? set.includes(row[c]) : row[c] === v); };
 
   Query.prototype._run = function () {
     const db = load();

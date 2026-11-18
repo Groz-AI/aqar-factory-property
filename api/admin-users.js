@@ -25,7 +25,7 @@
    Supabase's REST/Admin HTTP API directly via fetch().
    ============================================================ */
 
-const PAGE_KEYS = ['projects', 'cities', 'testimonials', 'developers', 'posts', 'inquiries', 'newsletter', 'content', 'units', 'categories'];
+const PAGE_KEYS = ['projects', 'cities', 'testimonials', 'developers', 'posts', 'inquiries', 'newsletter', 'followers', 'content', 'units', 'categories'];
 // subset of PAGE_KEYS that distinguish create from edit — mirrors
 // EDITABLE_PAGE_KEYS in admin/admin.js and the policy loop in schema.sql
 const EDITABLE_PAGE_KEYS = ['projects', 'units', 'cities', 'categories', 'testimonials', 'developers', 'posts'];

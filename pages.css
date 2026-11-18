@@ -244,6 +244,35 @@
 .consultants-list li{display:flex;align-items:center;gap:.7rem;font-size:.92rem;font-weight:600;color:#fff}
 .consultants-list img{width:36px;height:36px;border-radius:9px;object-fit:contain;background:#fff;border:1px solid rgba(255,255,255,.3);flex:none;padding:4px}
 
+/* Project progress — a vertical line of admin-managed checkpoints, newest
+   first; the newest is highlighted. Logical properties keep it correct in RTL. */
+.progress-section{padding:32px 0 8px}
+.progress-section[hidden]{display:none}
+.progress-head{display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:1.3rem}
+.detail-main .progress-head h2{margin:0}
+.progress-follow{display:inline-flex;align-items:center;gap:.5rem;padding:.55em 1.1em;border-radius:999px;border:1px solid var(--line);background:#fff;color:var(--sky-deep);font-family:inherit;font-weight:700;font-size:.85rem;cursor:pointer;transition:.2s}
+.progress-follow:hover{background:var(--sky-soft);border-color:transparent}
+.progress-follow svg{width:16px;height:16px;flex:none}
+.progress-line{list-style:none;margin:0;padding:0}
+.pr-item{position:relative;padding-inline-start:36px;padding-bottom:1.3rem}
+.pr-item::before{content:"";position:absolute;inset-inline-start:9px;top:26px;bottom:-4px;width:2px;background:rgba(12,22,32,.14)}
+.pr-item:last-child{padding-bottom:0}
+.pr-item:last-child::before{display:none}
+.pr-dot{position:absolute;inset-inline-start:0;top:10px;width:20px;height:20px;border-radius:50%;background:#fff;border:3px solid rgba(12,22,32,.25)}
+.pr-item.is-latest .pr-dot{border-color:var(--sky);background:var(--sky);box-shadow:0 0 0 5px var(--sky-soft)}
+.pr-card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:1.1rem 1.25rem;box-shadow:var(--shadow-sm)}
+.pr-item.is-latest .pr-card{border-color:rgba(219,19,81,.35)}
+.pr-meta{display:flex;flex-wrap:wrap;align-items:center;gap:.45rem;margin-bottom:.55rem}
+.pr-badge{display:inline-block;padding:.18em .65em;border-radius:999px;background:var(--sky);color:#fff;font-size:.72rem;font-weight:700;letter-spacing:.02em}
+.pr-status{display:inline-block;padding:.18em .65em;border-radius:999px;background:var(--sky-soft);color:var(--sky-deep);font-size:.76rem;font-weight:700}
+.pr-meta time{color:var(--ink-soft);font-size:.8rem}
+.pr-card h3{font-family:"Hanken Grotesk",sans-serif;font-size:1.05rem;font-weight:700;letter-spacing:-.01em;margin:0 0 .3rem;color:var(--ink)}
+.pr-card p{margin:0;color:var(--ink-soft);font-size:.93rem;line-height:1.65}
+.pr-photos{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px;margin-top:.95rem}
+.pr-photo{padding:0;border:none;background:var(--paper);border-radius:12px;overflow:hidden;cursor:zoom-in;aspect-ratio:4/3;display:block}
+.pr-photo img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .35s var(--ease)}
+.pr-photo:hover img{transform:scale(1.06)}
+
 /* FAQ — click-to-open questions between the page content and "More ..." */
 .faq-section{padding:56px 0 8px}
 .faq-section[hidden]{display:none}

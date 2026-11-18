@@ -167,6 +167,8 @@ function populate() {
   }
   injectJsonLd({ '@context': 'https://schema.org', '@graph': graph });
 
+  renderProgress(project);
+
   const heroImg = document.getElementById('heroImg');
   if (heroImg._tid) clearInterval(heroImg._tid);
   const heroImgs = projectImages(project);
@@ -257,13 +259,55 @@ function populateRelatedSections() {
   document.body.setAttribute('data-prerendered-ready', '1');
 }
 
+/* ---- project progress timeline (admin-managed checkpoints, newest first) ---- */
+let progressItems = [];
+function fmtProgressDate(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (isNaN(d)) return '';
+  return d.toLocaleDateString(isAr() ? 'ar' : 'en-GB', { year: 'numeric', month: 'short', day: 'numeric' });
+}
+function renderProgress(p) {
+  const sec = document.getElementById('progressSection');
+  if (!sec) return;
+  progressItems = (p.timeline || []).filter(cp => cp && (cp.title || cp.title_ar));
+  sec.hidden = !progressItems.length;
+  if (!progressItems.length) return;
+  const rows = progressItems.map((cp, i) => ({ cp, i })).reverse();   // newest first
+  document.getElementById('progressLine').innerHTML = rows.map(({ cp, i }, n) => {
+    const title = pick(cp, 'title', 'title_ar') || '';
+    const status = pick(cp, 'status', 'status_ar') || '';
+    const desc = pick(cp, 'desc', 'desc_ar') || '';
+    const when = fmtProgressDate(cp.date);
+    const photos = (cp.photos || []).filter(Boolean);
+    return `<li class="pr-item${n === 0 ? ' is-latest' : ''}">
+      <span class="pr-dot" aria-hidden="true"></span>
+      <div class="pr-card">
+        <div class="pr-meta">
+          ${n === 0 ? `<span class="pr-badge">${esc(t('Latest update'))}</span>` : ''}
+          ${status ? `<span class="pr-status">${esc(status)}</span>` : ''}
+          ${when ? `<time datetime="${esc(cp.date)}">${esc(when)}</time>` : ''}
+        </div>
+        <h3>${esc(title)}</h3>
+        ${desc ? `<p>${esc(desc).replace(/\n/g, '<br>')}</p>` : ''}
+        ${photos.length ? `<div class="pr-photos">${photos.map((ph, j) =>
+          `<button type="button" class="pr-photo" data-cp="${i}" data-ph="${j}" aria-label="${esc(title)} — ${esc(t('photo'))} ${j + 1}"><img src="${U(ph, 600)}" alt="${esc(title)} — ${esc(t('photo'))} ${j + 1}" width="300" height="225" loading="lazy"></button>`).join('')}</div>` : ''}
+      </div>
+    </li>`;
+  }).join('');
+  const follow = document.getElementById('progressFollowBtn');
+  follow.onclick = () => { if (window.followWidget) window.followWidget.open({ preselect: p.dbId }); };
+}
+
 /* ---- lightbox ---- */
 const lb = document.getElementById('lightbox');
 const lbImg = document.getElementById('lbImg');
 const lbCount = document.getElementById('lbCount');
 let lbIndex = 0;
-function gallery() { return (project && project.gallery) || []; }
-function openLb(i) {
+let lbSet = null;   // photos of one progress checkpoint; null = the project's own gallery
+function gallery() { return lbSet || (project && project.gallery) || []; }
+function openLb(i, set) {
+  if (set !== undefined) lbSet = set;
   const g = gallery();
   if (!g.length) return;
   lbIndex = (i + g.length) % g.length;
@@ -275,7 +319,13 @@ function openLb(i) {
 function closeLb() { lb.classList.remove('open'); lb.setAttribute('aria-hidden', 'true'); }
 document.getElementById('gallery').addEventListener('click', e => {
   const fig = e.target.closest('figure');
-  if (fig) openLb(+fig.dataset.idx);
+  if (fig) openLb(+fig.dataset.idx, null);
+});
+document.getElementById('progressLine').addEventListener('click', e => {
+  const b = e.target.closest('.pr-photo');
+  if (!b) return;
+  const cp = progressItems[+b.dataset.cp];
+  if (cp) openLb(+b.dataset.ph, (cp.photos || []).filter(Boolean));
 });
 document.getElementById('lbClose').addEventListener('click', closeLb);
 document.getElementById('lbNext').addEventListener('click', () => openLb(lbIndex + 1));

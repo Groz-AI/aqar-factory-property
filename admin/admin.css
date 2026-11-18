@@ -243,6 +243,22 @@ label.switch{position:relative;display:inline-flex;align-items:center;gap:.6rem;
 .faq-col input[type="text"]:focus,.faq-col textarea:focus{border-color:var(--sky);box-shadow:0 0 0 3px var(--sky-soft)}
 @media (max-width:640px){.faq-row-grid{grid-template-columns:1fr}}
 
+/* Progress timeline editor — reuses the FAQ row card; adds a date field and a photo strip per checkpoint */
+.tl-edit{display:flex;flex-direction:column;gap:12px;margin-top:6px}
+.tl-row .tl-date{display:flex;flex-direction:column;gap:6px;margin-top:12px;max-width:220px}
+.tl-row .tl-date label,.tl-row .tl-photos-label{font-size:.76rem;font-weight:600;color:var(--ink-soft)}
+.tl-row .tl-date input[type="date"]{border:1px solid var(--line);border-radius:8px;padding:.5em .7em;font-family:inherit;font-size:.92rem;background:#fff;color:var(--ink);outline:none}
+.tl-row .tl-date input[type="date"]:focus{border-color:var(--sky);box-shadow:0 0 0 3px var(--sky-soft)}
+.tl-row .tl-photos-label{display:block;margin-top:12px}
+
+/* Followers view — per-project counts as filter chips above the list */
+.fl-select{border:1px solid var(--line);border-radius:10px;padding:.55em .8em;font-family:inherit;font-size:.9rem;background:#fff;color:var(--ink);max-width:100%}
+.fl-chips{display:flex;flex-wrap:wrap;gap:8px;padding:6px 18px 14px}
+.fl-chip{border:1px solid var(--line);background:#fff;border-radius:999px;padding:.4em .9em;font-family:inherit;font-size:.82rem;color:var(--ink-soft);cursor:pointer;transition:.2s}
+.fl-chip b{color:var(--sky-deep, var(--ink));margin-inline-end:.25em}
+.fl-chip:hover{border-color:var(--sky)}
+.fl-chip.on{background:var(--sky-soft);border-color:var(--sky);color:var(--ink)}
+
 /* project/blog content field — a full-screen studio (.bs-*) replaces the
    old drawer-embedded editor: a language tab (English/Arabic), a sidebar
    toolbox of block types, a live-editable canvas, and a real-CSS preview */

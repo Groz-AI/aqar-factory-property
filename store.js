@@ -88,6 +88,9 @@
       seoTitle: r.seo_title || '', seoTitleAr: r.seo_title_ar || '',
       seoDescription: r.seo_description || '', seoDescriptionAr: r.seo_description_ar || '',
       isFeatured: !!r.is_featured, readyToMove: !!r.ready_to_move,
+      // construction-progress checkpoints (admin-edited), oldest first —
+      // { title, title_ar, status, status_ar, date, desc, desc_ar, photos[] }
+      timeline: Array.isArray(r.timeline) ? r.timeline : [],
       createdAt: r.created_at || null, updatedAt: r.updated_at || null
     };
   }
@@ -299,6 +302,46 @@
     }
   }
 
+  // ---------- follow a project ("تابع مشروعك") ----------
+  // One row per followed project. Visitors have no accounts, so the table is
+  // insert-only for them (see schema.sql); a project already followed with
+  // the same phone hits the unique key, which is treated as success so the
+  // visitor never learns whether a number was already registered.
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const validProjectId = (id) => (cloud ? UUID_RE.test(String(id || '')) : !!id);
+
+  async function followProjects(projectDbIds, who) {
+    if (!sb) return { error: { message: 'No backend configured' } };
+    const ids = [...new Set(projectDbIds || [])].filter(validProjectId);
+    const name = String((who && who.name) || '').trim();
+    const phone = String((who && who.phone) || '').trim();
+    if (!ids.length) return { error: { message: 'No valid project selected' } };
+    if (!name || !phone) return { error: { message: 'Name and phone are required' } };
+    try {
+      const results = await Promise.all(ids.map(pid =>
+        sb.from('project_followers').insert([{ project_id: pid, name, phone }])));
+      const failed = results.map(r => r && r.error).filter(e => e && e.code !== '23505' && !/duplicate|unique/i.test(e.message || ''));
+      return { error: failed[0] || null, ids };
+    } catch (e) {
+      return { error: { message: (e && e.message) || String(e) } };
+    }
+  }
+
+  // full rows (incl. the timeline) for just the projects a visitor follows —
+  // the list endpoints stay slim, so this is its own small query
+  async function getFollowedProjects(dbIds) {
+    const ids = [...new Set(dbIds || [])].filter(validProjectId);
+    if (!sb || !ids.length) return [];
+    try {
+      const { data, error } = await sb.from('projects')
+        .select('id,slug,slug_ar,name,name_ar,cover,city,timeline')
+        .eq('published', true).in('id', ids);
+      return error || !data ? [] : data.map(mapProject);
+    } catch (_) {
+      return [];
+    }
+  }
+
   // ---------- live sync ----------
   // Local mode: the "database" is localStorage; when the admin (in another
   // tab) writes a change, mirror it onto any open public page immediately.
@@ -340,6 +383,8 @@
     getContent,
     getCompany,
     submitInquiry,
-    submitNewsletter
+    submitNewsletter,
+    followProjects,
+    getFollowedProjects
   };
 })();

@@ -236,6 +236,29 @@ em{font-style:normal}
 }
 @media(prefers-reduced-motion:reduce){.wa-header-glow{animation:none}}
 
+/* "تابع مشروعك" / Track Your Project — secondary header button next to the
+   primary price-quote CTA: a frosted pill over the hero photo, a soft brand
+   tint once the header turns white. Icon-only on small screens (its
+   aria-label keeps the name). */
+.follow-header-btn{
+  background:rgba(255,255,255,.16);color:#fff;border:1px solid rgba(255,255,255,.42);
+  box-shadow:none;backdrop-filter:blur(6px);
+}
+.follow-header-btn:hover{background:rgba(255,255,255,.28);box-shadow:none}
+.site-header.scrolled .follow-header-btn,.site-header.solid .follow-header-btn{
+  background:var(--sky-soft);color:var(--sky-deep);border-color:transparent;backdrop-filter:none;
+}
+.site-header.scrolled .follow-header-btn:hover,.site-header.solid .follow-header-btn:hover{background:#f8d3dc}
+/* The header row is already full below ~1015px (the nav pill squeezes first), so
+   the button only lives there when there is room: labelled from 1240px, icon-only
+   from 1080px. On narrower screens the same action is a drawer item (phones) and
+   a footer link (everywhere) — all open the same modal via [data-follow-open]. */
+@media(max-width:1079px){.follow-header-btn{display:none}}
+@media(min-width:1080px) and (max-width:1239px){.follow-header-btn{padding:.7em .8em}.follow-header-btn span{display:none}}
+.nav-follow{display:none}
+.footer-link-btn{display:block;width:100%;text-align:start;background:none;border:0;cursor:pointer;font-family:inherit;font-size:.92rem;color:#9aa6b4;padding:.32rem 0;transition:.2s}
+.footer-link-btn:hover{color:#fff;padding-inline-start:.3rem}
+
 /* large centered "how would you like to reach us" modal (WhatsApp / Call) */
 .contact-modal{position:fixed;inset:0;z-index:410;display:grid;place-items:center;padding:20px;visibility:hidden;pointer-events:none}
 .contact-modal.open{visibility:visible;pointer-events:auto}
@@ -308,6 +331,91 @@ em{font-style:normal}
 }
 .wa-submit:hover{background:#1fb958;transform:translateY(-1px)}
 .wa-submit svg{width:18px;height:18px}
+
+/* ============================================================
+   FOLLOW A PROJECT — picker modal (follow-widget.js)
+   ============================================================ */
+.follow-modal{position:fixed;inset:0;z-index:405;display:grid;place-items:center;padding:16px;visibility:hidden;pointer-events:none}
+.follow-modal.open{visibility:visible;pointer-events:auto}
+.follow-backdrop{position:absolute;inset:0;background:rgba(12,22,32,.55);backdrop-filter:blur(3px);opacity:0;transition:opacity .3s}
+.follow-modal.open .follow-backdrop{opacity:1}
+.follow-card{
+  position:relative;width:min(540px,100%);max-height:min(90vh,720px);display:flex;flex-direction:column;
+  background:#fff;border-radius:24px;overflow:hidden;
+  box-shadow:0 40px 90px -30px rgba(10,20,30,.45);
+  transform:translateY(14px) scale(.97);opacity:0;transition:transform .35s var(--ease),opacity .3s;
+}
+.follow-modal.open .follow-card{transform:none;opacity:1}
+.follow-close{position:absolute;top:18px;inset-inline-end:18px;width:34px;height:34px;border-radius:50%;border:none;background:var(--paper);color:var(--ink-soft);display:grid;place-items:center;cursor:pointer;transition:.2s;z-index:2}
+.follow-close:hover{background:var(--line);color:var(--ink)}
+.follow-close svg{width:16px;height:16px}
+.follow-head{display:flex;align-items:center;gap:.8rem;padding:24px 64px 14px 26px}
+[dir="rtl"] .follow-head{padding:24px 26px 14px 64px}
+.follow-head-ic{width:46px;height:46px;border-radius:14px;background:var(--sky-soft);color:var(--sky-deep);display:grid;place-items:center;flex:none}
+.follow-head-ic svg{width:22px;height:22px}
+.follow-head b{display:block;font-family:"Hanken Grotesk",sans-serif;font-size:1.15rem;line-height:1.2}
+.follow-head small{display:block;color:var(--ink-soft);font-size:.84rem;margin-top:.15rem}
+.follow-tabs{display:flex;gap:6px;padding:0 26px 12px}
+.follow-tabs[hidden],.follow-foot[hidden]{display:none}
+.follow-tab{flex:1;padding:.6em .8em;border-radius:12px;border:1px solid var(--line);background:#fff;font-family:inherit;font-weight:600;font-size:.86rem;color:var(--ink-soft);cursor:pointer;transition:.2s}
+.follow-tab:hover{border-color:var(--ink-soft)}
+.follow-tab.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.follow-body{flex:1;min-height:0;overflow-y:auto;padding:4px 26px 18px}
+.follow-note{margin:0 0 .9rem;color:var(--ink-soft);font-size:.88rem}
+.follow-search{
+  display:block;width:100%;margin-bottom:.8rem;padding:.7em .95em;border-radius:12px;border:1px solid var(--line);
+  font-family:inherit;font-size:.95rem;background:var(--paper);transition:.2s;
+}
+.follow-search:focus{border-color:var(--sky);box-shadow:0 0 0 4px var(--sky-soft);background:#fff;outline:none}
+.follow-list{display:flex;flex-direction:column;gap:8px}
+.follow-item{
+  display:flex;align-items:center;gap:.8rem;width:100%;padding:.55rem;border-radius:16px;border:1px solid var(--line);
+  background:#fff;color:inherit;text-align:start;text-decoration:none;cursor:pointer;font-family:inherit;
+  transition:border-color .2s,background .2s,transform .2s var(--ease);
+}
+.follow-item:hover{border-color:var(--sky)}
+.follow-item.sel{border-color:var(--sky);background:var(--sky-soft)}
+.follow-item[disabled]{cursor:default;opacity:.78}
+.follow-item[disabled]:hover{border-color:var(--line)}
+.follow-thumb{width:56px;height:56px;border-radius:12px;object-fit:cover;background:var(--paper);flex:none}
+.follow-item-txt{min-width:0;flex:1}
+.follow-item-txt b{display:block;font-size:.95rem;line-height:1.25;font-family:"Hanken Grotesk",sans-serif}
+.follow-line{display:flex;flex-wrap:wrap;align-items:center;gap:.4rem;margin-top:.2rem}
+.follow-line small{color:var(--ink-soft);font-size:.8rem}
+.follow-status{display:inline-block;padding:.15em .6em;border-radius:999px;background:var(--sky-soft);color:var(--sky-deep);font-size:.74rem;font-weight:700}
+.follow-check{margin-inline-start:auto;width:24px;height:24px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;flex:none;color:#fff;background:#fff;transition:.2s}
+.follow-check svg{width:13px;height:13px}
+.follow-item.sel .follow-check{background:var(--sky);border-color:var(--sky)}
+.follow-chip{margin-inline-start:auto;flex:none;padding:.25em .7em;border-radius:999px;background:#E3F3EA;color:#1C7A4E;font-size:.74rem;font-weight:700}
+.follow-go{margin-inline-start:auto;width:30px;height:30px;border-radius:50%;background:var(--paper);display:grid;place-items:center;flex:none;color:var(--ink)}
+.follow-go svg{width:14px;height:14px}
+[dir="rtl"] .follow-go svg{transform:scaleX(-1)}
+.follow-foot{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:14px 26px 20px;border-top:1px solid var(--line);background:#fff}
+.follow-count{font-size:.86rem;font-weight:600;color:var(--ink-soft)}
+.follow-primary{
+  display:inline-flex;align-items:center;justify-content:center;padding:.8em 1.5em;border-radius:999px;border:none;
+  background:var(--sky);color:#fff;font-family:inherit;font-weight:700;font-size:.92rem;cursor:pointer;
+  box-shadow:0 10px 24px -12px rgba(219,19,81,.55);transition:.25s;
+}
+.follow-primary:hover:not(:disabled){transform:translateY(-1px);background:var(--sky-deep)}
+.follow-primary:disabled{opacity:.45;cursor:not-allowed;box-shadow:none}
+.follow-wide{width:100%}
+.follow-back{padding:.8em 1.2em;border-radius:999px;border:1px solid var(--line);background:#fff;font-family:inherit;font-weight:600;font-size:.9rem;color:var(--ink-soft);cursor:pointer;transition:.2s}
+.follow-back:hover{border-color:var(--ink-soft);color:var(--ink)}
+.follow-chosen{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:1.1rem}
+.follow-chip-sel{padding:.3em .8em;border-radius:999px;background:var(--sky-soft);color:var(--sky-deep);font-size:.8rem;font-weight:600}
+.follow-error{margin:.2rem 0 0;padding:.7em .9em;border-radius:12px;background:#FDECEF;color:#9E0E3B;font-size:.86rem;font-weight:600}
+.follow-error[hidden]{display:none}
+.follow-done{display:flex;flex-direction:column;align-items:stretch;gap:1rem;text-align:center}
+.follow-done>b{font-family:"Hanken Grotesk",sans-serif;font-size:1.1rem}
+.follow-done .follow-list{text-align:start}
+.follow-done-ic{width:56px;height:56px;border-radius:50%;background:#E3F3EA;color:#1C7A4E;display:grid;place-items:center;margin:.4rem auto 0}
+.follow-done-ic svg{width:26px;height:26px}
+@media(max-width:480px){
+  .follow-head{padding:20px 58px 12px 18px}
+  [dir="rtl"] .follow-head{padding:20px 18px 12px 58px}
+  .follow-tabs,.follow-body,.follow-foot{padding-inline:18px}
+}
 
 /* ============================================================
    HERO
@@ -924,6 +1032,7 @@ em{font-style:normal}
   .site-header.scrolled .nav.open{background:#fff;box-shadow:var(--shadow-lg);backdrop-filter:none;-webkit-backdrop-filter:none}
   .nav a{color:var(--ink)!important;background:none!important;box-shadow:none!important;font-size:1.1rem;padding:.7em 0;border-bottom:1px solid var(--line);border-radius:0}
   .nav-toggle{display:flex}
+  .nav-follow{display:block;width:100%;text-align:start;background:none;border:0;border-bottom:1px solid var(--line);cursor:pointer;font-family:inherit;font-weight:500;font-size:1.1rem;padding:.7em 0;color:var(--sky-deep)}
   .search-bar{flex-direction:column;border-radius:24px;align-items:stretch}
   .search-field{border-left:none!important;border-bottom:1px solid var(--line)}
   .search-adv-btn{justify-content:center}

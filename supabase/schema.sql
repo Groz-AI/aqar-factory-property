@@ -60,7 +60,7 @@ $$;
 -- Does the current request's admin (Owner, or Staff with this page granted)
 -- have access to a specific admin page? `page` matches the dashboard's page
 -- keys: projects | cities | testimonials | developers | posts | units |
--- inquiries | newsletter | content.
+-- inquiries | newsletter | followers | content.
 create or replace function public.has_page(page text)
 returns boolean
 language sql stable security definer set search_path = public as $$
@@ -713,3 +713,34 @@ alter table public.cities     add column if not exists description    text;
 alter table public.cities     add column if not exists description_ar text;
 alter table public.developers add column if not exists description    text;
 alter table public.developers add column if not exists description_ar text;
+
+-- "تابع مشروعك": project follow + progress timeline (same statements as supabase/add-project-follow-and-timeline.sql)
+alter table public.projects add column if not exists timeline jsonb default '[]'::jsonb;
+
+create table if not exists public.project_followers (
+  id         uuid primary key default gen_random_uuid(),
+  project_id uuid not null references public.projects(id) on delete cascade,
+  name       text not null,
+  phone      text not null,
+  created_at timestamptz default now(),
+  unique (project_id, phone)
+);
+create index if not exists idx_project_followers_project on public.project_followers(project_id);
+alter table public.project_followers enable row level security;
+
+drop policy if exists "public follow project" on public.project_followers;
+create policy "public follow project" on public.project_followers
+  for insert with check (
+    exists (select 1 from public.projects p where p.id = project_id and p.published)
+  );
+drop policy if exists "admin read followers" on public.project_followers;
+create policy "admin read followers" on public.project_followers
+  for select using (public.has_page('followers'));
+drop policy if exists "admin delete followers" on public.project_followers;
+create policy "admin delete followers" on public.project_followers
+  for delete using (public.has_page('followers'));
+do $$
+begin
+  alter publication supabase_realtime add table public.project_followers;
+exception when others then null;   -- already added
+end $$;

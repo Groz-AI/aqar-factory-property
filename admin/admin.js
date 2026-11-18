@@ -263,6 +263,7 @@
         { key: 'category', label: t('Category') },
         { key: 'city', label: t('City') },
         { key: 'status', label: t('Status') },
+        { key: '__followers', label: t('Followers'), type: 'followers' },
         { key: 'published', label: t('Status'), type: 'pill' }
       ],
       fields: [
@@ -292,6 +293,7 @@
         { key: 'gallery', label: t('Gallery'), type: 'gallery' },
         { key: 'about_blocks', arKey: 'about_blocks_ar', label: t('About'), type: 'blocks-i18n', previewClass: 'rich-content', hint: t('Opens a full-screen editor — build the description from any mix of blocks, edit English and Arabic side by side, and preview exactly how it will look on the site.') },
         { key: 'faqs', arKey: 'faqs_ar', label: t('FAQs'), type: 'faq-i18n', hint: t('Click-to-open questions and answers shown at the end of the page, before “More”. Write each in both languages — a page shows only its own language. Questions also feed the FAQ schema for Google.') },
+        { key: 'timeline', label: t('Progress timeline'), type: 'timeline', hint: t('Checkpoints shown on the project page as a progress line, newest first. Add one each time there is news: a status, a few words and photos. Visitors who follow the project see it there straight away.') },
         { key: 'amenities', label: t('Amenities'), type: 'tags' },
         { key: 'price', label: t('Price (display)'), type: 'text', half: true, hint: t('e.g. EGP 3.2M') },
         { key: 'price_value', label: t('Price value (number)'), type: 'number', half: true, hint: t('Same price as above, but as a plain number with no currency symbol or commas (e.g. 3200000) — required for Google to show the price in search results') },
@@ -491,7 +493,7 @@
   // page keys assignable to a Staff admin — matches the RESOURCES keys /
   // go(view) names for every sidebar item except overview/settings/users,
   // which are never assignable (personal-account-only, or Owner-only).
-  const PAGE_KEYS = ['projects', 'units', 'cities', 'categories', 'testimonials', 'developers', 'posts', 'inquiries', 'newsletter', 'content'];
+  const PAGE_KEYS = ['projects', 'units', 'cities', 'categories', 'testimonials', 'developers', 'posts', 'inquiries', 'newsletter', 'followers', 'content'];
   // pages that distinguish "create" from "edit existing" (matches the
   // per-table policy loop in schema.sql) — inquiries/newsletter/content
   // don't have that split, so they get no Edit checkbox in the Users form
@@ -499,7 +501,7 @@
   const PAGE_LABELS = () => ({
     projects: t('Projects'), units: t('Units'), cities: t('Cities'), categories: t('Categories'), testimonials: t('Testimonials'),
     developers: t('Developers'), posts: t('Blog'), inquiries: t('Inquiries'),
-    newsletter: t('Newsletter'), content: t('Site content')
+    newsletter: t('Newsletter'), followers: t('Followers'), content: t('Site content')
   });
 
   // ============================================================
@@ -544,6 +546,7 @@
     await hideFaqFieldsIfNotMigrated();
     await hideHomeFlagsIfNotMigrated();
     await hideAboutTextIfNotMigrated();
+    await hideTimelineIfNotMigrated();
     await refreshCounts();
     wireRealtimeCounts();
     go('overview');
@@ -594,6 +597,19 @@
     if (missing) toast(t('City and developer paragraphs are hidden: run supabase/add-city-developer-text.sql once in the Supabase SQL editor to enable them'), 'err');
   }
 
+  // The progress-timeline editor saves to projects.timeline
+  // (supabase/add-project-follow-and-timeline.sql); hidden until that column exists.
+  async function hideTimelineIfNotMigrated() {
+    if (localMode) return;
+    const res = RESOURCES.projects;
+    if (!res || !res.fields.some(f => f.type === 'timeline')) return;
+    const { error } = await sb.from(res.table).select('timeline').limit(1);
+    if (error) {
+      res.fields = res.fields.filter(f => f.type !== 'timeline');
+      toast(t('The progress timeline is hidden: run supabase/add-project-follow-and-timeline.sql once on the database to enable it'), 'err');
+    }
+  }
+
   // keeps sidebar badge counts (and the Overview stat cards / currently-open
   // list) correct automatically — without this, a change made in another
   // tab, by another admin, or directly in Supabase only shows up after a
@@ -602,7 +618,7 @@
   function wireRealtimeCounts() {
     if (!cloud || !sb || typeof sb.channel !== 'function') return;
     try {
-      const tables = [...new Set(Object.keys(RESOURCES).map(k => RESOURCES[k].table).concat(['inquiries', 'newsletter_subscribers']))];
+      const tables = [...new Set(Object.keys(RESOURCES).map(k => RESOURCES[k].table).concat(['inquiries', 'newsletter_subscribers', 'project_followers']))];
       let debounceT;
       const ch = sb.channel('realteek-admin-counts');
       tables.forEach(table => {
@@ -618,6 +634,7 @@
             else if (changedView && state.view === changedView) renderList(changedView);
             else if (state.view === 'inquiries' && table === 'inquiries') renderInquiries();
             else if (state.view === 'newsletter' && table === 'newsletter_subscribers') renderNewsletter();
+            else if (state.view === 'followers' && table === 'project_followers') renderFollowers();
           }, 500);
         });
       });
@@ -717,6 +734,7 @@
     else if (view === 'content') { renderContent(); pa.style.display = 'none'; }
     else if (view === 'inquiries') { renderInquiries(); pa.style.display = 'none'; }
     else if (view === 'newsletter') { renderNewsletter(); pa.style.display = 'none'; }
+    else if (view === 'followers') { renderFollowers(); pa.style.display = 'none'; }
     else if (view === 'settings') { renderSettings(); pa.style.display = 'none'; }
     else if (view === 'users') {
       $('#primaryAction').querySelector('span').textContent = t('Add') + ' ' + t('user');
@@ -755,6 +773,12 @@
       const badge = $('.badge[data-count="newsletter"]');
       if (badge) badge.textContent = count || 0;
     } catch (_) { /* table may not exist yet */ }
+    // followers: badge shows the total number of follow requests
+    try {
+      const { count } = await sb.from('project_followers').select('id', { count: 'exact', head: true });
+      const badge = $('.badge[data-count="followers"]');
+      if (badge) badge.textContent = count || 0;
+    } catch (_) { /* table may not exist yet, or no access */ }
   }
 
   // ============================================================
@@ -802,7 +826,39 @@
     const { data, error } = await sb.from(r.table).select('*').order('sort_order', { ascending: true });
     if (error) { $('#tblWrap').innerHTML = `<div class="empty-row">${t('Couldn’t load:')} ${esc(error.message)}</div>`; return; }
     state.cache[view] = data || [];
+    if (view === 'projects') await loadFollowerCounts();
     paintRows(view);
+  }
+
+  // every follow request, newest first. PostgREST returns at most ~1000 rows
+  // per request, so page through with range() when the client supports it
+  // (the local demo backend has no range() and no such cap).
+  async function fetchAllFollowers(cols) {
+    const PAGE = 1000;
+    let all = [];
+    for (let from = 0; ; from += PAGE) {
+      const q = sb.from('project_followers').select(cols || '*').order('created_at', { ascending: false });
+      if (typeof q.range !== 'function') return await q;
+      const { data, error } = await q.range(from, from + PAGE - 1);
+      if (error) return { data: null, error };
+      all = all.concat(data || []);
+      if (!data || data.length < PAGE) break;
+    }
+    return { data: all, error: null };
+  }
+
+  // followers per project for the Projects table; stays null (cells show a dash)
+  // when the table isn't there yet or this admin has no Followers access
+  async function loadFollowerCounts() {
+    state.cache.followerCounts = null;
+    if (!canAccessView('followers')) return;
+    try {
+      const { data, error } = await fetchAllFollowers('project_id');
+      if (error || !data) return;
+      const m = {};
+      data.forEach(r => { m[r.project_id] = (m[r.project_id] || 0) + 1; });
+      state.cache.followerCounts = m;
+    } catch (_) { /* no table yet */ }
   }
 
   function paintRows(view) {
@@ -835,6 +891,10 @@
 
   function cell(c, row) {
     const v = row[c.key];
+    if (c.type === 'followers') {
+      const m = state.cache.followerCounts;
+      return m ? `<span class="tag-mini">${m[row.id] || 0}</span>` : '<span style="color:var(--ink-soft)">—</span>';
+    }
     if (c.type === 'thumb') {
       const u = imgUrl(v, 120);
       return u ? `<img class="thumb" src="${esc(u)}" alt="" loading="lazy">` : `<div class="thumb"></div>`;
@@ -959,6 +1019,7 @@
       if (f.type === 'pdf') wirePdf('f_' + f.key, row ? row[f.key] : '');
       if (f.type === 'consultants') wireConsultants('f_' + f.key, f.key, (row && row[f.key]) || []);
       if (f.type === 'faq-i18n') wireFaqs('f_' + f.key, f.key, (row && row[f.key]) || [], (row && row[f.arKey]) || []);
+      if (f.type === 'timeline') wireTimeline('f_' + f.key, f.key, (row && row[f.key]) || []);
       if (f.type === 'blocks-i18n') wireBlocksStudio('f_' + f.key, f.key, f.arKey, (row && row[f.key]) || [], (row && row[f.arKey]) || [], f.label, f.previewClass);
     });
 
@@ -1003,6 +1064,13 @@
           <button type="button" class="btn btn-ghost btn-sm" id="${id}_openBtn">${esc(t('Open editor'))}</button>
           <button type="button" class="btn btn-ghost btn-sm btn-danger-ghost" id="${id}_clearBtn">${esc(t('Delete content'))}</button>
         </div>
+        ${hint}</div>`;
+    }
+    if (f.type === 'timeline') {
+      return `<div class="field"><label>${esc(f.label)}</label>
+        <div class="tl-edit" id="${id}_wrap"></div>
+        <button type="button" class="btn btn-ghost btn-sm" id="${id}_add" style="margin-top:8px">+ ${esc(t('Add checkpoint'))}</button>
+        <input type="file" id="${id}_file" accept="image/*" multiple style="display:none">
         ${hint}</div>`;
     }
     if (f.type === 'faq-i18n') {
@@ -1262,6 +1330,112 @@
       paint();
       const last = wrap.querySelector('.faq-row:last-child input');
       if (last) last.focus();
+    });
+    paint();
+  }
+
+  // ---------- progress timeline field wiring (one row = one checkpoint, written in both languages) ----------
+  // State lives in uploads['tl:' + key] as rows of
+  // {title, title_ar, status, status_ar, date, desc, desc_ar, photos[]} - exactly what is stored
+  // in projects.timeline. Row order is chronological (oldest first); the website shows newest first.
+  function timelineStateKey(key) { return 'tl:' + key; }
+  function timelineRowsIncomplete(key) {
+    // text or photos without a title would be dropped by collect() - flag it instead
+    return (uploads[timelineStateKey(key)] || []).some(r =>
+      !(r.title.trim() || r.title_ar.trim()) &&
+      (r.status.trim() || r.status_ar.trim() || r.desc.trim() || r.desc_ar.trim() || r.photos.length));
+  }
+  function wireTimeline(id, key, initial) {
+    const sk = timelineStateKey(key);
+    const s = v => (v == null ? '' : String(v));
+    uploads[sk] = (Array.isArray(initial) ? initial : []).map(c => ({
+      title: s(c && c.title), title_ar: s(c && c.title_ar), status: s(c && c.status), status_ar: s(c && c.status_ar),
+      date: s(c && c.date).slice(0, 10), desc: s(c && c.desc), desc_ar: s(c && c.desc_ar),
+      photos: Array.isArray(c && c.photos) ? c.photos.filter(Boolean) : []
+    }));
+    const wrap = $('#' + id + '_wrap'), addBtn = $('#' + id + '_add'), file = $('#' + id + '_file');
+    if (!wrap) return;
+    let uploadTarget = null;   // the row object a file upload belongs to (an index could shift if rows are reordered meanwhile)
+    const today = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+    const paint = () => {
+      const rows = uploads[sk];
+      wrap.innerHTML = rows.length ? rows.map((r, i) => `
+        <div class="faq-row tl-row" data-i="${i}">
+          <div class="faq-row-head">
+            <span class="faq-row-n">${esc(t('Checkpoint'))} ${i + 1}</span>
+            <span class="faq-row-btns">
+              <button type="button" class="icon-btn" data-tup="${i}" title="${esc(t('Move up'))}" ${i === 0 ? 'disabled' : ''}>${BLOCK_SVG.moveUp}</button>
+              <button type="button" class="icon-btn" data-tdown="${i}" title="${esc(t('Move down'))}" ${i === rows.length - 1 ? 'disabled' : ''}>${BLOCK_SVG.moveDown}</button>
+              <button type="button" class="icon-btn del" data-trm="${i}" title="${esc(t('Remove'))}">${BLOCK_SVG.trash}</button>
+            </span>
+          </div>
+          <div class="faq-row-grid">
+            <div class="faq-col">
+              <label>${esc(t('Title (English)'))}</label>
+              <input type="text" dir="ltr" value="${esc(r.title)}" data-tf="title" data-i="${i}" placeholder="${esc(t('e.g. Foundations completed'))}">
+              <label>${esc(t('Status label (English)'))}</label>
+              <input type="text" dir="ltr" value="${esc(r.status)}" data-tf="status" data-i="${i}" placeholder="${esc(t('e.g. On schedule'))}">
+              <label>${esc(t('Description (English)'))}</label>
+              <textarea dir="ltr" rows="3" data-tf="desc" data-i="${i}">${esc(r.desc)}</textarea>
+            </div>
+            <div class="faq-col">
+              <label>${esc(t('Title (Arabic)'))}</label>
+              <input type="text" dir="rtl" value="${esc(r.title_ar)}" data-tf="title_ar" data-i="${i}">
+              <label>${esc(t('Status label (Arabic)'))}</label>
+              <input type="text" dir="rtl" value="${esc(r.status_ar)}" data-tf="status_ar" data-i="${i}">
+              <label>${esc(t('Description (Arabic)'))}</label>
+              <textarea dir="rtl" rows="3" data-tf="desc_ar" data-i="${i}">${esc(r.desc_ar)}</textarea>
+            </div>
+          </div>
+          <div class="tl-date"><label>${esc(t('Date'))}</label><input type="date" value="${esc(r.date)}" data-tf="date" data-i="${i}"></div>
+          <label class="tl-photos-label">${esc(t('Photos'))}</label>
+          <div class="gallery-edit tl-photos">
+            ${r.photos.map((ref, j) => `<div class="g-item"><img src="${esc(imgUrl(ref, 200))}" alt=""><button type="button" data-tprm="${i}:${j}">×</button></div>`).join('')}
+            <button type="button" class="add-img" data-tpadd="${i}" title="${esc(t('Upload new'))}">+</button>
+            <button type="button" class="add-img add-img-pick" data-tppick="${i}" title="${esc(t('Choose an existing file'))}">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+              ${t('Choose')}
+            </button>
+          </div>
+        </div>`).join('') : `<div class="faq-empty">${esc(t('No checkpoints yet'))}</div>`;
+      // typing only updates state (no repaint, so focus and caret survive)
+      $$('[data-tf]', wrap).forEach(inp => inp.addEventListener('input', () => { uploads[sk][+inp.dataset.i][inp.dataset.tf] = inp.value; }));
+      const move = (i, d) => { const a = uploads[sk]; const j = i + d; if (j < 0 || j >= a.length) return; [a[i], a[j]] = [a[j], a[i]]; paint(); };
+      $$('[data-tup]', wrap).forEach(b => b.addEventListener('click', () => move(+b.dataset.tup, -1)));
+      $$('[data-tdown]', wrap).forEach(b => b.addEventListener('click', () => move(+b.dataset.tdown, 1)));
+      $$('[data-trm]', wrap).forEach(b => b.addEventListener('click', () => { uploads[sk].splice(+b.dataset.trm, 1); paint(); }));
+      $$('[data-tpadd]', wrap).forEach(b => b.addEventListener('click', () => { uploadTarget = uploads[sk][+b.dataset.tpadd]; file.click(); }));
+      $$('[data-tppick]', wrap).forEach(b => b.addEventListener('click', () => {
+        const row = uploads[sk][+b.dataset.tppick];
+        openMediaPicker('image', (url) => { row.photos.push(url); if (uploads[sk].includes(row)) paint(); });
+      }));
+      $$('[data-tprm]', wrap).forEach(b => b.addEventListener('click', () => {
+        const [i, j] = b.dataset.tprm.split(':').map(Number);
+        uploads[sk][i].photos.splice(j, 1); paint();
+      }));
+    };
+    addBtn.addEventListener('click', () => {
+      uploads[sk].push({ title: '', title_ar: '', status: '', status_ar: '', date: today(), desc: '', desc_ar: '', photos: [] });
+      paint();
+      const last = wrap.querySelector('.tl-row:last-child input');
+      if (last) last.focus();
+    });
+    file.addEventListener('change', async () => {
+      const files = Array.from(file.files || []);
+      const target = uploadTarget;
+      if (!files.length || !target) return;
+      const gen = drawerGen;
+      pendingUploads++;
+      toast(t('Uploading') + ' ' + files.length + ' ' + t('image(s)…'));
+      for (const f of files) {
+        const url = await uploadFile(f);
+        if (gen !== drawerGen) return; // a different drawer opened mid-upload - discard the rest
+        if (url) target.photos.push(url);
+      }
+      pendingUploads--;
+      file.value = '';
+      if (uploads[sk].includes(target)) paint();
+      toast(t('Photos added — remember to Save'));
     });
     paint();
   }
@@ -2046,6 +2220,15 @@
       if (f.type === 'bool') { out[f.key] = node.checked; continue; }
       if (f.type === 'gallery') { out[f.key] = uploads[f.key] || []; continue; }
       if (f.type === 'consultants') { out[f.key] = (uploads[f.key] || []).filter(c => c.name || c.logo); continue; }
+      if (f.type === 'timeline') {
+        out[f.key] = (uploads[timelineStateKey(f.key)] || [])
+          .filter(r => r.title.trim() || r.title_ar.trim())
+          .map(r => ({
+            title: r.title.trim(), title_ar: r.title_ar.trim(), status: r.status.trim(), status_ar: r.status_ar.trim(),
+            date: r.date || null, desc: r.desc.trim(), desc_ar: r.desc_ar.trim(), photos: r.photos.slice()
+          }));
+        continue;
+      }
       if (f.type === 'faq-i18n') {
         // one row -> one entry per language; a language where the row is
         // blank just doesn't get that question (a page shows only its own list)
@@ -2091,6 +2274,11 @@
     const faqField = r.fields.find(f => f.type === 'faq-i18n');
     if (faqField && faqRowsIncomplete(faqField.key)) {
       toast(t('Some FAQs have a question without an answer (or the other way round) — fill both or remove the row'), 'err');
+      return;
+    }
+    const timelineField = r.fields.find(f => f.type === 'timeline');
+    if (timelineField && timelineRowsIncomplete(timelineField.key)) {
+      toast(t('Each checkpoint needs a title (English or Arabic) — fill it in or remove the row'), 'err');
       return;
     }
     const payload = collect(view);
@@ -2185,7 +2373,12 @@
     }
     if (view === 'projects') {
       const { count } = await sb.from('units').select('id', { count: 'exact', head: true }).eq('project_id', id);
-      return count > 0 ? `\n\n${count} ${t('unit(s) are linked to this project — they\'ll be kept, just unlinked from it.')}` : '';
+      let msg = count > 0 ? `\n\n${count} ${t('unit(s) are linked to this project — they\'ll be kept, just unlinked from it.')}` : '';
+      try {
+        const { count: fc } = await sb.from('project_followers').select('id', { count: 'exact', head: true }).eq('project_id', id);
+        if (fc > 0) msg += `\n\n${fc} ${t('follower(s) of this project will be removed with it.')}`;
+      } catch (_) { /* followers table not created yet */ }
+      return msg;
     }
     return '';
   }
@@ -2610,6 +2803,105 @@
     paintNewsletter();
     refreshCounts();
     toast(t('Subscriber removed'));
+  }
+
+  // ============================================================
+  // FOLLOWERS (visitors following projects via "Track Your Project")
+  // ============================================================
+  // WhatsApp wants the country code; the site is Egypt-only, so a local
+  // 01XXXXXXXXX number is read as +20 1XXXXXXXXX. Anything else is used as typed.
+  function waDigits(phone) {
+    const d = String(phone || '').replace(/\D/g, '');
+    return /^01\d{9}$/.test(d) ? '20' + d.slice(1) : d;
+  }
+
+  async function renderFollowers() {
+    $('#viewTitle').textContent = t('Followers');
+    $('#viewSub').textContent = t('People who follow your projects');
+    $('#content').innerHTML = `<div class="panel">
+      <div class="panel-head" style="gap:10px;flex-wrap:wrap">
+        <select id="flProject" class="fl-select" aria-label="${esc(t('Project'))}"><option value="">${esc(t('All projects'))}</option></select>
+        <button class="btn btn-ghost btn-sm" id="copyPhonesBtn">${t('Copy all phones')}</button>
+      </div>
+      <div id="flSummary"></div>
+      <div id="flWrap"><div class="empty-row"><span class="spinner" style="border-color:rgba(0,0,0,.15);border-top-color:var(--sky)"></span></div></div>
+    </div>`;
+    const [res, projRes] = await Promise.all([
+      fetchAllFollowers(),
+      sb.from('projects').select('id,name').order('name', { ascending: true }).then(r => r, () => ({ data: [] }))
+    ]);
+    if (res.error) {
+      $('#flWrap').innerHTML = `<div class="empty-row">${t('Couldn’t load followers:')} ${esc(res.error.message)}<br><span class="field-hint">${t('Run supabase/add-project-follow-and-timeline.sql on the database first.')}</span></div>`;
+      return;
+    }
+    state.cache.followers = res.data || [];
+    state.cache.followerProjects = {};
+    (projRes.data || []).forEach(p => { state.cache.followerProjects[p.id] = p.name; });
+    state.followFilter = '';
+    const sel = $('#flProject');
+    sel.addEventListener('change', () => { state.followFilter = sel.value; paintFollowers(); });
+    $('#copyPhonesBtn').addEventListener('click', () => {
+      const phones = [...new Set(followersShown().map(r => r.phone))].join('\n');
+      if (!phones) { toast(t('No followers yet'), 'err'); return; }
+      navigator.clipboard.writeText(phones).then(
+        () => toast(t('Phone numbers copied to clipboard')),
+        () => toast(t('Could not copy — select and copy manually'), 'err')
+      );
+    });
+    paintFollowers();
+  }
+
+  function followersShown() {
+    const rows = state.cache.followers || [];
+    return state.followFilter ? rows.filter(r => r.project_id === state.followFilter) : rows;
+  }
+
+  function paintFollowers() {
+    const all = state.cache.followers || [];
+    const names = state.cache.followerProjects || {};
+    // per-project follower counts, biggest first; clicking one filters the list
+    const counts = {};
+    all.forEach(r => { counts[r.project_id] = (counts[r.project_id] || 0) + 1; });
+    const ranked = Object.keys(counts).sort((a, b) => counts[b] - counts[a]);
+    const sel = $('#flProject');
+    if (sel) sel.innerHTML = `<option value="">${esc(t('All projects'))} (${all.length})</option>` +
+      ranked.map(id => `<option value="${esc(id)}" ${state.followFilter === id ? 'selected' : ''}>${esc(names[id] || '—')} (${counts[id]})</option>`).join('');
+    $('#flSummary').innerHTML = ranked.length
+      ? `<div class="fl-chips">${ranked.map(id => `<button type="button" class="fl-chip${state.followFilter === id ? ' on' : ''}" data-fp="${esc(id)}"><b>${counts[id]}</b> ${esc(names[id] || '—')}</button>`).join('')}</div>`
+      : '';
+    $$('[data-fp]', $('#flSummary')).forEach(b => b.addEventListener('click', () => {
+      state.followFilter = state.followFilter === b.dataset.fp ? '' : b.dataset.fp;
+      paintFollowers();
+    }));
+
+    const rows = followersShown();
+    if (!rows.length) { $('#flWrap').innerHTML = `<div class="empty-row">${t('No followers yet. People who follow a project from the website will appear here.')}</div>`; return; }
+    const body = rows.map(r => {
+      const when = r.created_at ? new Date(r.created_at).toLocaleString() : '';
+      const wa = waDigits(r.phone);
+      return `<tr>
+        <td><div class="name">${esc(r.name)}</div></td>
+        <td><a href="tel:${esc(r.phone)}" dir="ltr">${esc(r.phone)}</a>${wa ? ` · <a href="https://wa.me/${esc(wa)}" target="_blank" rel="noopener">WhatsApp</a>` : ''}</td>
+        <td>${esc(names[r.project_id] || '—')}</td>
+        <td style="color:var(--ink-soft);font-size:.85rem">${esc(when)}</td>
+        <td><div class="row-actions"><button class="icon-btn del" data-del="${r.id}" title="${esc(t('Delete'))}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button></div></td>
+      </tr>`;
+    }).join('');
+    $('#flWrap').innerHTML = `<table class="tbl"><thead><tr><th>${t('Name')}</th><th>${t('Phone')}</th><th>${t('Project')}</th><th>${t('Followed')}</th><th></th></tr></thead><tbody>${body}</tbody></table>`;
+    $$('[data-del]', $('#flWrap')).forEach(b => b.addEventListener('click', () => deleteFollower(b.dataset.del)));
+  }
+
+  async function deleteFollower(id) {
+    if (!confirm(t('Remove this follower? This can’t be undone.'))) return;
+    const row = (state.cache.followers || []).find(x => x.id === id);
+    const { error } = await sb.from('project_followers').delete().eq('id', id);
+    if (error) { toast(error.message, 'err'); return; }
+    state.cache.followers = (state.cache.followers || []).filter(x => x.id !== id);
+    state.cache.followerCounts = null;
+    paintFollowers();
+    refreshCounts();
+    logAction('delete', 'followers', row ? row.name : '');
+    toast(t('Follower removed'));
   }
 
   // ============================================================
