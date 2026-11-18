@@ -33,6 +33,10 @@
     { "source": "/ar/project/:slug", "destination": "/project.html?id=:slug" },
     { "source": "/ar/unit/:slug", "destination": "/unit.html?id=:slug" },
     { "source": "/ar/blog/:slug", "destination": "/blog-post.html?slug=:slug" },
+    { "source": "/market_update", "destination": "/api/market-update" },
+    { "source": "/market_update/:slug", "destination": "/api/market-update?slug=:slug" },
+    { "source": "/ar/market_update", "destination": "/api/market-update?lang=ar" },
+    { "source": "/ar/market_update/:slug", "destination": "/api/market-update?slug=:slug&lang=ar" },
     { "source": "/ar/:path*", "destination": "/:path*" }
   ],
   "headers": [

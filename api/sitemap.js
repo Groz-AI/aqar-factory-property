@@ -121,6 +121,10 @@ module.exports = async function handler(req, res) {
     return;
   }
 
+  // market updates are optional: a missing table or a failed read just leaves them out
+  let updates = [];
+  try { updates = await fetchSlugs('market_updates', 'slug,updated_at'); } catch (_) { updates = []; }
+
   const staticPages = [
     { path: '/', priority: '1.0' },
     { path: '/projects.html', priority: '0.9' },
@@ -128,7 +132,8 @@ module.exports = async function handler(req, res) {
     { path: '/cities.html', priority: '0.8' },
     { path: '/blog.html', priority: '0.8' },
     { path: '/about.html', priority: '0.6' },
-    { path: '/contact.html', priority: '0.6' }
+    { path: '/contact.html', priority: '0.6' },
+    { path: '/market_update', priority: '0.8' }
   ];
 
   const urls = [
@@ -139,6 +144,7 @@ module.exports = async function handler(req, res) {
     // complete (own text of 300+ characters and 3+ projects) are listed
     ...cityRows.flatMap(c => landingEntries(SITE_URL, 'city', c, projects, '0.7')),
     ...devRows.flatMap(d => landingEntries(SITE_URL, 'developer', d, projects, '0.6')),
+    ...updates.flatMap(u => urlPair(SITE_URL, `/market_update/${encodeURIComponent(stripSlashes(u.slug))}`, (u.updated_at || '').slice(0, 10) || null, '0.7')),
     ...posts.flatMap(p => urlPair(SITE_URL, `/blog/${encodeURIComponent(stripSlashes(p.slug))}`, (p.updated_at || '').slice(0, 10) || null, '0.7'))
   ];
 

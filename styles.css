@@ -165,7 +165,7 @@ em{font-style:normal}
 }
 .nav a{
   font-size:.92rem;font-weight:500;color:rgba(255,255,255,.9);
-  padding:.5em 1.15em;border-radius:999px;line-height:1;
+  padding:.5em .95em;border-radius:999px;line-height:1;white-space:nowrap;
   transition:background .25s,color .25s,box-shadow .25s;
 }
 .nav a:hover{color:#fff;background:rgba(255,255,255,.18)}
@@ -1032,9 +1032,9 @@ em{font-style:normal}
   .footer-grid{grid-template-columns:1fr 1fr}
 }
 /* The header row (brand + 7-link nav pill + price-quote CTA + language switch) needs ~930px,
-   so below 1080px the nav collapses into the slide-in drawer instead of squeezing the nav and
+   so below 1240px (8 links now) the nav collapses into the slide-in drawer instead of squeezing the nav and
    pushing the language switch / hamburger off-screen (it used to collapse only at 760px). */
-@media(max-width:1079px){
+@media(max-width:1239px){
   .nav{
     /* explicit viewport-relative height instead of top:0;bottom:0 auto-sizing —
        .site-header.scrolled's backdrop-filter makes it a new containing block

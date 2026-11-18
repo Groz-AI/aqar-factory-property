@@ -671,3 +671,30 @@
 /* placeholder cards shown while the lists load (replaced by the real cards) */
 .pcard-skel{height:360px;border-radius:18px;background:linear-gradient(100deg,rgba(128,128,128,.10) 30%,rgba(128,128,128,.20) 50%,rgba(128,128,128,.10) 70%);background-size:200% 100%;animation:pskel 1.2s linear infinite}
 @keyframes pskel{from{background-position:200% 0}to{background-position:-200% 0}}
+
+/* ---------- market update pages (/market_update, /market_update/<slug>) ---------- */
+.mu-wrap{padding-block:40px 70px}
+.mu-article{max-width:860px;margin-inline:auto}
+.mu-summary{font-size:1.2rem;line-height:1.6;color:var(--ink);font-weight:500;margin:0 0 1.6rem}
+.mu-gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;margin:0 0 2rem}
+.mu-gallery .mu-photo{display:block;border-radius:16px;overflow:hidden;aspect-ratio:4/3;background:var(--paper)}
+.mu-gallery .mu-photo:first-child{grid-column:1/-1;aspect-ratio:16/9}
+.mu-gallery.one .mu-photo{aspect-ratio:16/9}
+.mu-photo img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .5s var(--ease)}
+.mu-photo:hover img{transform:scale(1.04)}
+.mu-body p{font-size:1.05rem;line-height:1.85;margin:0 0 1.2rem;color:var(--ink)}
+.mu-actions{display:flex;flex-wrap:wrap;gap:12px;margin:2rem 0 1.6rem}
+.mu-actions .btn{white-space:normal;text-align:center}
+.mu-wa{background:#1fa855;color:#fff}
+.mu-wa:hover{transform:translateY(-3px);box-shadow:0 16px 30px -12px rgba(31,168,85,.6)}
+.mu-back a{color:var(--sky-deep);font-weight:600}
+.mu-back a:hover{color:var(--ink)}
+.mu-lightbox{position:fixed;inset:0;z-index:600;background:rgba(10,14,20,.92);display:none;align-items:center;justify-content:center;padding:24px}
+.mu-lightbox.open{display:flex}
+.mu-lightbox img{max-width:min(92vw,1400px);max-height:88vh;border-radius:10px;object-fit:contain}
+.mu-lb-x,.mu-lb-nav{position:absolute;background:rgba(255,255,255,.14);border:0;color:#fff;width:46px;height:46px;border-radius:50%;font-size:1.9rem;line-height:1;cursor:pointer}
+.mu-lb-x{top:18px;inset-inline-end:18px}
+.mu-lb-prev{inset-inline-start:18px;top:50%;transform:translateY(-50%)}
+.mu-lb-next{inset-inline-end:18px;top:50%;transform:translateY(-50%)}
+[dir="rtl"] .mu-lb-nav{transform:translateY(-50%) scaleX(-1)}
+.mu-lightbox.single .mu-lb-nav{display:none}

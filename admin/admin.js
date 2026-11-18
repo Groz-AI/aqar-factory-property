@@ -263,7 +263,6 @@
         { key: 'category', label: t('Category') },
         { key: 'city', label: t('City') },
         { key: 'status', label: t('Status') },
-        { key: '__followers', label: t('Followers'), type: 'followers' },
         { key: 'published', label: t('Status'), type: 'pill' }
       ],
       fields: [
@@ -293,7 +292,6 @@
         { key: 'gallery', label: t('Gallery'), type: 'gallery' },
         { key: 'about_blocks', arKey: 'about_blocks_ar', label: t('About'), type: 'blocks-i18n', previewClass: 'rich-content', hint: t('Opens a full-screen editor — build the description from any mix of blocks, edit English and Arabic side by side, and preview exactly how it will look on the site.') },
         { key: 'faqs', arKey: 'faqs_ar', label: t('FAQs'), type: 'faq-i18n', hint: t('Click-to-open questions and answers shown at the end of the page, before “More”. Write each in both languages — a page shows only its own language. Questions also feed the FAQ schema for Google.') },
-        { key: 'timeline', label: t('Progress timeline'), type: 'timeline', hint: t('Checkpoints shown on the project page as a progress line, newest first. Add one each time there is news: a status, a few words and photos. Visitors who follow the project see it there straight away.') },
         { key: 'amenities', label: t('Amenities'), type: 'tags' },
         { key: 'price', label: t('Price (display)'), type: 'text', half: true, hint: t('e.g. EGP 3.2M') },
         { key: 'price_value', label: t('Price value (number)'), type: 'number', half: true, hint: t('Same price as above, but as a plain number with no currency symbol or commas (e.g. 3200000) — required for Google to show the price in search results') },
@@ -487,21 +485,50 @@
         { key: 'sort_order', label: t('Sort order'), type: 'number', half: true },
         { key: 'published', label: t('Published'), type: 'bool', half: true }
       ]
+    },
+    market_updates: {
+      label: t('Market updates'), singular: t('Market update'), table: 'market_updates', icon: 'post',
+      columns: [
+        { key: 'photos', label: '', type: 'thumb' },
+        { key: 'title', label: t('Title'), type: 'name', sub: 'slug' },
+        { key: 'published_at', label: t('Date'), type: 'date' },
+        { key: 'published', label: t('Status'), type: 'pill' }
+      ],
+      fields: [
+        { key: 'title', label: t('Title'), type: 'text', required: true },
+        { key: 'title_ar', label: t('Title (Arabic)'), type: 'text', hint: t('Shown when the site is set to Arabic — leave empty to fall back to the English title above.') },
+        { key: 'slug', label: t('Page address (after /market_update/)'), type: 'text', required: true, hint: t('Lowercase letters, numbers and dashes — e.g. new-capital-q4-update. The page will be at /market_update/new-capital-q4-update. Changing it later changes the address, so old links stop working.') },
+        { key: 'summary', label: t('Short summary'), type: 'textarea', hint: t('One or two lines shown on the list card and used as the search-result snippet.') },
+        { key: 'summary_ar', label: t('Short summary (Arabic)'), type: 'textarea' },
+        { key: 'description', label: t('Description'), type: 'textarea', hint: t('The page text. Leave a blank line between paragraphs.') },
+        { key: 'description_ar', label: t('Description (Arabic)'), type: 'textarea', hint: t('Shown when the site is set to Arabic — leave empty to fall back to the English description above.') },
+        { key: 'photos', label: t('Photos'), type: 'gallery', hint: t('The first photo is the cover on the list and when the link is shared.') },
+        { key: 'links', label: t('Links'), type: 'textarea', hint: t('One link per line, written as: Button text | https://address | Arabic button text (optional). Example: Download the brochure | https://example.com/brochure.pdf | حمّل الكتيب') },
+        { key: 'whatsapp_number', label: t('WhatsApp number'), type: 'text', half: true, hint: t('With country code, e.g. 201012345678. Leave empty to use the company WhatsApp number.') },
+        { key: 'whatsapp_text', label: t('WhatsApp message'), type: 'text', half: true, hint: t('Written in the chat box when the visitor taps the WhatsApp button. Leave empty for no WhatsApp button text.') },
+        { key: 'seo_title', label: t('SEO title'), type: 'text', half: true, hint: t('Overrides the page\'s <title> tag — leave empty to use the title. Aim for under 60 characters.') },
+        { key: 'seo_title_ar', label: t('SEO title (Arabic)'), type: 'text', half: true },
+        { key: 'seo_description', label: t('SEO meta description'), type: 'textarea', hint: t('Overrides the search-result snippet — leave empty to use the short summary. Aim for under 160 characters.') },
+        { key: 'seo_description_ar', label: t('SEO meta description (Arabic)'), type: 'textarea' },
+        { key: 'published_at', label: t('Published date'), type: 'date', half: true },
+        { key: 'sort_order', label: t('Sort order'), type: 'number', half: true, hint: t('Higher numbers appear first when dates are equal.') },
+        { key: 'published', label: t('Published'), type: 'bool', half: true }
+      ]
     }
   };
 
   // page keys assignable to a Staff admin — matches the RESOURCES keys /
   // go(view) names for every sidebar item except overview/settings/users,
   // which are never assignable (personal-account-only, or Owner-only).
-  const PAGE_KEYS = ['projects', 'units', 'cities', 'categories', 'testimonials', 'developers', 'posts', 'inquiries', 'newsletter', 'followers', 'content'];
+  const PAGE_KEYS = ['projects', 'units', 'cities', 'categories', 'testimonials', 'developers', 'posts', 'inquiries', 'newsletter', 'followers', 'market_updates', 'content'];
   // pages that distinguish "create" from "edit existing" (matches the
   // per-table policy loop in schema.sql) — inquiries/newsletter/content
   // don't have that split, so they get no Edit checkbox in the Users form
-  const EDITABLE_PAGE_KEYS = ['projects', 'units', 'cities', 'categories', 'testimonials', 'developers', 'posts'];
+  const EDITABLE_PAGE_KEYS = ['projects', 'units', 'cities', 'categories', 'testimonials', 'developers', 'posts', 'market_updates'];
   const PAGE_LABELS = () => ({
     projects: t('Projects'), units: t('Units'), cities: t('Cities'), categories: t('Categories'), testimonials: t('Testimonials'),
     developers: t('Developers'), posts: t('Blog'), inquiries: t('Inquiries'),
-    newsletter: t('Newsletter'), followers: t('Followers'), content: t('Site content')
+    newsletter: t('Newsletter'), followers: t('Followers'), market_updates: t('Market updates'), content: t('Site content')
   });
 
   // ============================================================
@@ -890,7 +917,8 @@
   }
 
   function cell(c, row) {
-    const v = row[c.key];
+    const v = (c.type === 'thumb' && Array.isArray(row[c.key])) ? row[c.key][0] : row[c.key];   // photo lists show their first photo
+    if (c.type === 'date') return esc(String(v || '').slice(0, 10));
     if (c.type === 'followers') {
       const m = state.cache.followerCounts;
       return m ? `<span class="tag-mini">${m[row.id] || 0}</span>` : '<span style="color:var(--ink-soft)">—</span>';

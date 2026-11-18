@@ -196,6 +196,16 @@
     'Unfollow': 'إلغاء المتابعة',
     'Enter the phone number you follow with to see your projects.': 'أدخل رقم الهاتف الذي تتابع به لعرض مشاريعك.',
     'Show my projects': 'اعرض مشاريعي',
+    'Market updates': 'تحديثات السوق',
+    'Market update': 'تحديث السوق',
+    'Page address (after /market_update/)': 'عنوان الصفحة (بعد /market_update/)',
+    'Short summary': 'ملخص قصير',
+    'Short summary (Arabic)': 'ملخص قصير (بالعربية)',
+    'Description (Arabic)': 'الوصف (بالعربية)',
+    'Photos': 'الصور',
+    'Links': 'الروابط',
+    'WhatsApp number': 'رقم واتساب',
+    'WhatsApp message': 'رسالة واتساب',
     'Use a different number': 'استخدم رقمًا آخر',
     "Sorry, we couldn't look that up just now. Please try again.": 'عذرًا، لم نتمكن من البحث الآن. حاول مرة أخرى.',
     'No projects are followed with this number yet. Pick a project to follow it.': 'لا توجد مشاريع متابَعة بهذا الرقم بعد. اختر مشروعًا لمتابعته.',
@@ -1232,7 +1242,7 @@
       if (u.origin !== location.origin) return null;
       const p = u.pathname;
       if (isArPath(p) || /^\/(admin|api)(\/|$)/.test(p)) return null;
-      if (!(p === '/' || /\.html$/.test(p) || /^\/(project|unit|blog|city|developer)\//.test(p))) return null;
+      if (!(p === '/' || /\.html$/.test(p) || /^\/(project|unit|blog|city|developer)\//.test(p) || /^\/market_update(\/|$)/.test(p))) return null;
       return (p === '/' ? '/ar' : '/ar' + p) + u.search + u.hash;
     } catch (_) { return null; }
   }
