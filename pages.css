@@ -698,10 +698,10 @@
 .mu-lb-next{inset-inline-end:18px;top:50%;transform:translateY(-50%)}
 [dir="rtl"] .mu-lb-nav{transform:translateY(-50%) scaleX(-1)}
 .mu-lightbox.single .mu-lb-nav{display:none}
-.mu-filters{display:flex;flex-wrap:wrap;gap:14px;padding:30px 0 0}
-.mu-filter{display:flex;flex-direction:column;gap:6px;flex:1 1 220px;max-width:420px}
-.mu-filter span{font-size:.8rem;font-weight:600;color:var(--ink-soft);letter-spacing:.02em}
-.mu-filter input,.mu-filter select{font:inherit;font-size:.95rem;padding:.8em 1.1em;border-radius:14px;border:1px solid var(--line);background:#fff;color:var(--ink);box-shadow:var(--shadow-sm);width:100%}
-.mu-filter input:focus,.mu-filter select:focus{outline:2px solid var(--sky);outline-offset:1px}
+.mu-citybar{display:flex;gap:10px;padding:30px 0 0;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.mu-citybar::-webkit-scrollbar{display:none}
+.mu-chip{flex:0 0 auto;font:inherit;font-size:.92rem;font-weight:600;padding:.6em 1.3em;border-radius:999px;border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer;box-shadow:var(--shadow-sm);transition:background .2s,color .2s,border-color .2s,transform .2s}
+.mu-chip:hover{transform:translateY(-1px);border-color:var(--sky)}
+.mu-chip.on{background:var(--sky);border-color:var(--sky);color:#fff}
 .mu-card[hidden]{display:none}
 .mu-city{font-size:.82rem;font-weight:600;color:var(--sky-deep)}

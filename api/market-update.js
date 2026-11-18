@@ -23,7 +23,7 @@ const SITE = 'https://www.aqar-factory.com';
 
 const TXT = {
   en: {
-    searchPh: 'Search by name…', allCities: 'All cities', cityLabel: 'City', noMatch: 'No updates match your search', noMatchSub: 'Try a different name or city.',
+    searchPh: 'Search by name…', allCities: 'All cities', cityLabel: 'City', noMatch: 'No updates in this city yet', noMatchSub: 'Pick another city or choose All cities.',
     tab: 'Track Your Project', home: 'Home', back: 'All updates', wa: 'Chat on WhatsApp',
     listTitle: 'Track Your Project — Aqar Factory',
     listDesc: 'Market updates and project news from Aqar Factory — photos, details and direct WhatsApp contact with our team.',
@@ -34,7 +34,7 @@ const TXT = {
     photo: 'Photo'
   },
   ar: {
-    searchPh: 'ابحث بالاسم…', allCities: 'كل المدن', cityLabel: 'المدينة', noMatch: 'لا توجد تحديثات مطابقة لبحثك', noMatchSub: 'جرّب اسمًا أو مدينة أخرى.',
+    searchPh: 'ابحث بالاسم…', allCities: 'كل المدن', cityLabel: 'المدينة', noMatch: 'لا توجد تحديثات في هذه المدينة بعد', noMatchSub: 'اختر مدينة أخرى أو اضغط كل المدن.',
     tab: 'تابع مشروعك', home: 'الرئيسية', back: 'كل التحديثات', wa: 'تواصل عبر واتساب',
     listTitle: 'تابع مشروعك — Aqar Factory',
     listDesc: 'تحديثات السوق وأخبار المشاريع من Aqar Factory — صور وتفاصيل وتواصل مباشر مع فريقنا عبر واتساب.',
@@ -141,8 +141,7 @@ function listPage(rows, ar, cities) {
     const cover = imgUrl((r.photos || [])[0], 800);
     const title = pickLang(r, 'title', ar), sum = pickLang(r, 'summary', ar);
     const city = cityName(r.city_id);
-    const hay = [r.title, r.title_ar, r.summary, r.summary_ar, city].filter(Boolean).join(' ').toLowerCase();
-    return `<a class="blog-card mu-card" href="${pre}/market_update/${encodeURIComponent(r.slug)}" data-q="${esc(hay)}" data-city="${esc(r.city_id || '')}">
+    return `<a class="blog-card mu-card" href="${pre}/market_update/${encodeURIComponent(r.slug)}" data-city="${esc(r.city_id || '')}">
       <div class="blog-card-img"${cover ? ` style="background-image:url('${esc(cover)}')"` : ''}></div>
       <div class="blog-card-body">
         <h3>${esc(title)}</h3>
@@ -154,10 +153,11 @@ function listPage(rows, ar, cities) {
   // only cities that have at least one published update are offered
   const used = [...new Set(rows.map(r => r.city_id).filter(Boolean))]
     .map(id => ({ id, label: cityName(id) })).filter(c => c.label).sort((a, b) => a.label.localeCompare(b.label, ar ? 'ar' : 'en'));
-  const filters = rows.length ? `<form class="mu-filters" role="search" onsubmit="return false">
-    <label class="mu-filter"><span>${esc(ar ? 'الاسم' : 'Name')}</span><input type="search" id="muSearch" placeholder="${esc(L.searchPh)}" autocomplete="off"></label>
-    ${used.length ? `<label class="mu-filter"><span>${esc(L.cityLabel)}</span><select id="muCity"><option value="">${esc(L.allCities)}</option>${used.map(c => `<option value="${esc(c.id)}">${esc(c.label)}</option>`).join('')}</select></label>` : ''}
-  </form>` : '';
+  // a bar of city buttons: "All" plus one per city that has a published update
+  const filters = used.length ? `<div class="mu-citybar" role="group" aria-label="${esc(L.cityLabel)}">
+    <button type="button" class="mu-chip on" data-city="" aria-pressed="true">${esc(L.allCities)}</button>
+    ${used.map(c => `<button type="button" class="mu-chip" data-city="${esc(c.id)}" aria-pressed="false">${esc(c.label)}</button>`).join('')}
+  </div>` : '';
   const crumbs = `<a href="${pre || '/'}">${esc(L.home)}</a><span>/</span><b>${esc(L.tab)}</b>`;
   const body = `${hero({ bg: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1700&q=80', crumbs, eyebrow: L.eyebrow, h1: L.h1, lead: L.lead })}
 <main class="container">

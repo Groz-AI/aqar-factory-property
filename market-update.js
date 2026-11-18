@@ -29,30 +29,19 @@
     })();
   }
 
-  // ---------- list page: filter by name and city ----------
+  // ---------- list page: pick a city ----------
   const grid = document.getElementById('muGrid');
-  if (grid) {
-    const search = document.getElementById('muSearch');
-    const city = document.getElementById('muCity');
+  const chips = [...document.querySelectorAll('.mu-chip')];
+  if (grid && chips.length) {
     const none = document.getElementById('muNoMatch');
     const cards = [...grid.querySelectorAll('.mu-card')];
-    // Arabic letter variants and diacritics are folded so a search matches however it was typed
-    const fold = (s) => String(s || '').toLowerCase()
-      .replace(/[ً-ٰٟـ]/g, '').replace(/[أإآٱ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه')
-      .replace(/[٠-٩]/g, d => String(d.charCodeAt(0) - 1632)).trim();
-    const hay = cards.map(c => fold(c.getAttribute('data-q')));
-    function apply() {
-      const q = fold(search && search.value), cid = city ? city.value : '';
+    chips.forEach(chip => chip.addEventListener('click', () => {
+      const cid = chip.getAttribute('data-city');
+      chips.forEach(c => { const on = c === chip; c.classList.toggle('on', on); c.setAttribute('aria-pressed', on ? 'true' : 'false'); });
       let shown = 0;
-      cards.forEach((c, i) => {
-        const ok = (!q || hay[i].includes(q)) && (!cid || c.getAttribute('data-city') === cid);
-        c.hidden = !ok;
-        if (ok) shown++;
-      });
+      cards.forEach(c => { const ok = !cid || c.getAttribute('data-city') === cid; c.hidden = !ok; if (ok) shown++; });
       if (none) none.hidden = shown > 0;
-    }
-    if (search) search.addEventListener('input', apply);
-    if (city) city.addEventListener('change', apply);
+    }));
   }
 
   // ---------- photo viewer ----------
