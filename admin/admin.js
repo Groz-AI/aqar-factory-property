@@ -498,6 +498,7 @@
         { key: 'title', label: t('Title'), type: 'text', required: true },
         { key: 'title_ar', label: t('Title (Arabic)'), type: 'text', hint: t('Shown when the site is set to Arabic — leave empty to fall back to the English title above.') },
         { key: 'slug', label: t('Page address (after /market_update/)'), type: 'text', required: true, hint: t('Lowercase letters, numbers and dashes — e.g. new-capital-q4-update. The page will be at /market_update/new-capital-q4-update. Changing it later changes the address, so old links stop working.') },
+        { key: 'city_id', label: t('City (optional)'), type: 'select', half: true, options: [{ value: '', label: t('— No linked city —') }], hint: t('Lets visitors filter the Market updates page by city. Add cities under the Cities section first.') },
         { key: 'summary', label: t('Short summary'), type: 'textarea', hint: t('One or two lines shown on the list card and used as the search-result snippet.') },
         { key: 'summary_ar', label: t('Short summary (Arabic)'), type: 'textarea' },
         { key: 'description', label: t('Description'), type: 'textarea', hint: t('The page text. Leave a blank line between paragraphs.') },
@@ -573,7 +574,7 @@
     await hideFaqFieldsIfNotMigrated();
     await hideHomeFlagsIfNotMigrated();
     await hideAboutTextIfNotMigrated();
-    await hideTimelineIfNotMigrated();
+    await hideMarketCityIfNotMigrated();
     await refreshCounts();
     wireRealtimeCounts();
     go('overview');
@@ -624,16 +625,16 @@
     if (missing) toast(t('City and developer paragraphs are hidden: run supabase/add-city-developer-text.sql once in the Supabase SQL editor to enable them'), 'err');
   }
 
-  // The progress-timeline editor saves to projects.timeline
-  // (supabase/add-project-follow-and-timeline.sql); hidden until that column exists.
-  async function hideTimelineIfNotMigrated() {
+  // The Market updates "City" picker saves to market_updates.city_id
+  // (supabase/add-market-updates-city.sql); hidden until that column exists.
+  async function hideMarketCityIfNotMigrated() {
     if (localMode) return;
-    const res = RESOURCES.projects;
-    if (!res || !res.fields.some(f => f.type === 'timeline')) return;
-    const { error } = await sb.from(res.table).select('timeline').limit(1);
-    if (error) {
-      res.fields = res.fields.filter(f => f.type !== 'timeline');
-      toast(t('The progress timeline is hidden: run supabase/add-project-follow-and-timeline.sql once on the database to enable it'), 'err');
+    const res = RESOURCES.market_updates;
+    if (!res || !res.fields.some(f => f.key === 'city_id')) return;
+    const { error } = await sb.from(res.table).select('city_id').limit(1);
+    if (error && /city_id/.test(error.message || '')) {
+      res.fields = res.fields.filter(f => f.key !== 'city_id');
+      toast(t('The city picker for market updates is hidden: run supabase/add-market-updates-city.sql once on the database to enable it'), 'err');
     }
   }
 
@@ -980,7 +981,7 @@
 
     // Projects and Units both link to a City — populate that dropdown from
     // the live table right before rendering the form.
-    if (view === 'projects' || view === 'units') {
+    if (view === 'projects' || view === 'units' || view === 'market_updates') {
       const { data } = await sb.from('cities').select('id,name').order('name', { ascending: true }).then(res => res, () => ({ data: [] }));
       dynamicCitiesList = data || [];
       const cityField = r.fields.find(f => f.key === 'city_id');

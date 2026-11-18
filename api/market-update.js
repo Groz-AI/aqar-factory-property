@@ -23,6 +23,7 @@ const SITE = 'https://www.aqar-factory.com';
 
 const TXT = {
   en: {
+    searchPh: 'Search by name…', allCities: 'All cities', cityLabel: 'City', noMatch: 'No updates match your search', noMatchSub: 'Try a different name or city.',
     tab: 'Track Your Project', home: 'Home', back: 'All updates', wa: 'Chat on WhatsApp',
     listTitle: 'Track Your Project — Aqar Factory',
     listDesc: 'Market updates and project news from Aqar Factory — photos, details and direct WhatsApp contact with our team.',
@@ -33,6 +34,7 @@ const TXT = {
     photo: 'Photo'
   },
   ar: {
+    searchPh: 'ابحث بالاسم…', allCities: 'كل المدن', cityLabel: 'المدينة', noMatch: 'لا توجد تحديثات مطابقة لبحثك', noMatchSub: 'جرّب اسمًا أو مدينة أخرى.',
     tab: 'تابع مشروعك', home: 'الرئيسية', back: 'كل التحديثات', wa: 'تواصل عبر واتساب',
     listTitle: 'تابع مشروعك — Aqar Factory',
     listDesc: 'تحديثات السوق وأخبار المشاريع من Aqar Factory — صور وتفاصيل وتواصل مباشر مع فريقنا عبر واتساب.',
@@ -132,24 +134,36 @@ function hero({ bg, crumbs, eyebrow, h1, lead }) {
 </section>`;
 }
 
-function listPage(rows, ar) {
+function listPage(rows, ar, cities) {
   const L = TXT[ar ? 'ar' : 'en'], pre = ar ? '/ar' : '';
+  const cityName = (id) => { const c = cities.find(x => x.id === id); return c ? ((ar && c.name_ar) ? c.name_ar : c.name) : ''; };
   const cards = rows.map(r => {
     const cover = imgUrl((r.photos || [])[0], 800);
     const title = pickLang(r, 'title', ar), sum = pickLang(r, 'summary', ar);
-    return `<a class="blog-card" href="${pre}/market_update/${encodeURIComponent(r.slug)}">
+    const city = cityName(r.city_id);
+    const hay = [r.title, r.title_ar, r.summary, r.summary_ar, city].filter(Boolean).join(' ').toLowerCase();
+    return `<a class="blog-card mu-card" href="${pre}/market_update/${encodeURIComponent(r.slug)}" data-q="${esc(hay)}" data-city="${esc(r.city_id || '')}">
       <div class="blog-card-img"${cover ? ` style="background-image:url('${esc(cover)}')"` : ''}></div>
       <div class="blog-card-body">
         <h3>${esc(title)}</h3>
         ${sum ? `<p class="blog-card-excerpt">${esc(sum)}</p>` : ''}
-        <div class="blog-card-foot"><span></span><span class="blog-card-date">${esc(fmtDate(r.published_at, ar))}</span></div>
+        <div class="blog-card-foot"><span class="mu-city">${esc(city)}</span><span class="blog-card-date">${esc(fmtDate(r.published_at, ar))}</span></div>
       </div>
     </a>`;
   }).join('');
+  // only cities that have at least one published update are offered
+  const used = [...new Set(rows.map(r => r.city_id).filter(Boolean))]
+    .map(id => ({ id, label: cityName(id) })).filter(c => c.label).sort((a, b) => a.label.localeCompare(b.label, ar ? 'ar' : 'en'));
+  const filters = rows.length ? `<form class="mu-filters" role="search" onsubmit="return false">
+    <label class="mu-filter"><span>${esc(ar ? 'الاسم' : 'Name')}</span><input type="search" id="muSearch" placeholder="${esc(L.searchPh)}" autocomplete="off"></label>
+    ${used.length ? `<label class="mu-filter"><span>${esc(L.cityLabel)}</span><select id="muCity"><option value="">${esc(L.allCities)}</option>${used.map(c => `<option value="${esc(c.id)}">${esc(c.label)}</option>`).join('')}</select></label>` : ''}
+  </form>` : '';
   const crumbs = `<a href="${pre || '/'}">${esc(L.home)}</a><span>/</span><b>${esc(L.tab)}</b>`;
   const body = `${hero({ bg: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1700&q=80', crumbs, eyebrow: L.eyebrow, h1: L.h1, lead: L.lead })}
 <main class="container">
-  ${rows.length ? `<div class="blog-grid">${cards}</div>` : `<div class="empty-state"><h3>${esc(L.empty)}</h3><p>${esc(L.emptySub)}</p></div>`}
+  ${filters}
+  ${rows.length ? `<div class="blog-grid" id="muGrid">${cards}</div>
+  <div class="empty-state" id="muNoMatch" hidden><h3>${esc(L.noMatch)}</h3><p>${esc(L.noMatchSub)}</p></div>` : `<div class="empty-state"><h3>${esc(L.empty)}</h3><p>${esc(L.emptySub)}</p></div>`}
 </main>`;
   const ld = {
     '@context': 'https://schema.org',
@@ -164,7 +178,7 @@ function listPage(rows, ar) {
   };
 }
 
-function detailPage(r, ar) {
+function detailPage(r, ar, city) {
   const L = TXT[ar ? 'ar' : 'en'], pre = ar ? '/ar' : '';
   const title = pickLang(r, 'title', ar);
   const description = pickLang(r, 'description', ar);
@@ -183,7 +197,7 @@ function detailPage(r, ar) {
   const gallery = photos.length ? `<div class="mu-gallery${photos.length === 1 ? ' one' : ''}">${photos.map((p, i) =>
     `<a class="mu-photo" href="${esc(imgUrl(p, 1800))}"><img src="${esc(imgUrl(p, i === 0 ? 1200 : 700))}" alt="${esc(title)} — ${esc(L.photo)} ${i + 1}" ${i === 0 ? 'fetchpriority="high"' : 'loading="lazy"'}></a>`).join('')}</div>` : '';
   const crumbs = `<a href="${pre || '/'}">${esc(L.home)}</a><span>/</span><a href="${pre}/market_update">${esc(L.tab)}</a><span>/</span><b>${esc(title)}</b>`;
-  const body = `${hero({ bg: imgUrl(photos[0], 1700) || 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1700&q=80', crumbs, eyebrow: date, h1: title })}
+  const body = `${hero({ bg: imgUrl(photos[0], 1700) || 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1700&q=80', crumbs, eyebrow: [city, date].filter(Boolean).join(' · '), h1: title })}
 <main class="container mu-wrap">
   <article class="mu-article">
     ${summary ? `<p class="mu-summary">${esc(summary)}</p>` : ''}
@@ -237,13 +251,26 @@ module.exports = async function handler(req, res) {
   let template, page, status = 200;
   try {
     template = await loadTemplate(host);
+    const cityRows = () => rest('cities?select=id,name,name_ar').catch(() => []);
     if (!slug) {
-      const rows = await rest('market_updates?select=slug,title,title_ar,summary,summary_ar,photos,published_at&published=eq.true&order=published_at.desc.nullslast,sort_order.desc');
-      page = listPage(rows, ar);
+      const cols = 'slug,title,title_ar,summary,summary_ar,photos,published_at';
+      const tail = '&published=eq.true&order=published_at.desc.nullslast,sort_order.desc';
+      // city_id exists only after supabase/add-market-updates-city.sql; the page works without it
+      const [rows, cities] = await Promise.all([
+        rest(`market_updates?select=${cols},city_id${tail}`).catch(() => rest(`market_updates?select=${cols}${tail}`)),
+        cityRows()
+      ]);
+      page = listPage(rows, ar, cities);
     } else {
       const rows = await rest(`market_updates?select=*&published=eq.true&slug=eq.${encodeURIComponent(slug)}&limit=1`);
-      if (rows[0]) page = detailPage(rows[0], ar);
-      else { page = notFoundPage(ar); status = 404; }
+      if (rows[0]) {
+        let city = '';
+        if (rows[0].city_id) {
+          const c = (await cityRows()).find(x => x.id === rows[0].city_id);
+          if (c) city = (ar && c.name_ar) ? c.name_ar : c.name;
+        }
+        page = detailPage(rows[0], ar, city);
+      } else { page = notFoundPage(ar); status = 404; }
     }
   } catch (_) {
     // a failed read must never be cached or indexed as an empty/missing page

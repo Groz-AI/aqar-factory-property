@@ -197,6 +197,8 @@
     'Enter the phone number you follow with to see your projects.': 'أدخل رقم الهاتف الذي تتابع به لعرض مشاريعك.',
     'Show my projects': 'اعرض مشاريعي',
     'Market updates': 'تحديثات السوق',
+    'City (optional)': 'المدينة (اختياري)',
+    '— No linked city —': '— بدون مدينة —',
     'Market update': 'تحديث السوق',
     'Page address (after /market_update/)': 'عنوان الصفحة (بعد /market_update/)',
     'Short summary': 'ملخص قصير',
