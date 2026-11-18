@@ -393,6 +393,14 @@ em{font-style:normal}
 .follow-check svg{width:13px;height:13px}
 .follow-item.sel .follow-check{background:var(--sky);border-color:var(--sky)}
 .follow-chip{margin-inline-start:auto;flex:none;padding:.25em .7em;border-radius:999px;background:#E3F3EA;color:#1C7A4E;font-size:.74rem;font-weight:700}
+/* My projects row: the project link plus an Unfollow button (a button cannot sit inside the link) */
+.follow-row{gap:.4rem;padding:0;cursor:default}
+.follow-item-link{display:flex;align-items:center;gap:.8rem;flex:1;min-width:0;padding:.55rem;color:inherit;text-decoration:none;border-radius:16px}
+.follow-unfollow{flex:none;margin-inline-end:.6rem;padding:.45em .85em;border-radius:999px;border:1px solid var(--line);background:#fff;color:var(--ink-soft);font-family:inherit;font-size:.78rem;font-weight:600;cursor:pointer;transition:.2s;white-space:nowrap}
+.follow-unfollow:hover{border-color:var(--ink-soft);color:var(--ink)}
+.follow-unfollow.arm{background:#9E0E3B;border-color:#9E0E3B;color:#fff}
+.follow-unfollow:disabled{opacity:.6;cursor:default}
+.follow-note-sm{margin-top:.8rem;font-size:.8rem}
 .follow-go{margin-inline-start:auto;width:30px;height:30px;border-radius:50%;background:var(--paper);display:grid;place-items:center;flex:none;color:var(--ink)}
 .follow-go svg{width:14px;height:14px}
 [dir="rtl"] .follow-go svg{transform:scaleX(-1)}

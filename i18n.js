@@ -193,6 +193,11 @@
     'Latest update': 'آخر تحديث',
     'Project Progress': 'مراحل تنفيذ المشروع',
     'Follow updates': 'تابع التحديثات',
+    'Unfollow': 'إلغاء المتابعة',
+    'Tap again to confirm': 'اضغط مرة أخرى للتأكيد',
+    'Removing…': 'جارٍ الإزالة…',
+    "Couldn't remove that just now. Please try again.": 'تعذّر الإلغاء الآن. حاول مرة أخرى.',
+    'A project without an Unfollow button was followed earlier or from another device. Contact us to stop following it.': 'المشروع الذي بلا زر إلغاء المتابعة تمت متابعته سابقًا أو من جهاز آخر. تواصل معنا لإيقاف متابعته.',
     // admin: followers + progress timeline editor
     'Followers': 'المتابعون',
     'People who follow your projects': 'العملاء الذين يتابعون مشاريعك',

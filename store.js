@@ -310,18 +310,53 @@
   const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   const validProjectId = (id) => (cloud ? UUID_RE.test(String(id || '')) : !!id);
 
+  // `who.token` is a random secret the browser keeps; it is stored with each row so
+  // that unfollowProject() can later prove ownership (see supabase/add-unfollow.sql).
+  // Returns the ids that were newly followed (`added`) and the ones that were already
+  // followed with this number, e.g. from another browser (`existing`) — only `added`
+  // can be unfollowed from this browser.
   async function followProjects(projectDbIds, who) {
     if (!sb) return { error: { message: 'No backend configured' } };
     const ids = [...new Set(projectDbIds || [])].filter(validProjectId);
     const name = String((who && who.name) || '').trim();
     const phone = String((who && who.phone) || '').trim();
+    const token = String((who && who.token) || '');
     if (!ids.length) return { error: { message: 'No valid project selected' } };
     if (!name || !phone) return { error: { message: 'Name and phone are required' } };
+    const isDup = (e) => e && (e.code === '23505' || /duplicate|unique/i.test(e.message || ''));
+    // before supabase/add-unfollow.sql has been run the column does not exist yet;
+    // following must keep working then (just without a way to unfollow)
+    const noColumn = (e) => e && /unfollow_token/i.test(e.message || '');
     try {
-      const results = await Promise.all(ids.map(pid =>
-        sb.from('project_followers').insert([{ project_id: pid, name, phone }])));
-      const failed = results.map(r => r && r.error).filter(e => e && e.code !== '23505' && !/duplicate|unique/i.test(e.message || ''));
-      return { error: failed[0] || null, ids };
+      const results = await Promise.all(ids.map(async pid => {
+        const row = { project_id: pid, name, phone };
+        if (token) row.unfollow_token = token;
+        let r = await sb.from('project_followers').insert([row]);
+        if (r && noColumn(r.error)) { delete row.unfollow_token; r = await sb.from('project_followers').insert([row]); r.noToken = true; }
+        return r;
+      }));
+      const failed = results.map(r => r && r.error).filter(e => e && !isDup(e));
+      const added = ids.filter((_, i) => !results[i].error && !results[i].noToken);
+      const existing = ids.filter((_, i) => isDup(results[i].error));
+      return { error: failed[0] || null, ids, added, existing };
+    } catch (e) {
+      return { error: { message: (e && e.message) || String(e) } };
+    }
+  }
+
+  // Remove one follow, proving ownership with the secret kept in this browser. A follow
+  // that is already gone counts as success (the visitor wanted it gone).
+  async function unfollowProject(projectDbId, token) {
+    if (!sb) return { error: { message: 'No backend configured' } };
+    if (!validProjectId(projectDbId) || !token) return { error: { message: 'Missing details' } };
+    try {
+      if (cloud) {
+        const { error } = await sb.rpc('unfollow_project', { p_project_id: projectDbId, p_token: token });
+        return { error: error || null };
+      }
+      // local demo mode has no database functions: delete the matching row directly
+      const { error } = await sb.from('project_followers').delete().eq('project_id', projectDbId).eq('unfollow_token', token);
+      return { error: error || null };
     } catch (e) {
       return { error: { message: (e && e.message) || String(e) } };
     }
@@ -385,6 +420,7 @@
     submitInquiry,
     submitNewsletter,
     followProjects,
+    unfollowProject,
     getFollowedProjects
   };
 })();

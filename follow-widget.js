@@ -30,11 +30,20 @@
   function readSaved() {
     try {
       const s = JSON.parse(localStorage.getItem(KEY));
-      if (s && Array.isArray(s.ids)) return { ids: s.ids.filter(Boolean), name: s.name || '', phone: s.phone || '' };
+      if (s && Array.isArray(s.ids)) return { ids: s.ids.filter(Boolean), tokens: (s.tokens && typeof s.tokens === 'object') ? s.tokens : {}, name: s.name || '', phone: s.phone || '' };
     } catch (_) {}
-    return { ids: [], name: '', phone: '' };
+    return { ids: [], tokens: {}, name: '', phone: '' };
   }
   function writeSaved(s) { try { localStorage.setItem(KEY, JSON.stringify(s)); } catch (_) {} }
+
+  // random secret that proves, later, that this browser made a follow (stored with the row,
+  // kept here; see supabase/add-unfollow.sql)
+  function newToken() {
+    const a = new Uint8Array(16);
+    if (window.crypto && window.crypto.getRandomValues) window.crypto.getRandomValues(a);
+    else for (let i = 0; i < a.length; i++) a[i] = Math.floor(Math.random() * 256);
+    return Array.from(a, b => b.toString(16).padStart(2, '0')).join('');
+  }
 
   // digits typed on an Arabic keyboard (٠١٢…) are turned into 0-9 first
   function normPhone(raw) {
@@ -162,12 +171,48 @@
       const line = last
         ? `<span class="follow-status">${esc(status)}</span>${when ? `<small>${esc(when)}</small>` : ''}`
         : `<small>${esc(t('No updates yet'))}</small>`;
-      return `<a class="follow-item" href="${esc(window.buildUrl ? window.buildUrl('project', p) : '#')}">
-        <img class="follow-thumb" src="${esc(img(p.cover, 160))}" alt="" width="56" height="56" loading="lazy">
-        <span class="follow-item-txt"><b>${esc(pick(p, 'name', 'nameAr'))}</b><span class="follow-line">${line}</span></span>
-        <span class="follow-go" aria-hidden="true">${arrowSVG}</span>
-      </a>`;
-    }).join('') + '</div>';
+      const canUnfollow = !!(saved.tokens && saved.tokens[p.dbId]);
+      return `<div class="follow-item follow-row">
+        <a class="follow-item-link" href="${esc(window.buildUrl ? window.buildUrl('project', p) : '#')}">
+          <img class="follow-thumb" src="${esc(img(p.cover, 160))}" alt="" width="56" height="56" loading="lazy">
+          <span class="follow-item-txt"><b>${esc(pick(p, 'name', 'nameAr'))}</b><span class="follow-line">${line}</span></span>
+          <span class="follow-go" aria-hidden="true">${arrowSVG}</span>
+        </a>
+        ${canUnfollow
+          ? `<button type="button" class="follow-unfollow" data-unfollow="${esc(p.dbId)}">${esc(t('Unfollow'))}</button>`
+          : ''}
+      </div>`;
+    }).join('') + '</div>' + (list.some(p => !(saved.tokens && saved.tokens[p.dbId])) ? `<p class="follow-note follow-note-sm">${esc(t('A project without an Unfollow button was followed earlier or from another device. Contact us to stop following it.'))}</p>` : '');
+    bodyEl.querySelectorAll('[data-unfollow]').forEach(b => b.addEventListener('click', () => onUnfollow(b)));
+  }
+
+  // two taps: the first arms the button, the second removes the follow
+  async function onUnfollow(btn) {
+    const id = btn.dataset.unfollow;
+    if (!btn.classList.contains('arm')) {
+      btn.classList.add('arm');
+      btn.textContent = t('Tap again to confirm');
+      setTimeout(() => { if (btn.isConnected && !btn.disabled) { btn.classList.remove('arm'); btn.textContent = t('Unfollow'); } }, 4000);
+      return;
+    }
+    btn.disabled = true; btn.textContent = t('Removing…');
+    let res;
+    try { res = await window.store.unfollowProject(id, saved.tokens && saved.tokens[id]); }
+    catch (_) { res = { error: { message: 'network' } }; }
+    if (res && res.error) {
+      btn.disabled = false; btn.classList.remove('arm'); btn.textContent = t('Unfollow');
+      const note = document.createElement('p');
+      note.className = 'follow-error';
+      note.textContent = t("Couldn't remove that just now. Please try again.");
+      btn.closest('.follow-row').after(note);
+      setTimeout(() => note.remove(), 5000);
+      return;
+    }
+    const tokens = Object.assign({}, saved.tokens); delete tokens[id];
+    saved = { ids: saved.ids.filter(x => x !== id), tokens, name: saved.name, phone: saved.phone };
+    writeSaved(saved);
+    if (!saved.ids.length) view = 'pick';
+    render();
   }
 
   // ---------- pick projects ----------
@@ -251,8 +296,9 @@
       const label = submit.textContent;
       submit.disabled = true; submit.textContent = t('Sending…');
       let res = { error: null };
+      const token = newToken();
       if (!form.website.value) {   // a filled honeypot gets a fake success, nothing is written
-        try { res = await window.store.followProjects(ids, { name, phone }); }
+        try { res = await window.store.followProjects(ids, { name, phone, token }); }
         catch (_) { res = { error: { message: 'network' } }; }
       }
       if (res && res.error) {
@@ -260,7 +306,9 @@
         return fail(t("Sorry, we couldn't save that just now. Please try again."));
       }
       if (!form.website.value) {
-        saved = { ids: [...new Set(saved.ids.concat(ids))], name, phone };
+        const tokens = Object.assign({}, saved.tokens);
+        (res.added || []).forEach(id => { tokens[id] = token; });
+        saved = { ids: [...new Set(saved.ids.concat(ids))], tokens, name, phone };
         writeSaved(saved);
       }
       followedNow = ids;

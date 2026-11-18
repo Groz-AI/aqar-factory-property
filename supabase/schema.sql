@@ -744,3 +744,19 @@ begin
   alter publication supabase_realtime add table public.project_followers;
 exception when others then null;   -- already added
 end $$;
+
+-- Visitor "Unfollow" (same statements as supabase/add-unfollow.sql)
+alter table public.project_followers add column if not exists unfollow_token text;
+create or replace function public.unfollow_project(p_project_id uuid, p_token text)
+returns boolean
+language plpgsql security definer set search_path = public as $$
+declare n int;
+begin
+  if p_token is null or length(p_token) < 16 then return false; end if;
+  delete from public.project_followers
+   where project_id = p_project_id and unfollow_token = p_token;
+  get diagnostics n = row_count;
+  return n > 0;
+end $$;
+revoke all on function public.unfollow_project(uuid, text) from public;
+grant execute on function public.unfollow_project(uuid, text) to anon, authenticated;
