@@ -401,6 +401,11 @@ em{font-style:normal}
 .follow-unfollow.arm{background:#9E0E3B;border-color:#9E0E3B;color:#fff}
 .follow-unfollow:disabled{opacity:.6;cursor:default}
 .follow-note-sm{margin-top:.8rem;font-size:.8rem}
+@media(max-width:480px){
+  .follow-row{flex-wrap:wrap}
+  .follow-item-link{flex:1 1 100%}
+  .follow-unfollow{margin-inline-start:auto;margin-inline-end:.6rem;margin-bottom:.6rem}
+}
 .follow-go{margin-inline-start:auto;width:30px;height:30px;border-radius:50%;background:var(--paper);display:grid;place-items:center;flex:none;color:var(--ink)}
 .follow-go svg{width:14px;height:14px}
 [dir="rtl"] .follow-go svg{transform:scaleX(-1)}
