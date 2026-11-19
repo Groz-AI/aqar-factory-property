@@ -497,7 +497,7 @@
       fields: [
         { key: 'title', label: t('Title'), type: 'text', required: true },
         { key: 'title_ar', label: t('Title (Arabic)'), type: 'text', hint: t('Shown when the site is set to Arabic — leave empty to fall back to the English title above.') },
-        { key: 'slug', label: t('Page address (after /market_update/)'), type: 'text', required: true, hint: t('Lowercase letters, numbers and dashes — e.g. new-capital-q4-update. The page will be at /market_update/new-capital-q4-update. Changing it later changes the address, so old links stop working.') },
+        { key: 'slug', label: t('Page address (after /market_update/)'), type: 'text', required: true, hint: t('Filled in automatically from the English title (spaces become dashes) — you can change it. The page will be at /market_update/<this address>. Changing it later changes the address, so old links stop working.') },
         { key: 'city_id', label: t('City (optional)'), type: 'select', half: true, options: [{ value: '', label: t('— No linked city —') }], hint: t('Lets visitors filter the Market updates page by city. Add cities under the Cities section first.') },
         { key: 'summary', label: t('Short summary'), type: 'textarea', hint: t('One or two lines shown on the list card and used as the search-result snippet.') },
         { key: 'summary_ar', label: t('Short summary (Arabic)'), type: 'textarea' },
@@ -1081,6 +1081,17 @@
         slugArInput.addEventListener('input', () => { slugArDirty = true; });
         nameArInput.addEventListener('input', () => { if (!slugArDirty) slugArInput.value = slugifyAr(nameArInput.value); });
         wireLiveSlug(slugArInput, liveSlugAr, slugifyAr);
+      }
+    }
+
+    // Track Your Project: the page address follows the English Title the same way
+    if (view === 'market_updates') {
+      const titleInput = $('#f_title'), slugInput = $('#f_slug');
+      if (titleInput && slugInput) {
+        let slugDirty = !!(row && row.slug);
+        slugInput.addEventListener('input', () => { slugDirty = true; });
+        titleInput.addEventListener('input', () => { if (!slugDirty) slugInput.value = slugify(titleInput.value); });
+        wireLiveSlug(slugInput, liveSlug, slugify);
       }
     }
 

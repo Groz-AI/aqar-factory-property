@@ -201,6 +201,7 @@
     '— No linked city —': '— بدون مدينة —',
     'Market update': 'تحديث السوق',
     'Tracked project': 'مشروع للمتابعة',
+    'Filled in automatically from the English title (spaces become dashes) — you can change it. The page will be at /market_update/<this address>. Changing it later changes the address, so old links stop working.': 'يُملأ تلقائيًا من العنوان الإنجليزي (المسافات تتحول إلى شرطات) — ويمكنك تعديله. ستكون الصفحة على /market_update/<هذا العنوان>. تغييره لاحقًا يغيّر الرابط فتتوقف الروابط القديمة.',
     'The page text. Press Enter twice between paragraphs.': 'نص الصفحة. اضغط Enter مرتين بين الفقرات.',
     'The page shows a button to this project\'s own page.': 'تعرض الصفحة زرًا يفتح صفحة هذا المشروع.',
     'The city picker for market updates is hidden: run supabase/add-market-updates-city.sql once on the database to enable it': 'اختيار المدينة مخفي: شغّل ملف supabase/add-market-updates-city.sql مرة واحدة على قاعدة البيانات لتفعيله',
