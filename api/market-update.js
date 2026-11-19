@@ -31,7 +31,7 @@ const TXT = {
     lead: 'The latest news, photos and details on the projects and markets we work in.',
     empty: 'No updates published yet', emptySub: 'Check back soon — we are working on it.',
     notFound: 'Update not found', notFoundSub: 'This page does not exist or is no longer published.',
-    photo: 'Photo'
+    photo: 'Photo', viewProject: 'View project'
   },
   ar: {
     searchPh: 'ابحث بالاسم…', allCities: 'كل المدن', cityLabel: 'المدينة', noMatch: 'لا توجد تحديثات في هذه المدينة بعد', noMatchSub: 'اختر مدينة أخرى أو اضغط كل المدن.',
@@ -42,7 +42,7 @@ const TXT = {
     lead: 'آخر الأخبار والصور والتفاصيل عن المشاريع والأسواق التي نعمل فيها.',
     empty: 'لا توجد تحديثات منشورة بعد', emptySub: 'عد قريبًا — نعمل على ذلك.',
     notFound: 'التحديث غير موجود', notFoundSub: 'هذه الصفحة غير موجودة أو لم تعد منشورة.',
-    photo: 'صورة'
+    photo: 'صورة', viewProject: 'عرض المشروع'
   }
 };
 
@@ -84,6 +84,11 @@ function parseLinks(text, ar) {
   });
   return out;
 }
+
+// [link text](https://…) written in the admin becomes a real link; only
+// http(s), mailto, tel and site-relative targets are accepted. Input is already escaped.
+const withLinks = (escaped) => escaped.replace(/\[([^\[\]]+)\]\(([^()\s]+)\)/g, (m, label, url) => /^(https?:\/\/|mailto:|tel:|\/(?!\/))/i.test(url)
+  ? `<a href="${url}"${/^https?:/i.test(url) ? ' target="_blank" rel="noopener"' : ''}>${label}</a>` : m);
 
 const pickLang = (row, k, ar) => (ar && row[k + '_ar']) ? row[k + '_ar'] : (row[k] || '');
 const firstChars = (s, n) => { const t = String(s || '').replace(/\s+/g, ' ').trim(); return t.length > n ? t.slice(0, n - 1).trimEnd() + '…' : t; };
@@ -178,7 +183,7 @@ function listPage(rows, ar, cities) {
   };
 }
 
-function detailPage(r, ar, city) {
+function detailPage(r, ar, city, project) {
   const L = TXT[ar ? 'ar' : 'en'], pre = ar ? '/ar' : '';
   const title = pickLang(r, 'title', ar);
   const description = pickLang(r, 'description', ar);
@@ -187,7 +192,9 @@ function detailPage(r, ar, city) {
   const path = '/market_update/' + encodeURIComponent(r.slug);
   const date = fmtDate(r.published_at, ar);
   const paras = description.replace(/\r/g, '').split(/\n{2,}/).map(p => p.trim()).filter(Boolean)
-    .map(p => `<p>${esc(p).replace(/\n/g, '<br>')}</p>`).join('');
+    .map(p => `<p>${withLinks(esc(p)).replace(/\n/g, '<br>')}</p>`).join('');
+  const projectBtn = project
+    ? `<a class="btn btn-ghost mu-link" href="${pre}/project/${encodeURIComponent((ar && project.slug_ar) || project.slug)}">${esc(L.viewProject)}: ${esc((ar && project.name_ar) || project.name)}</a>` : '';
   const links = parseLinks(r.links, ar).map(l => `<a class="btn btn-ghost mu-link" href="${esc(l.url)}"${/^https?:/i.test(l.url) ? ' target="_blank" rel="noopener"' : ''}>${esc(l.label)}</a>`).join('');
   const waNum = String(r.whatsapp_number || '').replace(/\D/g, '');
   const waText = r.whatsapp_text || '';
@@ -203,12 +210,12 @@ function detailPage(r, ar, city) {
     ${summary ? `<p class="mu-summary">${esc(summary)}</p>` : ''}
     ${gallery}
     ${paras ? `<div class="mu-body">${paras}</div>` : ''}
-    <div class="mu-actions">${wa}${links}</div>
+    <div class="mu-actions">${wa}${projectBtn}${links}</div>
     <p class="mu-back"><a href="${pre}/market_update">${ar ? '→' : '←'} ${esc(L.back)}</a></p>
   </article>
 </main>`;
   const metaTitle = (ar ? (r.seo_title_ar || r.seo_title) : r.seo_title) || `${title} — Aqar Factory`;
-  const metaDesc = (ar ? (r.seo_description_ar || r.seo_description) : r.seo_description) || firstChars(summary || description, 158) || L.listDesc;
+  const metaDesc = (ar ? (r.seo_description_ar || r.seo_description) : r.seo_description) || firstChars(summary || description.replace(/\[([^\[\]]+)\]\([^()\s]+\)/g, '$1'), 158) || L.listDesc;
   const ld = {
     '@context': 'https://schema.org',
     '@graph': [
@@ -269,7 +276,12 @@ module.exports = async function handler(req, res) {
           const c = (await cityRows()).find(x => x.id === rows[0].city_id);
           if (c) city = (ar && c.name_ar) ? c.name_ar : c.name;
         }
-        page = detailPage(rows[0], ar, city);
+        // linked project (column exists only after supabase/add-market-updates-project.sql)
+        let project = null;
+        if (rows[0].project_id) {
+          project = (await rest(`projects?select=slug,slug_ar,name,name_ar&published=eq.true&id=eq.${encodeURIComponent(rows[0].project_id)}&limit=1`).catch(() => []))[0] || null;
+        }
+        page = detailPage(rows[0], ar, city, project);
       } else { page = notFoundPage(ar); status = 404; }
     }
   } catch (_) {

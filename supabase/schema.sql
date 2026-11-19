@@ -849,3 +849,7 @@ $$;
 -- Market updates city filter (same statement as supabase/add-market-updates-city.sql)
 alter table public.market_updates
   add column if not exists city_id uuid references public.cities(id) on delete set null;
+
+-- Track Your Project linked project (same statement as supabase/add-market-updates-project.sql)
+alter table public.market_updates
+  add column if not exists project_id uuid references public.projects(id) on delete set null;

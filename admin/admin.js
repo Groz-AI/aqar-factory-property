@@ -501,10 +501,10 @@
         { key: 'city_id', label: t('City (optional)'), type: 'select', half: true, options: [{ value: '', label: t('— No linked city —') }], hint: t('Lets visitors filter the Market updates page by city. Add cities under the Cities section first.') },
         { key: 'summary', label: t('Short summary'), type: 'textarea', hint: t('One or two lines shown on the list card and used as the search-result snippet.') },
         { key: 'summary_ar', label: t('Short summary (Arabic)'), type: 'textarea' },
-        { key: 'description', label: t('Description'), type: 'textarea', hint: t('The page text. Leave a blank line between paragraphs.') },
-        { key: 'description_ar', label: t('Description (Arabic)'), type: 'textarea', hint: t('Shown when the site is set to Arabic — leave empty to fall back to the English description above.') },
+        { key: 'project_id', label: t('Linked project (optional)'), type: 'select', half: true, options: [{ value: '', label: t('— No linked project —') }], hint: t('The page shows a button to this project\'s own page.') },
+        { key: 'description', label: t('Description'), type: 'textarea', links: true, hint: t('The page text. Press Enter twice between paragraphs.') },
+        { key: 'description_ar', label: t('Description (Arabic)'), type: 'textarea', links: true, hint: t('Shown when the site is set to Arabic — leave empty to fall back to the English description above.') },
         { key: 'photos', label: t('Photos'), type: 'gallery', hint: t('The first photo is the cover on the list and when the link is shared.') },
-        { key: 'links', label: t('Links'), type: 'textarea', hint: t('One link per line, written as: Button text | https://address | Arabic button text (optional). Example: Download the brochure | https://example.com/brochure.pdf | حمّل الكتيب') },
         { key: 'whatsapp_number', label: t('WhatsApp number'), type: 'text', half: true, hint: t('With country code, e.g. 201012345678. Leave empty to use the company WhatsApp number.') },
         { key: 'whatsapp_text', label: t('WhatsApp message'), type: 'text', half: true, hint: t('Written in the chat box when the visitor taps the WhatsApp button. Leave empty for no WhatsApp button text.') },
         { key: 'seo_title', label: t('SEO title'), type: 'text', half: true, hint: t('Overrides the page\'s <title> tag — leave empty to use the title. Aim for under 60 characters.') },
@@ -630,11 +630,18 @@
   async function hideMarketCityIfNotMigrated() {
     if (localMode) return;
     const res = RESOURCES.market_updates;
-    if (!res || !res.fields.some(f => f.key === 'city_id')) return;
-    const { error } = await sb.from(res.table).select('city_id').limit(1);
-    if (error && /city_id/.test(error.message || '')) {
-      res.fields = res.fields.filter(f => f.key !== 'city_id');
-      toast(t('The city picker for market updates is hidden: run supabase/add-market-updates-city.sql once on the database to enable it'), 'err');
+    if (!res) return;
+    // each optional picker is hidden until its column exists
+    for (const [key, msg] of [
+      ['city_id', t('The city picker for market updates is hidden: run supabase/add-market-updates-city.sql once on the database to enable it')],
+      ['project_id', t('The linked-project picker for market updates is hidden: run supabase/add-market-updates-project.sql once on the database to enable it')]
+    ]) {
+      if (!res.fields.some(f => f.key === key)) continue;
+      const { error } = await sb.from(res.table).select(key).limit(1);
+      if (error && new RegExp(key).test(error.message || '')) {
+        res.fields = res.fields.filter(f => f.key !== key);
+        toast(msg, 'err');
+      }
     }
   }
 
@@ -1010,8 +1017,8 @@
       if (categoryField) categoryField.options = (cats || []).map(c => c.name);
     }
 
-    // Units can also link to a Project (which then supplies their city)
-    if (view === 'units') {
+    // Units and Track Your Project pages can link to a Project
+    if (view === 'units' || view === 'market_updates') {
       const { data: projs } = await sb.from('projects').select('id,name').order('name', { ascending: true }).then(res => res, () => ({ data: [] }));
       const projectField = r.fields.find(f => f.key === 'project_id');
       if (projectField) {
@@ -1019,11 +1026,13 @@
           .concat((projs || []).map(p => ({ value: p.id, label: p.name })));
       }
 
-      const { data: types } = await sb.from('categories').select('name').eq('published', true).eq('kind', 'unit')
-        .order('sort_order', { ascending: true }).then(res => res, () => ({ data: [] }));
-      const typeField = r.fields.find(f => f.key === 'type');
-      // same stale-value safety as the project category field above
-      if (typeField) typeField.options = (types || []).map(c => c.name);
+      if (view === 'units') {
+        const { data: types } = await sb.from('categories').select('name').eq('published', true).eq('kind', 'unit')
+          .order('sort_order', { ascending: true }).then(res => res, () => ({ data: [] }));
+        const typeField = r.fields.find(f => f.key === 'type');
+        // same stale-value safety as the project category field above
+        if (typeField) typeField.options = (types || []).map(c => c.name);
+      }
     }
 
     let buf = [];
