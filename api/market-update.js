@@ -17,6 +17,8 @@
    (Market updates). Only published rows are visible (row-level security).
    ============================================================ */
 
+const { setLangSwitch } = require('./_i18n-server.js');
+
 const SUPA_URL = 'https://api.aqar-factory.com';
 const SUPA_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzkzNDE0OTE4LCJleHAiOjE5NTEwOTQ5MTh9.mD68-Zl0D11mxbFhuckIpEouBs3DPjjesSQjJ1ouj84';
 const SITE = 'https://www.aqar-factory.com';
@@ -292,7 +294,9 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  const html = template
+  // the language switch leads to this same page in the other language
+  const swPath = '/market_update' + (slug && status === 200 ?'/' + encodeURIComponent(slug) : '');
+  const html = setLangSwitch(template, ar, swPath, '/ar' + swPath)
     .replace(/<html lang="en">/, `<html lang="${ar ? 'ar' : 'en'}" dir="${ar ? 'rtl' : 'ltr'}">`)
     .replace('<!--MU_HEAD-->', () => page.head)
     .replace('<!--MU_MAIN-->', () => page.body);

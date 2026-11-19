@@ -102,7 +102,14 @@ function populate() {
   // that only report root-level @type entities actually detect it — same
   // reasoning and structure as api/bot-render.js.
   const ORG_ID = 'https://www.aqar-factory.com/#organization';
-  const orgEntity = { '@id': ORG_ID, '@type': 'Organization', name: 'Aqar Factory', url: 'https://www.aqar-factory.com/' };
+  let orgEntity = { '@id': ORG_ID, '@type': 'Organization', name: 'Aqar Factory', url: 'https://www.aqar-factory.com/' };
+  // the server already put the full company entity (logo, phone, address,
+  // socials) in this block; keep it instead of replacing it with a bare one
+  try {
+    const prev = JSON.parse(document.getElementById('ldJson').textContent);
+    const full = (prev['@graph'] || []).find(n => n && n['@id'] === ORG_ID && (n.telephone || n.logo || n.sameAs));
+    if (full) orgEntity = full;
+  } catch (_) { /* first run: keep the plain entity */ }
   const orgRef = { '@id': ORG_ID };
   const unitTitle = customTitle || pick(unit, 'name', 'nameAr') || unit.name;
   const productEntity = {
@@ -112,12 +119,13 @@ function populate() {
     image: unit.cover ? U(unit.cover, 1600) : undefined,
     url: location.href,
     brand: orgRef,
-    offers: {
+    // only with a real price: an Offer without one is incomplete markup
+    offers: unit.priceValue > 0 ? {
       '@type': 'Offer', url: location.href, priceCurrency: 'EGP',
-      price: unit.priceValue > 0 ? unit.priceValue : undefined,
+      price: unit.priceValue,
       availability: 'https://schema.org/' + (unit.readyToMove ? 'InStock' : 'PreOrder'),
       seller: orgRef
-    }
+    } : undefined
   };
   const graph = [orgEntity, productEntity];
   // Article only when there's real long-form content, not a thin one-liner

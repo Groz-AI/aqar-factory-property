@@ -15,7 +15,7 @@
    ============================================================ */
 
 const SchemaHelpers = require('../schema-helpers.js');
-const { toArabicHtml } = require('./_i18n-server.js');
+const { toArabicHtml, setLangSwitch } = require('./_i18n-server.js');
 
 const SITE = 'https://www.aqar-factory.com';
 const SUPA_URL = 'https://api.aqar-factory.com';
@@ -130,6 +130,7 @@ module.exports = async function handler(req, res) {
   ] };
 
   try { if (ar) html = await toArabicHtml(html); } catch (_) { /* keep English; i18n.js translates it */ }
+  html = setLangSwitch(html, ar, enUrl, arUrl);
 
   // hreflang only when BOTH language versions are offered to Google
   const alternates = (indexableEn && indexableAr)

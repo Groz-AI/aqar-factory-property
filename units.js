@@ -69,8 +69,13 @@ function pick(u, key, arKey) {
 
 function cardHTML(u) {
   const imgs = unitImages(u);
-  const slides = imgs.map((g, n) =>
-    `<div class="pg-slide${n === 0 ? ' active' : ''}" data-bg="${U(g, 800)}"></div>`).join('');
+  // the first slide is a real <img> with alt text (so image search can index
+  // the card's photo); the other slides stay lazy backgrounds, loaded as the
+  // cross-fade reaches them
+  const altName = String(pick(u, 'name', 'nameAr') || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const slides = imgs.map((g, n) => n === 0
+    ? `<img class="pg-slide active" src="${U(g, 800)}" alt="${altName}" width="800" height="600" loading="lazy" decoding="async">`
+    : `<div class="pg-slide" data-bg="${U(g, 800)}"></div>`).join('');
   const dots = imgs.length > 1
     ? `<div class="pg-dots">${imgs.map((_, n) => `<i class="${n === 0 ? 'on' : ''}"></i>`).join('')}</div>` : '';
   return `

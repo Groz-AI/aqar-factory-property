@@ -14,7 +14,12 @@ window.U = (id, w = 900) =>
   window.loadSlide = function (el) {
     const u = el && el.dataset && el.dataset.bg;
     if (u) { el.style.backgroundImage = "url('" + u + "')"; el.removeAttribute('data-bg'); }
-    if (u && el.classList.contains('active') && el.nextElementSibling) { const n = el.nextElementSibling; setTimeout(() => window.loadSlide(n), 1500); }
+    // the first slide of a listing card is a real <img> (it has alt text for image
+    // search); it still starts the same "load the next slide a moment later" chain
+    if ((u || (el && el.tagName === 'IMG' && !el._chained)) && el.classList.contains('active') && el.nextElementSibling) {
+      el._chained = 1;
+      const n = el.nextElementSibling; setTimeout(() => window.loadSlide(n), 1500);
+    }
   };
   const io = 'IntersectionObserver' in window
     ? new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { io.unobserve(e.target); window.loadSlide(e.target); } }), { rootMargin: '400px 0px' })
@@ -22,7 +27,7 @@ window.U = (id, w = 900) =>
   let queued = false;
   function scan() {
     queued = false;
-    document.querySelectorAll('.pg-slide.active[data-bg]').forEach((el) => {
+    document.querySelectorAll('.pg-slide.active[data-bg], img.pg-slide.active').forEach((el) => {
       if (el._lz) return; el._lz = 1;
       if (io) io.observe(el); else window.loadSlide(el);
     });

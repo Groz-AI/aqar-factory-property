@@ -83,10 +83,16 @@ function populate() {
   // @type entities actually detect it — same structure as project.js/
   // unit.js/api/bot-render.js.
   const ORG_ID = 'https://www.aqar-factory.com/#organization';
-  const orgEntity = {
+  let orgEntity = {
     '@id': ORG_ID, '@type': 'Organization', name: 'Aqar Factory', url: 'https://www.aqar-factory.com/',
     logo: COMPANY.logo ? { '@type': 'ImageObject', url: U(COMPANY.logo, 512) } : undefined
   };
+  // the server already put the full company entity in this block; keep it
+  try {
+    const prev = JSON.parse(document.getElementById('ldJson').textContent);
+    const full = (prev['@graph'] || []).find(n => n && n['@id'] === ORG_ID && (n.telephone || n.sameAs));
+    if (full) orgEntity = full;
+  } catch (_) { /* keep the plain entity */ }
   const orgRef = { '@id': ORG_ID };
   const graph = [
     orgEntity,

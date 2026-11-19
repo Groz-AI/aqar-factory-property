@@ -12,7 +12,7 @@
    own data exactly as before.
    ============================================================ */
 
-const { toArabicHtml } = require('./_i18n-server.js');
+const { toArabicHtml, setLangSwitch } = require('./_i18n-server.js');
 
 const SUPA_URL = 'https://api.aqar-factory.com';
 const SUPA_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzkzNDE0OTE4LCJleHAiOjE5NTEwOTQ5MTh9.mD68-Zl0D11mxbFhuckIpEouBs3DPjjesSQjJ1ouj84';
@@ -119,6 +119,9 @@ module.exports = async function handler(req, res) {
 <link rel="alternate" hreflang="x-default" href="${enU}">
 </head>`);
   }
+
+  // the language switch leads to this same page in the other language
+  html = setLangSwitch(html, ar, page, page === '/' ? '/ar' : '/ar' + page);
 
   let out = html, cache = 'public, max-age=0, s-maxage=10';
   if (!tables.length) {

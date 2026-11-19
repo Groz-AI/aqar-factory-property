@@ -125,19 +125,26 @@ module.exports = async function handler(req, res) {
   let updates = [];
   try { updates = await fetchSlugs('market_updates', 'slug,updated_at'); } catch (_) { updates = []; }
 
+  // <lastmod> for the list pages = the newest change to what they list (a
+  // real date, not "today"); About and Contact are plain files with no data
+  // behind them, so their date is written here by hand: change it when the
+  // page's text really changes.
+  const newest = (rows) => rows.map(r => String(r.updated_at || '').slice(0, 10)).filter(Boolean).sort().pop() || null;
+  const latestOf = (...lists) => lists.map(newest).filter(Boolean).sort().pop() || null;
+  const STATIC_FILE_LASTMOD = { '/about.html': '2026-11-19', '/contact.html': '2026-11-18' };
   const staticPages = [
-    { path: '/', priority: '1.0' },
-    { path: '/projects.html', priority: '0.9' },
-    { path: '/units.html', priority: '0.9' },
-    { path: '/cities.html', priority: '0.8' },
-    { path: '/blog.html', priority: '0.8' },
-    { path: '/about.html', priority: '0.6' },
-    { path: '/contact.html', priority: '0.6' },
-    { path: '/market_update', priority: '0.8' }
+    { path: '/', priority: '1.0', lastmod: latestOf(projects, units, posts) },
+    { path: '/projects.html', priority: '0.9', lastmod: newest(projects) },
+    { path: '/units.html', priority: '0.9', lastmod: newest(units) },
+    { path: '/cities.html', priority: '0.8', lastmod: latestOf(cityRows, projects) },
+    { path: '/blog.html', priority: '0.8', lastmod: newest(posts) },
+    { path: '/about.html', priority: '0.6', lastmod: STATIC_FILE_LASTMOD['/about.html'] },
+    { path: '/contact.html', priority: '0.6', lastmod: STATIC_FILE_LASTMOD['/contact.html'] },
+    { path: '/market_update', priority: '0.8', lastmod: newest(updates) }
   ];
 
   const urls = [
-    ...staticPages.flatMap(p => urlPair(SITE_URL, p.path, null, p.priority)),
+    ...staticPages.flatMap(p => urlPair(SITE_URL, p.path, p.lastmod, p.priority)),
     ...projects.flatMap(p => urlPairSlugged(SITE_URL, '/project', p.slug, p.slug_ar, (p.updated_at || '').slice(0, 10) || null, '0.8')),
     ...units.flatMap(u => urlPairSlugged(SITE_URL, '/unit', u.slug, u.slug_ar, (u.updated_at || '').slice(0, 10) || null, '0.75')),
     // city / developer landing pages: only the language versions that are

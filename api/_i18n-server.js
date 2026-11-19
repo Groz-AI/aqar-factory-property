@@ -56,6 +56,19 @@ function localizeLinksAr(html) {
   });
 }
 
+// The language switch in every page's source is <a id="langSwitch" href="/ar"
+// role="button"> — fine for the home page, but on any other page a reader of the
+// raw HTML (Google, a link checker, a screen reader) saw a "button" that leads
+// to the Arabic HOME page. Write the real target — this same page in the other
+// language — into the first HTML. i18n.js keeps refining it in the browser.
+// enPath / arPath are site paths ("/projects.html", "/ar/projects.html"), or full URLs.
+function setLangSwitch(html, ar, enPath, arPath) {
+  const toPath = (u) => String(u || '').replace(/^https?:\/\/[^/]+/, '') || '/';
+  const target = toPath(ar ? enPath : arPath);
+  return html.replace(/<a class="lang-switch" id="langSwitch" href="[^"]*" role="button">/, () =>
+    `<a class="lang-switch" id="langSwitch" href="${target.replace(/"/g, '&quot;')}" hreflang="${ar ? 'en' : 'ar'}" aria-label="${ar ? 'Switch to English' : 'التبديل إلى العربية'}">`);
+}
+
 async function toArabicHtml(html) {
   const AR = await loadDict();
   let out = html.replace('<html lang="en">', '<html lang="ar" dir="rtl">');
@@ -83,4 +96,4 @@ async function toArabicHtml(html) {
   return localizeLinksAr(out);
 }
 
-module.exports = { toArabicHtml, localizeLinksAr };
+module.exports = { toArabicHtml, localizeLinksAr, setLangSwitch };

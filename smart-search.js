@@ -218,7 +218,10 @@
 
   function cardHTML(it) {
     const imgs = (it.gallery && it.gallery.length ? it.gallery : [it.cover]).filter(Boolean).slice(0, 5);
-    const slides = imgs.map((g, i) => `<div class="pg-slide${i === 0 ? ' active' : ''}" data-bg="${IMG(g, 900)}"></div>`).join('');
+    const altName = String(pick(it, 'name', 'nameAr') || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const slides = imgs.map((g, i) => i === 0
+      ? `<img class="pg-slide active" src="${IMG(g, 900)}" alt="${altName}" width="900" height="600" loading="lazy" decoding="async">`
+      : `<div class="pg-slide" data-bg="${IMG(g, 900)}"></div>`).join('');
     const dots = imgs.length > 1 ? `<div class="pg-dots">${imgs.map((_, i) => `<i class="${i === 0 ? 'on' : ''}"></i>`).join('')}</div>` : '';
     const href = window.buildUrl(it._kind === 'unit' ? 'unit' : 'project', it);
     const kindBadge = `<span class="result-kind-badge ${it._kind}">${t(it._kind === 'unit' ? 'Unit' : 'Project')}</span>`;

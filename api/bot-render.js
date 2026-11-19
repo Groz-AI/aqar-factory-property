@@ -31,7 +31,7 @@
 // shared with project.js/unit.js/blog-post.js (loaded there as a plain
 // <script>) so crawler and browser JSON-LD are built by the same code
 const SchemaHelpers = require('../schema-helpers.js');
-const { localizeLinksAr } = require('./_i18n-server.js');
+const { localizeLinksAr, setLangSwitch, toArabicHtml } = require('./_i18n-server.js');
 
 const SUPA_URL = 'https://api.aqar-factory.com';
 const SUPA_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzkzNDE0OTE4LCJleHAiOjE5NTEwOTQ5MTh9.mD68-Zl0D11mxbFhuckIpEouBs3DPjjesSQjJ1ouj84';
@@ -532,6 +532,11 @@ async function handleStatic(req, res, params) {
     // the real language only by i18n.js client-side — which never runs for
     // a bot reading this raw response
     if (isAr) html = html.replace('<html lang="en">', '<html lang="ar" dir="rtl">');
+    html = setLangSwitch(html, isAr, enUrl, arUrl);
+    // the raw static pages are written in English and only translated in the
+    // browser by i18n.js, which a crawler never runs: translate them here, the
+    // same way api/preload.js does for visitors
+    if (isAr) { try { html = await toArabicHtml(html); } catch (_) { /* keep the English source */ } }
 
     const meta = STATIC_META[page] || null;
     const title = meta ? (isAr ? meta.titleAr : meta.title) : '';
@@ -847,7 +852,10 @@ async function handleDetail(req, res, params) {
   // was technically present. @id + references is the correct JSON-LD way
   // to point multiple entities at the same Organization without repeating it.
   const ORG_ID = 'https://www.aqar-factory.com/#organization';
-  const orgEntity = { '@id': ORG_ID, '@type': 'Organization', name: 'Aqar Factory', url: 'https://www.aqar-factory.com/' };
+  // the full company entity (logo, phone, address, hours, real social links —
+  // the same node the home/contact pages carry), not just a name and a URL
+  const company = await fetchCompany();
+  const orgEntity = SchemaHelpers.companyNode(company);
   const orgRef = { '@id': ORG_ID };
 
   let jsonLd;
@@ -873,14 +881,17 @@ async function handleDetail(req, res, params) {
       '@type': 'Product',
       name: title, description, image: image || undefined, url: canonicalUrl,
       brand: orgRef,
-      offers: {
+      // An Offer without a real price is an incomplete offer (Search Console
+      // warns about it and Google may ignore the page's markup), so it is only
+      // written when the page has a price above zero.
+      offers: priceValue > 0 ? {
         '@type': 'Offer', url: canonicalUrl, priceCurrency: 'EGP',
-        price: priceValue > 0 ? priceValue : undefined,
+        price: priceValue,
         // off-plan projects and units that are not ready to move in are
         // pre-orders; only delivered stock is "in stock"
         availability: 'https://schema.org/' + ((kindPath === 'unit' ? !row.ready_to_move : row.status === 'Off-plan') ? 'PreOrder' : 'InStock'),
         seller: orgRef
-      }
+      } : undefined
     };
     const graph = [orgEntity, productEntity];
     // Article only when there's real long-form content beyond the meta
@@ -943,6 +954,8 @@ async function handleDetail(req, res, params) {
         .replace(/<meta name="description" content="[^"]*"[^>]*>/, `<meta name="description" content="${esc(description)}">`)
         .replace('</head>', head);
       if (isAr) page = localizeLinksAr(page.replace('<html lang="en">', '<html lang="ar" dir="rtl">'));
+      // the language switch leads to this same page in the other language
+      page = setLangSwitch(page, isAr, hreflangEn, hreflangAr);
       // the visible heading is a placeholder in the template ("Project",
       // "Unit", "Article") that the page script fills in; put the real name
       // in the HTML itself so crawlers and slow connections see it at once
@@ -950,6 +963,29 @@ async function handleDetail(req, res, params) {
       if (h1Text) {
         page = page.replace(/(<h1 id="(?:projName|unitName|postTitle)")([^>]*>)[^<]*(<\/h1>)/,
           (m, a, b, c) => a + b.replace(/\s+data-i18n(?=[\s>])/, '') + esc(String(h1Text)) + c);
+      }
+      // Fill the rest of what a visitor sees first — breadcrumb name, location,
+      // tagline, the About / description text and the cover photo — so the raw
+      // HTML (and a visitor on a slow connection) shows the real page, not an
+      // empty frame until project.js / unit.js have fetched the data. The page
+      // script later replaces each of these with its own rendering.
+      const nameText = esc(String(h1Text || ''));
+      const fill = (needle, replacement) => { if (page.includes(needle)) page = page.replace(needle, () => replacement); };
+      if (table !== 'blog_posts') {
+        if (nameText) fill('<b id="crumbName">' + (table === 'units' ? 'Unit' : 'Project') + '</b>', `<b id="crumbName">${nameText}</b>`);
+        if (row.location) fill(`<p class="d-loc" id="${table === 'units' ? 'unitLoc' : 'projLoc'}"></p>`, `<p class="d-loc" id="${table === 'units' ? 'unitLoc' : 'projLoc'}">${esc(row.location)}</p>`);
+        if (table === 'projects' && row.tagline) fill('<p class="detail-tagline" id="tagline"></p>', `<p class="detail-tagline" id="tagline">${esc(row.tagline)}</p>`);
+        const aboutHtml = (bodyBlocks && blocksToSafeHtml(bodyBlocks, String(h1Text || ''), isAr ? 'صورة' : 'photo'))
+          || (table === 'units' && description ? `<p>${esc(description)}</p>` : '');
+        if (aboutHtml) {
+          fill(table === 'units' ? '<div id="description" class="rich-content"></div>' : '<div id="about" class="rich-content"></div>',
+            `<div id="${table === 'units' ? 'description' : 'about'}" class="rich-content">${aboutHtml}</div>`);
+        }
+      }
+      const coverUrl = img(row.cover, 1600);
+      if (coverUrl) {
+        page = page.replace(/(<div class="detail-hero-img" id="heroImg"[^>]*>)(<\/div>)/, (m, open, close) =>
+          `${open}<img class="pg-slide active" src="${esc(coverUrl)}" alt="${nameText}" width="1600" height="900" fetchpriority="high" decoding="async">${close}`);
       }
       if (manualFaqs.length) {
         // the FAQ section is hidden and empty in the template; fill and show

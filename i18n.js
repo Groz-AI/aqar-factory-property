@@ -383,7 +383,7 @@
     'A handpicked approach to a': 'نهج مختار بعناية في',
     'noisy market': 'سوق صاخب',
     "Aqar Factory began with a simple frustration: great properties were being sold like commodities. We set out to do the opposite — to treat every listing as a story, every client as a long-term relationship, and every transaction as something worth getting right.": 'بدأت Aqar Factory من إحباط بسيط: كانت العقارات المميزة تُباع وكأنها سلع. فقررنا فعل العكس — أن نتعامل مع كل عقار كقصة، وكل عميل كعلاقة طويلة الأمد، وكل صفقة كأمر يستحق أن يُنجز بإتقان.',
-    "Today we operate across the world's most dynamic cities, partnering with the developers and owners we believe in, and quietly turning down the ones we don't. The result is a smaller, sharper portfolio — and clients who come back.": 'اليوم نعمل في أكثر مدن العالم حيوية، بشراكة مع المطورين والملّاك الذين نثق بهم، ونعتذر بهدوء عن التعامل مع من لا نثق بهم. والنتيجة محفظة أصغر وأكثر تميزًا — وعملاء يعودون إلينا دائمًا.',
+    "Today we operate across Egypt's most dynamic cities, partnering with the developers and owners we believe in, and quietly turning down the ones we don't. The result is a smaller, sharper portfolio — and clients who come back.": 'اليوم نعمل في أكثر مدن مصر حيوية، بشراكة مع المطورين والملّاك الذين نثق بهم، ونعتذر بهدوء عن التعامل مع من لا نثق بهم. والنتيجة محفظة أصغر وأكثر تميزًا — وعملاء يعودون إلينا دائمًا.',
     'Talk to our team': 'تحدث مع فريقنا',
     'yrs': 'سنة',
     'curating spaces people are proud to call their own': 'نختار مساحات يفخر أصحابها بامتلاكها',
@@ -1063,16 +1063,15 @@
   if (!isAdminPath()) {
     let storedPref = null;
     try { storedPref = localStorage.getItem(PUBLIC_LANG_KEY); } catch (_) { /* ignore */ }
-    // no automatic redirect for a visitor who never chose: the URL decides.
-    // Only an explicit choice made with the language switch is remembered.
-    const preferredLang = (storedPref === 'en' || storedPref === 'ar') ? storedPref : (isArPath(location.pathname) ? 'ar' : 'en');
-    const currentIsAr = isArPath(location.pathname);
-    if ((preferredLang === 'ar') !== currentIsAr) {
-      const target = toggledPath(preferredLang, location.pathname);
-      if (target !== location.pathname) {
-        location.replace(target + location.search + location.hash);
-        return;
-      }
+    // The URL decides the language. The remembered choice (made earlier with
+    // the language switch) is used for one thing only: a returning visitor who
+    // opens the bare home address "/" lands on the Arabic home if that is the
+    // language they picked. A link to any other page — one a friend sent, or a
+    // search result — always opens in the language of its own address, so
+    // nobody is bounced to a different page than the one they clicked.
+    if (storedPref === 'ar' && location.pathname === '/') {
+      location.replace('/ar' + location.search + location.hash);
+      return;
     }
   }
 
