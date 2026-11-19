@@ -155,12 +155,42 @@ function renderHero(){
 /* the city's / developer's own paragraph (written in the admin), shown above
    the list while that filter is active. Each language shows only its own
    text; nothing renders if there isn't one. */
+const fullRowsPromise = {};
+function loadFullRows(kind) {
+  if (!fullRowsPromise[kind]) {
+    fullRowsPromise[kind] = (async () => {
+      let rows = null;
+      try {
+        const r = await fetch('/api/list?t=' + kind);
+        if (r.ok) rows = await r.json();
+      } catch (_) {}
+      if (!Array.isArray(rows) && window.store && window.store.sb) {
+        try { const { data } = await window.store.sb.from(kind).select('*').eq('published', true); rows = data; } catch (_) {}
+      }
+      const list = kind === 'developers' ? DEVS : CITIES;
+      (rows || []).forEach(full => {
+        const own = list.find(x => x.id === full.id);
+        if (own) Object.assign(own, full);
+      });
+      // never ask twice: rows still without the key just have no intro text
+      list.forEach(x => { if (!('description' in x)) x.description = ''; if (!('description_ar' in x)) x.description_ar = ''; });
+    })();
+  }
+  return fullRowsPromise[kind];
+}
+
 function renderIntro(){
   const box = document.getElementById('listingIntro');
   if (!box) return;
   const esc = (x) => String(x == null ? '' : x).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const row = state.developer !== 'all' ? DEVS.find(d => d.name === state.developer)
     : state.city !== 'all' ? CITIES.find(c => c.name === state.city) : null;
+  // the page arrives with city / developer rows WITHOUT their long text (keeps
+  // the first HTML small); the first time one is chosen, fetch the full rows
+  if (row && !('description' in row)) {
+    const kind = state.developer !== 'all' ? 'developers' : 'cities';
+    loadFullRows(kind).then(() => renderIntro());
+  }
   const text = row ? ((isAr() ? row.description_ar : row.description) || '') : '';
   const wrap = document.getElementById('listingWrap');
   if (!row || !text.trim()) { box.hidden = true; box.innerHTML = ''; if (wrap) wrap.classList.remove('has-intro'); return; }

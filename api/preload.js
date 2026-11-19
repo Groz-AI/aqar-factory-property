@@ -50,15 +50,16 @@ function slimRows(t, rows) {
   return rows;
 }
 
-// pages that only show city / developer cards (no intro text) skip the long
-// description columns; /projects.html still gets the full rows for its intro
+// city / developer rows go in without their long description columns on every
+// page; /projects.html fetches the one it needs (projects.js renderIntro) the
+// first time a city / developer filter is chosen
 const SLIM_COLS = {
   cities: 'id,slug,name,name_ar,image,size,country,sort_order,published,created_at,updated_at',
   developers: 'id,slug,name,name_ar,logo,sort_order,published,created_at,updated_at'
 };
 
 async function fetchTable(t, page) {
-  const cols = (page !== '/projects.html' && SLIM_COLS[t]) || COLS[t];
+  const cols = SLIM_COLS[t] || COLS[t];
   const r = await fetch(`${SUPA_URL}/rest/v1/${t}?select=${cols}&published=eq.true&order=sort_order.asc`,
     { headers: { apikey: SUPA_ANON_KEY, Authorization: `Bearer ${SUPA_ANON_KEY}` } });
   if (!r.ok) throw new Error('upstream ' + r.status);
