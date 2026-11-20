@@ -24,7 +24,8 @@ function cycleGalleries(scopeSel, hoverSel, baseInterval) {
   document.querySelectorAll(scopeSel + ' [data-gallery]').forEach((box, idx) => {
     const slides = box.querySelectorAll('.pg-slide');
     const dots = box.querySelectorAll('.pg-dots i');
-    if (slides.length < 2) return;
+    if (slides.length < 2 || box._cycling) return;   // already running (cards are added in batches)
+    box._cycling = true;
     let i = 0;
     const advance = () => {
       slides[i].classList.remove('active');
@@ -126,18 +127,41 @@ function getFiltered(){
   return list;
 }
 
+/* the cards are drawn in batches as the visitor scrolls: ~190 cards at once
+   meant a very large DOM and a long first render */
+const BATCH = 24;
+let shown = 0, curList = [], moreObs = null, sentinel = null;
+function appendBatch(){
+  const next = curList.slice(shown, shown + BATCH);
+  if (!next.length) return;
+  grid.insertAdjacentHTML('beforeend', next.map(cardHTML).join(''));
+  const kids = grid.children;
+  next.forEach((_, i) => { if (kids[shown + i]) kids[shown + i].style.animationDelay = `${i * 50}ms`; });
+  shown += next.length;
+  cycleGalleries('#projectsGrid', '.pcard', 4000);
+  if (window.cardContact) window.cardContact.wire(grid);
+  watchMore();
+}
+function watchMore(){
+  if (moreObs) moreObs.disconnect();
+  if (shown >= curList.length) { if (sentinel) sentinel.remove(); sentinel = null; return; }
+  if (!('IntersectionObserver' in window)) { appendBatch(); return; }   // no observer: draw the rest
+  if (!sentinel) { sentinel = document.createElement('div'); sentinel.style.height = '1px'; grid.after(sentinel); }
+  if (!moreObs) moreObs = new IntersectionObserver(es => { if (es.some(e => e.isIntersecting)) appendBatch(); }, { rootMargin: '900px 0px' });
+  moreObs.observe(sentinel);   // re-observing re-fires while the sentinel is still near the viewport
+}
+
 function render(){
   const list = getFiltered();
   // clear any running gallery timers before replacing the cards
   grid.querySelectorAll('[data-gallery]').forEach(b => { if (b._tid) clearInterval(b._tid); });
-  grid.innerHTML = list.map(cardHTML).join('');
-  [...grid.children].forEach((el, i) => el.style.animationDelay = `${i * 50}ms`);
+  curList = list; shown = 0;
+  grid.innerHTML = '';
+  appendBatch();
   resCount.textContent = list.length;
   emptyState.hidden = list.length !== 0;
   resetBtn.hidden = !(state.cat !== 'all' || state.city !== 'all' || state.developer !== 'all' || state.q || state.sort !== 'featured');
   searchClear.hidden = !state.q;
-  cycleGalleries('#projectsGrid', '.pcard', 4000);
-  if (window.cardContact) window.cardContact.wire(grid);
   renderIntro();
   renderHero();
 }
