@@ -4,6 +4,7 @@
   "trailingSlash": false,
   "regions": ["fra1"],
   "buildCommand": "node scripts/minify.js",
+  "outputDirectory": ".",
   "functions": { "api/preload.js": { "includeFiles": "i18n.js" }, "api/bot-render.js": { "includeFiles": "i18n.js" }, "api/landing.js": { "includeFiles": "i18n.js" } },
   "redirects": [
     { "source": "/", "has": [{ "type": "host", "value": "aqar-factory-property.vercel.app" }], "destination": "https://www.aqar-factory.com/", "permanent": true },

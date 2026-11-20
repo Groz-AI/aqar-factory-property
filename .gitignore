@@ -22,3 +22,6 @@ scratchpad/
 
 # full database/storage exports (private data)
 backup-export/
+
+# private handoff notes (contain keys)
+HANDOFF.md
