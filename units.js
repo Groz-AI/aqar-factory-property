@@ -55,16 +55,16 @@ function buildFacets() {
   ).join('');
   const cities = [...new Set(P.map(u => u.cityName).filter(Boolean))].sort();
   citySelect.insertAdjacentHTML('beforeend',
-    cities.map(c => `<option value="${c}">${c}</option>`).join(''));
+    cities.map(c => `<option value="${c}">${window.cityText(c)}</option>`).join(''));
 }
 
 const isAr = () => !!(window.i18n && window.i18n.lang === 'ar');
 function pick(u, key, arKey) {
   if (isAr()) {
     const v = u[arKey];
-    if (v) return v;
+    if (v) return window.biText(v);
   }
-  return u[key];
+  return window.biText(u[key]);
 }
 
 function cardHTML(u) {
@@ -88,7 +88,7 @@ function cardHTML(u) {
     </div>
     <div class="pcard-body">
       <h3>${pick(u, 'name', 'nameAr') || ''}</h3>
-      <p class="pcard-loc">${pinSVG}${u.location || ''}</p>
+      <p class="pcard-loc">${pinSVG}${window.biText(u.location || '')}</p>
       <p class="pcard-tag">${[u.beds ? `${u.beds} ${t('Beds')}` : '', u.baths ? `${u.baths} ${t('Baths')}` : '', u.area || ''].filter(Boolean).join(' · ')}</p>
       <div class="pcard-foot">
         <span class="pcard-price">${window.formatPrice ? window.formatPrice(u.price) : (u.price || '')}</span>
@@ -192,6 +192,7 @@ function applyURLParams() {
     const projectsByDbId = {};
     (projects || []).forEach(pr => { if (pr.dbId) projectsByDbId[pr.dbId] = pr; });
     const cityById = {};
+    window.registerCities(cities);
     (cities || []).forEach(c => { cityById[c.id] = c; });
 
     P = (units || []).map(u => {

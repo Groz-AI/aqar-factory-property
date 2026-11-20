@@ -62,6 +62,28 @@
     return (ar ? '/ar' : '') + base + encodeURIComponent(slug);
   };
 
+  // Some admin-entered texts hold both languages as "English | Arabic" (either
+  // order). Cards show only the side that matches the page language.
+  window.biText = function (s) {
+    if (typeof s !== 'string' || s.indexOf(' | ') < 0) return s;
+    const parts = s.split(' | ').map(x => x.trim()).filter(Boolean);
+    if (parts.length !== 2) return s;
+    const hasAr = x => /[؀-ۿ]/.test(x);
+    if (hasAr(parts[0]) === hasAr(parts[1])) return s;
+    const arPart = hasAr(parts[0]) ? parts[0] : parts[1], enPart = hasAr(parts[0]) ? parts[1] : parts[0];
+    return (window.i18n && window.i18n.lang === 'ar') ? arPart : enPart;
+  };
+  // city names in project / unit rows are plain English text; the Arabic name
+  // lives on the cities row (name_ar) — pages register those, cityText() uses them
+  const cityArMap = {};
+  window.registerCities = function (rows) {
+    (rows || []).forEach(c => { if (c && c.name && c.name_ar) cityArMap[c.name] = c.name_ar; });
+  };
+  window.cityText = function (n) {
+    const v = window.biText(n);
+    return (window.i18n && window.i18n.lang === 'ar' && cityArMap[v]) || v;
+  };
+
   // map a DB project row to the shape pages expect
   function mapProject(r) {
     return {

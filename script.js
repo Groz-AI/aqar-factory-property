@@ -36,9 +36,9 @@ const isAr = () => !!(window.i18n && window.i18n.lang === 'ar');
 function pick(o, key, arKey) {
   if (isAr()) {
     const v = o[arKey];
-    if (v) return v;
+    if (v) return window.biText(v);
   }
-  return o[key];
+  return window.biText(o[key]);
 }
 
 /* ---------- custom dropdown (replaces native <select> so the open list can
@@ -165,7 +165,7 @@ function unitCardHTML(u) {
       <span class="project-tag">${u.type ? t(u.type) : ''}</span>
       <h3>${pick(u, 'name', 'nameAr')}</h3>
       <p>${specs.join(' · ')}</p>
-      <div class="project-foot"><span>${u.location || ''}</span><span>${window.formatPrice ? window.formatPrice(u.price) : (u.price || '')}</span></div>
+      <div class="project-foot"><span>${window.biText(u.location || '')}</span><span>${window.formatPrice ? window.formatPrice(u.price) : (u.price || '')}</span></div>
     </div>
   </a>`;
 }
@@ -273,10 +273,10 @@ function projectCardHTML(p) {
       <div class="project-body">
         <span class="project-tag">${p.category ? t(p.category) : ''}</span>
         <h3>${pick(p, 'name', 'nameAr')}</h3>
-        <p>${p.tagline || ''}</p>
+        <p>${window.biText(p.tagline || '')}</p>
         ${devLine}
         ${consultantsLine}
-        <div class="project-foot"><span>${p.city || p.location || ''}</span><span>${p.year || ''}</span></div>
+        <div class="project-foot"><span>${window.cityText(p.city || p.location || '')}</span><span>${p.year || ''}</span></div>
       </div>
     </a>`;
 }
@@ -605,6 +605,7 @@ function wireReveals() {
     ]);
     allProjects = projects || [];
     allUnits = units || [];
+    window.registerCities(cities);
     if (window.__PRELOAD_PARTIAL) {
       fullListsReady = Promise.all([S.getProjects(), S.getUnits ? S.getUnits() : []]).then(([p, u]) => {
         if (Array.isArray(p) && p.length) allProjects = p;

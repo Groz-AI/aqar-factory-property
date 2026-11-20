@@ -49,9 +49,9 @@
   function pick(o, key, arKey) {
     if (isAr()) {
       const v = o[arKey];
-      if (v) return v;
+      if (v) return window.biText(v);
     }
-    return o[key];
+    return window.biText(o[key]);
   }
 
   function debounce(fn, ms) {
@@ -232,7 +232,7 @@
       <div class="project-body">
         <span class="project-tag">${it.type ? t(it.type) : ''}</span>
         <h3>${escHTML(pick(it, 'name', 'nameAr'))}</h3>
-        <p>${escHTML(it.city)}</p>
+        <p>${escHTML(window.cityText(it.city))}</p>
         <div class="project-foot"><span>${escHTML(it.area)}</span><span>${window.formatPrice ? window.formatPrice(it.price) : (it.price || '')}</span></div>
       </div>
     </a>`;
@@ -383,7 +383,7 @@
   function setData(cities, projects, units) {
     COMBINED = buildCombined(projects, units, cities);
 
-    cityOptions = (cities || []).map(c => ({ value: c.name, label: c.name }));
+    cityOptions = (cities || []).map(c => ({ value: c.name, label: window.cityText(c.name) }));
     searchCitySelect = searchCitySelect || (typeof initCustomSelect === 'function' ? initCustomSelect(document.getElementById('searchCity')) : null);
     if (searchCitySelect) {
       searchCitySelect.setOptions([{ value: '', label: t('All locations') }].concat(cityOptions));

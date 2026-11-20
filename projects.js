@@ -56,7 +56,7 @@ function buildFacets() {
   ).join('');
   const cities = [...new Set(P.map(p => p.city).filter(Boolean))].sort();
   citySelect.insertAdjacentHTML('beforeend',
-    cities.map(c => `<option value="${c}">${c}</option>`).join(''));
+    cities.map(c => `<option value="${c}">${window.cityText(c)}</option>`).join(''));
 }
 
 const statusClass = s => (s || '').toLowerCase().replace(/[^a-z]/g, '-');
@@ -65,9 +65,9 @@ const isAr = () => !!(window.i18n && window.i18n.lang === 'ar');
 function pick(p, key, arKey) {
   if (isAr()) {
     const v = p[arKey];
-    if (v) return v;
+    if (v) return window.biText(v);
   }
-  return p[key];
+  return window.biText(p[key]);
 }
 
 function cardHTML(p){
@@ -95,8 +95,8 @@ function cardHTML(p){
     </div>
     <div class="pcard-body">
       <h3>${pick(p, 'name', 'nameAr') || ''}</h3>
-      <p class="pcard-loc">${pinSVG}${p.location || ''}</p>
-      <p class="pcard-tag">${p.tagline || ''}</p>
+      <p class="pcard-loc">${pinSVG}${window.biText(p.location || '')}</p>
+      <p class="pcard-tag">${window.biText(p.tagline || '')}</p>
       <div class="pcard-foot">
         <span class="pcard-price">${window.formatPrice ? window.formatPrice(stats.price) : (stats.price || '')}</span>
         <span class="arrow">${arrowSVG}</span>
@@ -265,7 +265,7 @@ function applyURLParams() {
 (async function () {
   try {
     const [projects, cities, devs] = await Promise.all([window.store.getProjects(), window.store.getCities ? window.store.getCities() : [], window.store.getDevelopers ? window.store.getDevelopers() : [], window.store.getCategories ? window.store.getCategories() : null]);
-    P = projects; CITIES = cities || []; DEVS = devs || [];
+    P = projects; CITIES = cities || []; DEVS = devs || []; window.registerCities(CITIES);
   } catch (e) { P = window.PROJECTS || []; }
   if (!P || !P.length) P = window.PROJECTS || [];
   buildFacets();
