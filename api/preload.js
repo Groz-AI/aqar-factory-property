@@ -66,9 +66,10 @@ const SLIM_COLS = {
 // is incomplete — store.js then hands these rows to the page's first paint
 // (getProjects({quick:true})) and loads the complete list in the background.
 const SLIM_KEYS = {
-  projects: ['id', 'slug', 'slug_ar', 'name', 'name_ar', 'category', 'city', 'location', 'developer', 'developer_id', 'city_id',
-    'sort_order', 'published', 'is_featured', 'ready_to_move', 'price', 'price_value', 'area', 'area_value', 'cover'],
-  units: ['id', 'slug', 'slug_ar', 'name', 'name_ar', 'type', 'price', 'price_value', 'beds', 'area', 'area_value', 'location',
+  // display texts (location, price, area) are left out: they come with the complete list
+  projects: ['id', 'slug', 'slug_ar', 'name', 'name_ar', 'category', 'city', 'developer', 'developer_id', 'city_id',
+    'sort_order', 'published', 'is_featured', 'ready_to_move', 'price_value', 'area_value', 'cover'],
+  units: ['id', 'slug', 'slug_ar', 'name', 'name_ar', 'type', 'price_value', 'beds', 'area_value',
     'project_id', 'city_id', 'developer_id', 'sort_order', 'published', 'is_featured', 'ready_to_move', 'cover']
 };
 // which rows each page draws whole (index in sort order, row)
