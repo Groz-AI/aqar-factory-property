@@ -698,6 +698,10 @@ em{font-style:normal}
   display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:230px;gap:20px;
 }
 .city-card{
+  /* isolation keeps the card its own stacking context: the photo sits at
+     z-index:-1 inside it, and without this it fell behind the section's
+     background as soon as the fade-in (opacity/transform) finished */
+  isolation:isolate;
   position:relative;border-radius:var(--r);overflow:hidden;cursor:pointer;
   background-image:linear-gradient(180deg,rgba(8,16,28,0) 35%,rgba(8,16,28,.78));
   color:#fff;
