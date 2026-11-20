@@ -382,6 +382,7 @@
     'Who we are': 'من نحن',
     'A handpicked approach to a': 'نهج مختار بعناية في',
     'noisy market': 'سوق صاخب',
+    'Egypt': 'مصر',
     "Aqar Factory began with a simple frustration: great properties were being sold like commodities. We set out to do the opposite — to treat every listing as a story, every client as a long-term relationship, and every transaction as something worth getting right.": 'بدأت Aqar Factory من إحباط بسيط: كانت العقارات المميزة تُباع وكأنها سلع. فقررنا فعل العكس — أن نتعامل مع كل عقار كقصة، وكل عميل كعلاقة طويلة الأمد، وكل صفقة كأمر يستحق أن يُنجز بإتقان.',
     "Today we operate across Egypt's most dynamic cities, partnering with the developers and owners we believe in, and quietly turning down the ones we don't. The result is a smaller, sharper portfolio — and clients who come back.": 'اليوم نعمل في أكثر مدن مصر حيوية، بشراكة مع المطورين والملّاك الذين نثق بهم، ونعتذر بهدوء عن التعامل مع من لا نثق بهم. والنتيجة محفظة أصغر وأكثر تميزًا — وعملاء يعودون إلينا دائمًا.',
     'Talk to our team': 'تحدث مع فريقنا',

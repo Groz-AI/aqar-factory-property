@@ -229,9 +229,11 @@ function renderCities(cities, projectList) {
     const w = size ? 900 : 700;
     const n = counts[c.id] || 0;
     const label = n === 1 ? t('1 Project') : `${n.toLocaleString()} ${t('Projects')}`;
-    return `<a class="city-card${size} reveal" href="${landingHref('city', c)}" aria-label="${t('View projects in')} ${c.name}">
-      <img class="city-card-img" src="${IMG(c.image, w)}" alt="${escHTML(c.name)}" width="${w}" height="${Math.round(w * 0.72)}" loading="lazy">
-      <div class="city-meta"><h3>${c.name}</h3><p>${c.country || ''}</p></div>
+    // Arabic visitors see the city's Arabic name (set in the admin) and country
+    const nm = escHTML((isAr() && c.name_ar) ? c.name_ar : c.name);
+    return `<a class="city-card${size} reveal" href="${landingHref('city', c)}" aria-label="${t('View projects in')} ${nm}">
+      <img class="city-card-img" src="${IMG(c.image, w)}" alt="${nm}" width="${w}" height="${Math.round(w * 0.72)}" loading="lazy">
+      <div class="city-meta"><h3>${nm}</h3><p>${c.country ? t(c.country) : ''}</p></div>
       <span class="city-count">${label}</span>
     </a>`;
   }).join('');

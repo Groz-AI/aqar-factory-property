@@ -26,14 +26,15 @@ const imgUrl = (ref, w = 900) =>
     wrap.innerHTML = (cities || []).map(c => {
       const n = counts[c.id] || 0;
       const label = n === 1 ? t('1 Project') : `${n.toLocaleString()} ${t('Projects')}`;
+      const nm = (isAr() && c.name_ar) ? c.name_ar : c.name;
       return `
       <article class="city-row">
-        <a class="city-row-img" href="${landingHref('city', c)}" aria-label="${esc(c.name)}">
-          <img src="${imgUrl(c.image, 900)}" alt="${esc(c.name)}" width="900" height="563" loading="lazy">
+        <a class="city-row-img" href="${landingHref('city', c)}" aria-label="${esc(nm)}">
+          <img src="${imgUrl(c.image, 900)}" alt="${esc(nm)}" width="900" height="563" loading="lazy">
         </a>
         <div class="city-row-body">
-          <h2>${esc(c.name)}</h2>
-          <p class="city-row-meta">${esc(c.country || '')}${c.country ? ' · ' : ''}${label}</p>
+          <h2>${esc(nm)}</h2>
+          <p class="city-row-meta">${esc(c.country ? t(c.country) : '')}${c.country ? ' · ' : ''}${label}</p>
           <a class="view-all" href="${landingHref('city', c)}"><span>${t('View projects')}</span>
             <svg viewBox="0 0 24 24" fill="none"><path d="M7 17 17 7M9 7h8v8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
         </div>
