@@ -58,6 +58,38 @@ const SLIM_COLS = {
   developers: 'id,slug,name,name_ar,logo,sort_order,published,created_at,updated_at'
 };
 
+// ---- partial lists ------------------------------------------------------
+// The home / units / cities pages only DRAW a few project / unit cards (or
+// none) but need a few facts about every row (counts per city, filters,
+// search bounds). Rows the page draws go in whole; every other row goes in
+// with just those facts, and window.__PRELOAD_PARTIAL tells store.js the list
+// is incomplete — store.js then hands these rows to the page's first paint
+// (getProjects({quick:true})) and loads the complete list in the background.
+const SLIM_KEYS = {
+  projects: ['id', 'slug', 'slug_ar', 'name', 'name_ar', 'category', 'city', 'location', 'developer', 'developer_id', 'city_id',
+    'sort_order', 'published', 'is_featured', 'ready_to_move', 'price', 'price_value', 'area', 'area_value', 'cover'],
+  units: ['id', 'slug', 'slug_ar', 'name', 'name_ar', 'type', 'price', 'price_value', 'beds', 'area', 'area_value', 'location',
+    'project_id', 'city_id', 'developer_id', 'sort_order', 'published', 'is_featured', 'ready_to_move', 'cover']
+};
+// which rows each page draws whole (index in sort order, row)
+const none = () => false;
+const PARTIAL = {
+  '/': {
+    projects: (r, i) => i < 4 || r.is_featured || r.ready_to_move,
+    units: (r, i) => i < 8 || r.is_featured || r.ready_to_move
+  },
+  '/units.html': { projects: none },
+  '/cities.html': { projects: none }
+};
+function makePartial(t, rows, wholeIf) {
+  return rows.map((r, i) => {
+    if (wholeIf(r, i)) return r;
+    const o = {};
+    SLIM_KEYS[t].forEach(k => { if (r[k] !== undefined) o[k] = r[k]; });
+    return o;
+  });
+}
+
 async function fetchTable(t, page) {
   const cols = SLIM_COLS[t] || COLS[t];
   const r = await fetch(`${SUPA_URL}/rest/v1/${t}?select=${cols}&published=eq.true&order=sort_order.asc`,
@@ -134,10 +166,15 @@ module.exports = async function handler(req, res) {
   }
   try {
     const rows = await Promise.all(tables.map(t => fetchTable(t, page)));
-    const data = {}; tables.forEach((t, i) => { if (Array.isArray(rows[i]) && rows[i].length) data[t] = rows[i]; });
+    const data = {}, partial = {};
+    tables.forEach((t, i) => {
+      if (!Array.isArray(rows[i]) || !rows[i].length) return;
+      const rule = PARTIAL[page] && PARTIAL[page][t];
+      if (rule) { data[t] = makePartial(t, rows[i], rule); partial[t] = 1; } else data[t] = rows[i];
+    });
     // "<" escaped so no row can close the script tag; the JSON is valid JS
     const json = JSON.stringify(data).split('<').join('\\u003c');
-    const tag = '<script>window.__PRELOAD=' + json + ';</script>\n';
+    const tag = '<script>window.__PRELOAD=' + json + ';' + (Object.keys(partial).length ? 'window.__PRELOAD_PARTIAL=' + JSON.stringify(partial) + ';' : '') + '</script>\n';
     const anchor = '<script src="store.js"></script>';
     if (html.includes(anchor)) { out = html.replace(anchor, () => tag + anchor); cache = 'public, max-age=0, s-maxage=30, stale-while-revalidate=120'; }
   } catch (_) { /* plain static page */ }

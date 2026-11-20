@@ -20,7 +20,7 @@ const imgUrl = (ref, w = 900) =>
 (async function () {
   const wrap = document.getElementById('cityRows');
   try {
-    const [cities, projects] = await Promise.all([window.store.getCities(), window.store.getProjects()]);
+    const [cities, projects] = await Promise.all([window.store.getCities(), window.store.getProjects({ quick: true })]);
     const counts = {};
     (projects || []).forEach(p => { if (p.cityId) counts[p.cityId] = (counts[p.cityId] || 0) + 1; });
     wrap.innerHTML = (cities || []).map(c => {

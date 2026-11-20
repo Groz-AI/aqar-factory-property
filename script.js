@@ -30,6 +30,7 @@ const emLast = (s) => {
 
 let allProjects = [];
 let allUnits = [];
+let fullListsReady = Promise.resolve(); // resolves once allProjects / allUnits hold complete rows
 
 const isAr = () => !!(window.i18n && window.i18n.lang === 'ar');
 function pick(o, key, arKey) {
@@ -189,7 +190,8 @@ function renderUnitChips() {
   wrap.querySelectorAll('.chip').forEach(b => b.addEventListener('click', () => {
     wrap.querySelector('.active')?.classList.remove('active');
     b.classList.add('active');
-    renderUnits(b.dataset.type);
+    // rows beyond the first few arrive whole only with the complete list
+    fullListsReady.then(() => { if (b.classList.contains('active')) renderUnits(b.dataset.type); });
   }));
 }
 
@@ -593,12 +595,21 @@ function wireReveals() {
 (async function init() {
   const S = window.store;
   try {
+    // first paint from the rows the server put in the page (whole rows for the
+    // cards shown, a few facts for the rest); the complete lists follow below
     const [cities, projects, units, devs, content] = await Promise.all([
-      S.getCities(), S.getProjects(), S.getUnits ? S.getUnits() : [], S.getDevelopers(), S.getContent(),
+      S.getCities(), S.getProjects({ quick: true }), S.getUnits ? S.getUnits({ quick: true }) : [], S.getDevelopers(), S.getContent(),
       S.getCategories ? S.getCategories() : null
     ]);
     allProjects = projects || [];
     allUnits = units || [];
+    if (window.__PRELOAD_PARTIAL) {
+      fullListsReady = Promise.all([S.getProjects(), S.getUnits ? S.getUnits() : []]).then(([p, u]) => {
+        if (Array.isArray(p) && p.length) allProjects = p;
+        if (Array.isArray(u) && u.length) allUnits = u;
+        if (window.smartSearch && window.smartSearch.refreshData) window.smartSearch.refreshData(cities || [], allProjects, allUnits);
+      }).catch(() => {});
+    }
     applyContent(content);
     if (window.smartSearch) window.smartSearch.setData(cities || [], allProjects, allUnits);
     initHeroTyping();

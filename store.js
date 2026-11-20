@@ -169,7 +169,36 @@
     try { sessionStorage.setItem('rt_list_' + table, JSON.stringify({ t: Date.now(), d: rows })); } catch (_) {}
   }
 
-  async function fetchTable(table, fallbackKey, map) {
+  // the complete published list: tab cache → CDN copy → database; null if none worked
+  async function fetchFullRows(table) {
+    const cached = cacheGet(table);
+    if (cached) return cached;
+    // 1) the CDN-cached copy (nearby, instant); 2) the database directly
+    if (/^https?:/.test(location.protocol) && !/^(localhost|127.)/.test(location.hostname)) {
+      try {
+        const r = await fetch('/api/list?t=' + table);
+        if (r.ok) {
+          const rows = await r.json();
+          if (Array.isArray(rows) && rows.length) { cacheSet(table, rows); return rows; }
+        }
+      } catch (_) { /* fall through to the direct query */ }
+    }
+    try {
+      const { data, error } = await sb.from(table).select(LIST_COLS[table] || '*').eq('published', true).order('sort_order', { ascending: true });
+      if (error || !data || !data.length) return null;
+      cacheSet(table, data);
+      return data;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  // api/preload.js may send a list as "partial" (window.__PRELOAD_PARTIAL): rows
+  // the page draws are whole, the rest carry only a few facts. quick:true asks
+  // for exactly those rows (first paint); anything else gets the complete list,
+  // fetched once and shared.
+  const fullMemo = {};
+  async function fetchTable(table, fallbackKey, map, quick) {
     async function fallback() {
       await ensureFallback();
       const d = getF()[fallbackKey] || [];
@@ -178,27 +207,17 @@
     if (!sb) return fallback();
     // rows the server already put in the page (api/preload.js)
     const pre = window.__PRELOAD && window.__PRELOAD[table];
-    if (Array.isArray(pre) && pre.length) return map ? pre.map(map) : pre;
-    const cached = cacheGet(table);
-    if (cached) return map ? cached.map(map) : cached;
-    // 1) the CDN-cached copy (nearby, instant); 2) the database directly
-    if (/^https?:/.test(location.protocol) && !/^(localhost|127.)/.test(location.hostname)) {
-      try {
-        const r = await fetch('/api/list?t=' + table);
-        if (r.ok) {
-          const rows = await r.json();
-          if (Array.isArray(rows) && rows.length) { cacheSet(table, rows); return map ? rows.map(map) : rows; }
-        }
-      } catch (_) { /* fall through to the direct query */ }
+    if (Array.isArray(pre) && pre.length) {
+      const partial = !!(window.__PRELOAD_PARTIAL && window.__PRELOAD_PARTIAL[table]);
+      if (!partial || quick) return map ? pre.map(map) : pre;
+      if (!fullMemo[table]) fullMemo[table] = fetchFullRows(table);
+      const rows = await fullMemo[table];
+      // could not load the complete list: the partial rows are still real data
+      return map ? (rows || pre).map(map) : (rows || pre);
     }
-    try {
-      const { data, error } = await sb.from(table).select(LIST_COLS[table] || '*').eq('published', true).order('sort_order', { ascending: true });
-      if (error || !data || !data.length) return fallback();
-      cacheSet(table, data);
-      return map ? data.map(map) : data;
-    } catch (_) {
-      return fallback();
-    }
+    const rows = await fetchFullRows(table);
+    if (!rows) return fallback();
+    return map ? rows.map(map) : rows;
   }
 
   // fetches a single row by its (English or Arabic) slug instead of
@@ -427,12 +446,12 @@
 
   window.store = {
     configured,
-    getProjects:     () => fetchTable('projects', 'projects', mapProject),
+    getProjects:     (o) => fetchTable('projects', 'projects', mapProject, !!(o && o.quick)),
     getCities:       () => fetchTable('cities', 'cities'),
     getTestimonials: () => fetchTable('testimonials', 'testimonials'),
     getDevelopers:   () => fetchTable('developers', 'developers'),
     getBlogPosts:    () => fetchTable('blog_posts', 'blogPosts', mapBlogPost),
-    getUnits:        () => fetchTable('units', 'units', mapUnit),
+    getUnits:        (o) => fetchTable('units', 'units', mapUnit, !!(o && o.quick)),
     getProjectBySlug: (slug) => fetchOne('projects', slug, 'projects', mapProject),
     getUnitBySlug:    (slug) => fetchOne('units', slug, 'units', mapUnit),
     getCategories,

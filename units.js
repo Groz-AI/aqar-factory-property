@@ -185,7 +185,7 @@ function applyURLParams() {
   try {
     const [units, projects, cities] = await Promise.all([
       window.store.getUnits ? window.store.getUnits() : [],
-      window.store.getProjects ? window.store.getProjects() : [],
+      window.store.getProjects ? window.store.getProjects({ quick: true }) : [],
       window.store.getCities ? window.store.getCities() : [],
       window.store.getCategories ? window.store.getCategories() : null
     ]);

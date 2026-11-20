@@ -410,6 +410,13 @@
     render();
   }
 
+  // the complete lists arrived after first paint (the page started from the
+  // partial rows api/preload.js sent): swap them in, bounds and chips stay
+  function refreshData(cities, projects, units) {
+    COMBINED = buildCombined(projects, units, cities);
+    if (hasSearched) render();
+  }
+
   wireEvents();
-  window.smartSearch = { setData };
+  window.smartSearch = { setData, refreshData };
 })();
