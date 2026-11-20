@@ -466,6 +466,25 @@
     } catch (_) { /* realtime not available — pages still update on next load */ }
   }
 
+  // makes `el` read "<prefix><developer name>" with the name linking to that
+  // developer's page (/developer/<slug>); leaves the plain text when it has none
+  window.linkDeveloper = async function (el, devId, devName, prefix) {
+    if (!el || (!devId && !devName)) return;
+    try {
+      const devs = await window.store.getDevelopers();
+      const d = (devs || []).find(x => devId ? x.id === devId : x.name === devName);
+      const S = window.SchemaHelpers;
+      const slug = d && S && S.entityUrlSlug ? S.entityUrlSlug(d) : '';
+      if (!slug) return;
+      const ar = !!(window.i18n && window.i18n.lang === 'ar');
+      const a = document.createElement('a');
+      a.href = (ar ? '/ar' : '') + '/developer/' + encodeURIComponent(slug);
+      a.textContent = (ar && d.name_ar) || devName || d.name;
+      el.textContent = prefix || '';
+      el.appendChild(a);
+    } catch (_) { /* keep the plain text */ }
+  };
+
   window.store = {
     configured,
     getProjects:     (o) => fetchTable('projects', 'projects', mapProject, !!(o && o.quick)),

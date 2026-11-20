@@ -102,7 +102,7 @@ export const config = {
     // static pages — matched so bots can get server-injected hreflang (see
     // the STATIC_HREFLANG_PAGES block below); real browsers pass straight
     // through untouched, same as everywhere else in this file
-    '/', '/ar', '/projects.html', '/ar/projects.html', '/units.html', '/ar/units.html', '/cities.html', '/ar/cities.html',
+    '/', '/ar', '/projects.html', '/ar/projects.html', '/units.html', '/ar/units.html', '/cities.html', '/ar/cities.html', '/developers.html', '/ar/developers.html', '/developers.html', '/ar/developers.html',
     '/blog.html', '/ar/blog.html', '/about.html', '/ar/about.html', '/contact.html', '/ar/contact.html'
   ],
   // @vercel/blob's get() pulls in Node-specific modules (net/tls/stream/etc.)
@@ -156,8 +156,8 @@ export default async function middleware(request) {
   // Uses its own isAr check (not the one below) because "/ar" with no
   // trailing slash — the real, trailingSlash:false form of the Arabic
   // homepage — doesn't match startsWith('/ar/').
-  const STATIC_HREFLANG_PAGES = new Set(['/', '/projects.html', '/units.html', '/cities.html', '/blog.html', '/about.html', '/contact.html']);
-  const PRELOAD_PAGES = new Set(['/', '/projects.html', '/units.html', '/cities.html']);
+  const STATIC_HREFLANG_PAGES = new Set(['/', '/projects.html', '/units.html', '/cities.html', '/developers.html', '/blog.html', '/about.html', '/contact.html']);
+  const PRELOAD_PAGES = new Set(['/', '/projects.html', '/units.html', '/cities.html', '/developers.html']);
   // pages with no card lists: still go through api/preload so the first HTML carries canonical / hreflang (and Arabic text on /ar)
   const AR_TEXT_PAGES = new Set(['/about.html', '/contact.html', '/blog.html']);
   const staticIsAr = url.pathname === '/ar' || url.pathname.startsWith('/ar/');

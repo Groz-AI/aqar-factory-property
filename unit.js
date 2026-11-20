@@ -329,6 +329,7 @@ function renderDeveloperPicks() {
 
   section.hidden = false;
   document.getElementById('devPicksTitle').textContent = `${t('More from')} ${developerLabel}`;
+  if (window.linkDeveloper) window.linkDeveloper(document.getElementById('devPicksTitle'), self.developerId, self.developer, `${t('More from')} `);
   grid.querySelectorAll('[data-gallery]').forEach(b => { if (b._tid) clearInterval(b._tid); });
   grid.innerHTML = devUnits.map(unitCardHTML).join('');
   cycleGalleries('#devPicks', '.pcard', 4000);

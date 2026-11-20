@@ -30,6 +30,7 @@ const PAGE_TABLES = {
   '/projects.html': ['projects', 'cities', 'developers', 'categories'],
   '/units.html': ['units', 'projects', 'cities', 'categories'],
   '/cities.html': ['cities', 'projects'],
+  '/developers.html': ['developers', 'projects'],
   // no lists: these only need the Arabic text for visitors of /ar/ pages
   '/about.html': [], '/contact.html': [], '/blog.html': []
 };
@@ -80,7 +81,8 @@ const PARTIAL = {
     units: (r, i) => i < 8 || r.is_featured || r.ready_to_move
   },
   '/units.html': { projects: none },
-  '/cities.html': { projects: none }
+  '/cities.html': { projects: none },
+  '/developers.html': { projects: none }
 };
 function makePartial(t, rows, wholeIf) {
   return rows.map((r, i) => {

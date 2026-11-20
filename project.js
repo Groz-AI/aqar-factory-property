@@ -222,6 +222,7 @@ function populate() {
     .filter(([, v]) => v)
     .map(([k, v]) => `<div><dt>${t(k)}</dt><dd>${v}</dd></div>`).join('');
   document.getElementById('devName').textContent = project.developer || '';
+  if (window.linkDeveloper) window.linkDeveloper(document.getElementById('devName'), project.developerId, project.developer, '');
   const devAv = document.getElementById('devAv');
   if (project.developerLogo) {
     devAv.innerHTML = `<img src="${U(project.developerLogo, 80)}" alt="${project.developer || ''}">`;
@@ -487,6 +488,7 @@ function renderDeveloperPicks() {
 
   section.hidden = false;
   document.getElementById('devPicksTitle').textContent = `${t('More from')} ${project.developer}`;
+  if (window.linkDeveloper) window.linkDeveloper(document.getElementById('devPicksTitle'), project.developerId, project.developer, `${t('More from')} `);
   grid.querySelectorAll('[data-gallery]').forEach(b => { if (b._tid) clearInterval(b._tid); });
   grid.innerHTML = devProjects.map(projectCardHTML).join('') + devUnits.map(unitCardHTML).join('');
   cycleGalleries('#devPicks', '.pcard', 4000);

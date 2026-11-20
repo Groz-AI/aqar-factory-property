@@ -18,7 +18,7 @@ let esbuild;
 try { esbuild = require('esbuild'); } catch (e) { console.log('minify: esbuild missing, skipped'); process.exit(0); }
 
 const root = path.join(__dirname, '..');
-const js = ['ai-widget', 'blocks-render', 'blog-post', 'blog', 'branding', 'card-contact', 'cities', 'data', 'market-update',
+const js = ['ai-widget', 'blocks-render', 'blog-post', 'blog', 'branding', 'card-contact', 'cities', 'data', 'developers', 'market-update',
   'newsletter', 'project', 'projects', 'script', 'smart-search', 'store', 'unit', 'units', 'whatsapp-widget'].map(n => n + '.js');
 const css = ['styles.css', 'pages.css'];
 

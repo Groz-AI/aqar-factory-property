@@ -100,6 +100,15 @@ async function fetchRow(table, slug, rich) {
   }
 }
 
+// the developer fact of a project / unit page: links to the developer's own
+// page (/developer/<slug>) when there is one, plain text otherwise
+async function developerFact(devId, devName, isAr) {
+  const d = devId ? await fetchById('developers', devId, 'slug,name,name_ar') : null;
+  const slug = d ? SchemaHelpers.entityUrlSlug(d) : '';
+  if (!slug) return devName;
+  return { text: (isAr && d.name_ar) || devName || d.name, href: `https://www.aqar-factory.com${isAr ? '/ar' : ''}/developer/${encodeURIComponent(slug)}` };
+}
+
 async function fetchById(table, id, select) {
   if (!id) return null;
   try {
@@ -265,6 +274,11 @@ const STATIC_META = {
     description: 'Browse real-estate projects and units by city — read about each area and see what we have for sale there.',
     descriptionAr: 'تصفح المشروعات والوحدات العقارية حسب المدينة — اقرأ عن كل منطقة وتعرف على ما نعرضه للبيع فيها.'
   },
+  '/developers.html': {
+    title: 'Developers — Aqar Factory', titleAr: 'المطورون — Aqar Factory',
+    description: "Browse the real-estate developers we work with — see each developer's projects, prices and payment plans on Aqar Factory.",
+    descriptionAr: 'تصفح شركات التطوير العقاري التي نتعامل معها — شاهد مشروعات كل مطور وأسعارها وخطط السداد على Aqar Factory.'
+  },
   '/blog.html': {
     title: 'Blog — Aqar Factory', titleAr: 'المدونة — Aqar Factory',
     description: 'Market insight, buying guides and stories from the Aqar Factory team — real estate, done right.',
@@ -348,6 +362,17 @@ const LISTING_INJECT = {
     href: (slug, ar) => `${ar ? '/ar' : ''}/city/${encodeURIComponent(slug)}`,
     row: (r, ar) => ({ slug: SchemaHelpers.entityUrlSlug(r), name: (ar && r.name_ar) || r.name, sub: ((ar ? r.description_ar : r.description) || '').replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, '$1') || r.country || '' })
   }],
+  '/developers.html': [{
+    // only developers that own at least one project (the others have no page)
+    table: 'developers', containerId: 'devRows', limit: 200,
+    select: 'slug,name,name_ar,description,description_ar,projects(count)',
+    href: (slug, ar) => `${ar ? '/ar' : ''}/developer/${encodeURIComponent(slug)}`,
+    row: (r, ar) => ({
+      slug: (r.projects && r.projects[0] && r.projects[0].count > 0) ? SchemaHelpers.entityUrlSlug(r) : '',
+      name: (ar && r.name_ar) || r.name,
+      sub: ((ar ? r.description_ar : r.description) || '').replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, '$1').replace(/\s+/g, ' ').trim().slice(0, 160)
+    })
+  }],
   '/blog.html': [{
     table: 'blog_posts', containerId: 'blogGrid',
     select: 'slug,title,title_ar,excerpt,excerpt_ar',
@@ -388,15 +413,15 @@ const LISTING_INJECT = {
 // so a crawler landing on it had nowhere to go - and to Google it looked
 // nothing like the page visitors get, which has a full header and footer.
 const NAV = {
-  en: { home: 'Home', projects: 'Projects', units: 'Units', cities: 'Cities', blog: 'Blog', about: 'About Us', contact: 'Contact', other: 'العربية' },
-  ar: { home: 'الرئيسية', projects: 'مشاريع', units: 'الوحدات', cities: 'المدن', blog: 'المدونة', about: 'من نحن', contact: 'تواصل معنا', other: 'English' }
+  en: { home: 'Home', projects: 'Projects', units: 'Units', cities: 'Cities', developers: 'Developers', blog: 'Blog', about: 'About Us', contact: 'Contact', other: 'العربية' },
+  ar: { home: 'الرئيسية', projects: 'مشاريع', units: 'الوحدات', cities: 'المدن', developers: 'المطورون', blog: 'المدونة', about: 'من نحن', contact: 'تواصل معنا', other: 'English' }
 };
 function siteNav(isAr) {
   const L = NAV[isAr ? 'ar' : 'en'];
   const pre = isAr ? '/ar' : '';
   const S = 'https://www.aqar-factory.com';
   return [
-    [L.home, isAr ? S + '/ar' : S + '/'], [L.projects, S + pre + '/projects.html'], [L.units, S + pre + '/units.html'], [L.cities, S + pre + '/cities.html'],
+    [L.home, isAr ? S + '/ar' : S + '/'], [L.projects, S + pre + '/projects.html'], [L.units, S + pre + '/units.html'], [L.cities, S + pre + '/cities.html'], [L.developers, S + pre + '/developers.html'],
     [L.blog, S + pre + '/blog.html'], [L.about, S + pre + '/about.html'], [L.contact, S + pre + '/contact.html']
   ].map(([label, href]) => `<a href="${esc(href)}">${esc(label)}</a>`).join(' | ');
 }
@@ -421,7 +446,7 @@ function blocksToSafeHtml(blocks, altText, word) {
 
 function pageHTML({ title, description, image, url, canonicalUrl, hreflangEn, hreflangAr, type, facts, bodyText, bodyBlocks, amenities, gallery, consultants, brochurePdf, related, projectUnits, faqPairs, parentProject, crumb, isAr, jsonLd }) {
   const factsList = facts.length
-    ? `<h2>Key facts</h2><ul>${facts.map(([k, v]) => `<li><b>${esc(k)}:</b> ${esc(v)}</li>`).join('')}</ul>` : '';
+    ? `<h2>Key facts</h2><ul>${facts.map(([k, v]) => `<li><b>${esc(k)}:</b> ${v && v.href ? `<a href="${esc(v.href)}">${esc(v.text)}</a>` : esc(v)}</li>`).join('')}</ul>` : '';
   const amenitiesList = (amenities && amenities.length)
     ? `<h2>Amenities</h2><ul>${amenities.map(a => `<li>${esc(a)}</li>`).join('')}</ul>` : '';
   const consultantsList = (consultants && consultants.length)
@@ -581,7 +606,7 @@ async function handleStatic(req, res, params) {
     html = html.replace(/<script type="application\/ld\+json" id="siteSchema">[\s\S]*?<\/script>\s*/, '');
     const PAGE_TYPE = {
       '/about.html': 'AboutPage', '/contact.html': 'ContactPage',
-      '/projects.html': 'CollectionPage', '/units.html': 'CollectionPage', '/cities.html': 'CollectionPage', '/blog.html': 'CollectionPage'
+      '/projects.html': 'CollectionPage', '/units.html': 'CollectionPage', '/cities.html': 'CollectionPage', '/developers.html': 'CollectionPage', '/blog.html': 'CollectionPage'
     };
     const graph = [SchemaHelpers.companyNode(company), SchemaHelpers.websiteNode()];
     if (PAGE_TYPE[page]) {
@@ -753,7 +778,7 @@ async function handleDetail(req, res, params) {
       || (richMode ? blocksToText(pick('about_blocks', 'about_blocks_ar')) || (row.about && row.about[0]) : '')
       || row.tagline || '';
     image = img(row.cover, 1200);
-    if (row.developer) facts.push([isAr ? 'المطوّر' : 'Developer', row.developer]);
+    if (row.developer) facts.push([isAr ? 'المطوّر' : 'Developer', richMode ? await developerFact(row.developer_id, row.developer, isAr) : row.developer]);
     if (row.location) facts.push([isAr ? 'الموقع' : 'Location', row.location]);
     if (row.city) facts.push([isAr ? 'المدينة' : 'City', row.city]);
     if (row.country) facts.push([isAr ? 'الدولة' : 'Country', row.country]);
@@ -816,7 +841,7 @@ async function handleDetail(req, res, params) {
       const relUnits = await fetchRelatedUnits(devId, devName, row.slug);
       related = relUnits.map(r => ({ name: (isAr && r.name_ar) || r.name, url: linkUrl(r.slug, r.slug_ar, 'units') }));
     }
-    if (devName) facts.unshift([isAr ? 'المطوّر' : 'Developer', devName]);
+    if (devName) facts.unshift([isAr ? 'المطوّر' : 'Developer', richMode ? await developerFact(devId, devName, isAr) : devName]);
   }
   description = String(description || '').trim();
   bodyText = String(bodyText || '').trim();

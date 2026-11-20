@@ -93,8 +93,8 @@ module.exports = async function handler(req, res) {
   const arUrl = `${SITE}/ar/${kind}/${encodeURIComponent(slugNow)}`;
   const n = mine.length;
   // offered to Google only when it has its own text (300+ characters) and 3+ projects, per language
-  const indexableEn = SchemaHelpers.landingIndexable(ent, n, false);
-  const indexableAr = SchemaHelpers.landingIndexable(ent, n, true);
+  const indexableEn = SchemaHelpers.landingIndexable(ent, n, false, kind);
+  const indexableAr = SchemaHelpers.landingIndexable(ent, n, true, kind);
   const indexable = ar ? indexableAr : indexableEn;
 
   // text written in the admin (page title / heading / search description) wins

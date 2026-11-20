@@ -228,11 +228,18 @@
   // A landing page is offered to Google only when it has real text of its
   // own (about 300 characters or more, in the language of the page) and at
   // least 3 projects. Each language is decided on its own.
+  // A developer is also offered when it has 3+ projects but no text yet: its
+  // page is then a real list of those projects (the Arabic one needs name_ar).
+  // A developer with its own text needs only 1 project.
   const LANDING_MIN_CHARS = 300;
   const LANDING_MIN_PROJECTS = 3;
-  function landingIndexable(ent, projectCount, ar) {
+  function landingIndexable(ent, projectCount, ar, kind) {
     const raw = ent ? (ar ? ent.description_ar : ent.description) : '';
     const text = String(raw || '').replace(/\[([^\]]+)\]\([^)]*\)/g, '$1').replace(/\s+/g, ' ').trim();
+    if (kind === 'developer') {
+      if (text.length >= LANDING_MIN_CHARS && projectCount >= 1) return true;
+      return projectCount >= LANDING_MIN_PROJECTS && (!ar || !!String(ent && ent.name_ar || '').trim());
+    }
     return text.length >= LANDING_MIN_CHARS && projectCount >= LANDING_MIN_PROJECTS;
   }
 

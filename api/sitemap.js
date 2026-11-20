@@ -86,8 +86,8 @@ function urlPairSlugged(SITE_URL, base, enSlug, arSlug, lastmod, priority) {
 function landingEntries(SITE_URL, kind, ent, projects, priority) {
   const n = SchemaHelpers.entityProjects(kind, ent, projects).length;
   const slug = encodeURIComponent(SchemaHelpers.entityUrlSlug(ent));
-  const enOk = SchemaHelpers.landingIndexable(ent, n, false);
-  const arOk = SchemaHelpers.landingIndexable(ent, n, true);
+  const enOk = SchemaHelpers.landingIndexable(ent, n, false, kind);
+  const arOk = SchemaHelpers.landingIndexable(ent, n, true, kind);
   const enUrl = `${SITE_URL}/${kind}/${slug}`;
   const arUrl = `${SITE_URL}/ar/${kind}/${slug}`;
   const alt = (enOk && arOk)
@@ -137,6 +137,7 @@ module.exports = async function handler(req, res) {
     { path: '/projects.html', priority: '0.9', lastmod: newest(projects) },
     { path: '/units.html', priority: '0.9', lastmod: newest(units) },
     { path: '/cities.html', priority: '0.8', lastmod: latestOf(cityRows, projects) },
+    { path: '/developers.html', priority: '0.8', lastmod: latestOf(devRows, projects) },
     { path: '/blog.html', priority: '0.8', lastmod: newest(posts) },
     { path: '/about.html', priority: '0.6', lastmod: STATIC_FILE_LASTMOD['/about.html'] },
     { path: '/contact.html', priority: '0.6', lastmod: STATIC_FILE_LASTMOD['/contact.html'] },
