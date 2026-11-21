@@ -123,7 +123,7 @@ const BATCH = 24;
 let shown = 0, curList = [], moreObs = null, sentinel = null;
 function appendBatch() {
   const next = curList.slice(shown, shown + BATCH);
-  if (!next.length) return;
+  if (!next.length) { watchMore(); return; }   // empty result: drop the old scroll trigger
   grid.insertAdjacentHTML('beforeend', next.map(cardHTML).join(''));
   const kids = grid.children;
   next.forEach((_, i) => { if (kids[shown + i]) kids[shown + i].style.animationDelay = `${i * 50}ms`; });

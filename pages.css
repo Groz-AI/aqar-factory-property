@@ -85,6 +85,9 @@
    PROJECTS GRID
    ============================================================ */
 .projects-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:30px;padding-bottom:40px}
+/* cards are added in batches below the viewport: stop the footer (e.g. after pressing End) from being the scroll anchor,
+   otherwise the browser pushes the page down with every batch and loads the whole list at once */
+.projects-grid ~ *, .footer{overflow-anchor:none}
 /* the [hidden] attr must win over display:grid above, or the grid never hides
    when Map view is selected (both grid + map would show — "no difference") */
 .projects-grid[hidden]{display:none}
