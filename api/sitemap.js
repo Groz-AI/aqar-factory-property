@@ -131,7 +131,9 @@ module.exports = async function handler(req, res) {
   // page's text really changes.
   const newest = (rows) => rows.map(r => String(r.updated_at || '').slice(0, 10)).filter(Boolean).sort().pop() || null;
   const latestOf = (...lists) => lists.map(newest).filter(Boolean).sort().pop() || null;
-  const STATIC_FILE_LASTMOD = { '/about.html': '2026-11-19', '/contact.html': '2026-11-18' };
+  // these two are plain files (no data behind them): set the date by hand when their text changes
+  // (last: Developers link added to the header / footer)
+  const STATIC_FILE_LASTMOD = { '/about.html': '2026-11-20', '/contact.html': '2026-11-20' };
   const staticPages = [
     { path: '/', priority: '1.0', lastmod: latestOf(projects, units, posts) },
     { path: '/projects.html', priority: '0.9', lastmod: newest(projects) },
