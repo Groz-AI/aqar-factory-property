@@ -26,7 +26,7 @@
   const closeSVG = `<svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`;
   const sendSVG = `<svg viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 
-  const IMG = (ref, w = 200) =>
+  const IMG = (ref, w = 200) => window.U ? window.U(ref, w) :
     !ref ? '' :
     /^https?:\/\//.test(ref) ? ref :
     `https://images.unsplash.com/photo-${ref}?auto=format&fit=crop&w=${w}&q=80`;

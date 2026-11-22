@@ -89,7 +89,7 @@
       document.querySelectorAll('.brand-mark').forEach(function (m) {
         m.innerHTML = '';
         var img = document.createElement('img');
-        img.src = src; img.alt = '';
+        img.src = /^https:\/\/pub-[a-z0-9]+\.r2\.dev\//.test(src) && !/^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? '/api/img?u=' + encodeURIComponent(src) + '&w=160' : src; img.alt = '';
         img.style.cssText = 'width:100%;height:100%;object-fit:contain;display:block';
         m.appendChild(img);
       });

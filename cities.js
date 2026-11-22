@@ -14,7 +14,7 @@ function landingHref(kind, ent) {
 
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const isAr = () => !!(window.i18n && window.i18n.lang === 'ar');
-const imgUrl = (ref, w = 900) =>
+const imgUrl = (ref, w = 900) => window.U ? window.U(ref, w) :
   !ref ? '' : /^https?:\/\//.test(ref) ? ref : `https://images.unsplash.com/photo-${ref}?auto=format&fit=crop&w=${w}&q=80`;
 
 (async function () {

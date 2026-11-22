@@ -14,7 +14,8 @@ function landingHref(kind, ent) {
   return slug ? `${pre}/${kind}/${encodeURIComponent(slug)}` : `projects.html?${kind}=${encodeURIComponent(name)}`;
 }
 
-const IMG = (ref, w = 800) =>
+// R2 photos are shown resized (window.U in data.js sends them through /api/img)
+const IMG = (ref, w = 800) => window.U ? window.U(ref, w) :
   !ref ? '' :
   /^https?:\/\//.test(ref) ? ref :
   `https://images.unsplash.com/photo-${ref}?auto=format&fit=crop&w=${w}&q=80`;

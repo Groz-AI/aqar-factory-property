@@ -27,7 +27,9 @@
 
   function imgURL(ref, w = 160) {
     if (!ref) return '';
-    if (/^(https?:)?\/\//.test(ref) || /^data:/.test(ref)) return ref;
+    if (/^data:/.test(ref)) return ref;
+    if (window.U && /^https?:\/\//.test(ref)) return window.U(ref, w);   // R2 logo: resized
+    if (/^(https?:)?\/\//.test(ref)) return ref;
     return `https://images.unsplash.com/photo-${ref}?auto=format&fit=crop&w=${w}&q=80`;
   }
 
