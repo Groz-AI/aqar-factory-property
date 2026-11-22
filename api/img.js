@@ -35,7 +35,9 @@ module.exports = async function handler(req, res) {
     res.statusCode = 400; res.setHeader('Content-Type', 'text/plain'); res.end('bad image address'); return;
   }
   const want = parseInt(q.get('w'), 10) || 800;
-  const width = WIDTHS.find(x => x >= want) || WIDTHS[WIDTHS.length - 1];
+  // the nearest size that is not clearly smaller than asked (900 -> 800, 700 -> 640), so cards
+  // are not sent a whole size class bigger than they are drawn
+  const width = WIDTHS.find(x => x >= want * 0.88) || WIDTHS[WIDTHS.length - 1];
 
   try {
     const r = await fetch(url.href, { redirect: 'error', signal: AbortSignal.timeout(9000) });
