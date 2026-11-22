@@ -131,7 +131,14 @@ function getFiltered(){
    meant a very large DOM and a long first render */
 const BATCH = 24;
 let shown = 0, curList = [], moreObs = null, sentinel = null;
+/* api/preload.js sends the first BATCH rows whole and the rest with only a few facts
+   (filters, counts, sort need nothing more); the complete list loads right after
+   first paint. Until it arrives only the first batch is drawn and filter / search /
+   sort wait for it. */
+let fullDone = true, fullP = null;
+function whenFull(fn){ if (fullDone) fn(); else fullP.then(fn); }
 function appendBatch(){
+  if (!fullDone && shown >= BATCH) return;   // later cards need the complete rows
   const next = curList.slice(shown, shown + BATCH);
   if (!next.length) { watchMore(); return; }   // empty result: drop the old scroll trigger
   grid.insertAdjacentHTML('beforeend', next.map(cardHTML).join(''));
@@ -236,17 +243,17 @@ catChips.addEventListener('click', e => {
   catChips.querySelector('.active')?.classList.remove('active');
   chip.classList.add('active');
   state.cat = chip.dataset.cat;
-  render();
+  whenFull(render);
 });
-citySelect.addEventListener('change', () => { state.city = citySelect.value; render(); });
-sortSelect.addEventListener('change', () => { state.sort = sortSelect.value; render(); });
+citySelect.addEventListener('change', () => { state.city = citySelect.value; whenFull(render); });
+sortSelect.addEventListener('change', () => { state.sort = sortSelect.value; whenFull(render); });
 
 let searchT;
 searchInput.addEventListener('input', () => {
   clearTimeout(searchT);
-  searchT = setTimeout(() => { state.q = searchInput.value; render(); }, 160);
+  searchT = setTimeout(() => { state.q = searchInput.value; whenFull(render); }, 160);
 });
-searchClear.addEventListener('click', () => { searchInput.value = ''; state.q = ''; render(); searchInput.focus(); });
+searchClear.addEventListener('click', () => { searchInput.value = ''; state.q = ''; whenFull(render); searchInput.focus(); });
 
 function resetAll(){
   state = { ...state, cat: 'all', city: 'all', developer: 'all', q: '', sort: 'featured' };
@@ -255,7 +262,7 @@ function resetAll(){
   citySelect.value = 'all';
   sortSelect.value = 'featured';
   searchInput.value = '';
-  render();
+  whenFull(render);
 }
 resetBtn.addEventListener('click', resetAll);
 document.getElementById('emptyReset').addEventListener('click', resetAll);
@@ -287,11 +294,25 @@ function applyURLParams() {
 
 /* ---------- boot: load projects from the data layer ---------- */
 (async function () {
+  // partial first HTML (see appendBatch); a page that starts already filtered
+  // (?city= / ?cat= / ?developer=) needs the complete rows for its first paint
+  const quick = !!(window.__PRELOAD_PARTIAL && window.__PRELOAD_PARTIAL.projects) && !/[?&](city|cat|developer)=/.test(location.search);
   try {
-    const [projects, cities, devs] = await Promise.all([window.store.getProjects(), window.store.getCities ? window.store.getCities() : [], window.store.getDevelopers ? window.store.getDevelopers() : [], window.store.getCategories ? window.store.getCategories() : null]);
+    const [projects, cities, devs] = await Promise.all([window.store.getProjects(quick ? { quick: true } : undefined), window.store.getCities ? window.store.getCities() : [], window.store.getDevelopers ? window.store.getDevelopers() : [], window.store.getCategories ? window.store.getCategories() : null]);
     P = projects; CITIES = cities || []; DEVS = devs || []; window.registerCities(CITIES);
   } catch (e) { P = window.PROJECTS || []; }
   if (!P || !P.length) P = window.PROJECTS || [];
+  if (quick) {
+    fullDone = false;
+    fullP = Promise.resolve(window.store.getProjects()).then(full => {
+      if (Array.isArray(full) && full.length) {
+        // keep the order of the first paint so the next batches continue where it stopped
+        const byId = new Map(full.map(r => [r.dbId || r.id, r]));
+        const seen = new Set(P.map(r => r.dbId || r.id));
+        P = P.map(r => byId.get(r.dbId || r.id) || r).concat(full.filter(r => !seen.has(r.dbId || r.id)));
+      }
+    }).catch(() => {}).then(() => { fullDone = true; curList = getFiltered(); watchMore(); });
+  }
   buildFacets();
   applyURLParams();
   render();

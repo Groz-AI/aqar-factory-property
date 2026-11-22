@@ -121,7 +121,14 @@ function getFiltered() {
 /* cards are drawn in batches as the visitor scrolls (same approach as projects.js) */
 const BATCH = 24;
 let shown = 0, curList = [], moreObs = null, sentinel = null;
+/* api/preload.js sends the first BATCH units whole and the rest with only a few facts
+   (filters, counts, sort need nothing more); the complete list loads right after
+   first paint. Until it arrives only the first batch is drawn and filter / search /
+   sort wait for it. */
+let fullDone = true, fullP = null;
+function whenFull(fn) { if (fullDone) fn(); else fullP.then(fn); }
 function appendBatch() {
+  if (!fullDone && shown >= BATCH) return;   // later cards need the complete rows
   const next = curList.slice(shown, shown + BATCH);
   if (!next.length) { watchMore(); return; }   // empty result: drop the old scroll trigger
   grid.insertAdjacentHTML('beforeend', next.map(cardHTML).join(''));
@@ -160,17 +167,17 @@ typeChips.addEventListener('click', e => {
   typeChips.querySelector('.active')?.classList.remove('active');
   chip.classList.add('active');
   state.type = chip.dataset.type;
-  render();
+  whenFull(render);
 });
-citySelect.addEventListener('change', () => { state.city = citySelect.value; render(); });
-sortSelect.addEventListener('change', () => { state.sort = sortSelect.value; render(); });
+citySelect.addEventListener('change', () => { state.city = citySelect.value; whenFull(render); });
+sortSelect.addEventListener('change', () => { state.sort = sortSelect.value; whenFull(render); });
 
 let searchT;
 searchInput.addEventListener('input', () => {
   clearTimeout(searchT);
-  searchT = setTimeout(() => { state.q = searchInput.value; render(); }, 160);
+  searchT = setTimeout(() => { state.q = searchInput.value; whenFull(render); }, 160);
 });
-searchClear.addEventListener('click', () => { searchInput.value = ''; state.q = ''; render(); searchInput.focus(); });
+searchClear.addEventListener('click', () => { searchInput.value = ''; state.q = ''; whenFull(render); searchInput.focus(); });
 
 function resetAll() {
   state = { ...state, type: 'all', city: 'all', q: '', sort: 'featured' };
@@ -179,7 +186,7 @@ function resetAll() {
   citySelect.value = 'all';
   sortSelect.value = 'featured';
   searchInput.value = '';
-  render();
+  whenFull(render);
 }
 resetBtn.addEventListener('click', resetAll);
 document.getElementById('emptyReset').addEventListener('click', resetAll);
@@ -205,9 +212,13 @@ function applyURLParams() {
 
 /* ---------- boot: load units (+ their resolved city name) from the data layer ---------- */
 (async function () {
+  // partial first HTML (see appendBatch); a page that starts already filtered
+  // (?city= / ?type=) needs the complete rows for its first paint
+  const quick = !!(window.__PRELOAD_PARTIAL && window.__PRELOAD_PARTIAL.units) && !/[?&](city|type)=/.test(location.search);
+  let withCity = (rows) => rows;
   try {
     const [units, projects, cities] = await Promise.all([
-      window.store.getUnits ? window.store.getUnits() : [],
+      window.store.getUnits ? window.store.getUnits(quick ? { quick: true } : undefined) : [],
       window.store.getProjects ? window.store.getProjects({ quick: true }) : [],
       window.store.getCities ? window.store.getCities() : [],
       window.store.getCategories ? window.store.getCategories() : null
@@ -218,13 +229,25 @@ function applyURLParams() {
     window.registerCities(cities);
     (cities || []).forEach(c => { cityById[c.id] = c; });
 
-    P = (units || []).map(u => {
+    withCity = (rows) => (rows || []).map(u => {
       const linkedProject = u.projectId ? projectsByDbId[u.projectId] : null;
       const cityId = linkedProject ? linkedProject.cityId : u.cityId;
       const cityRow = cityId ? cityById[cityId] : null;
       return Object.assign({}, u, { cityName: (linkedProject && linkedProject.city) || (cityRow && cityRow.name) || '' });
     });
+    P = withCity(units);
   } catch (e) { P = []; }
+  if (quick && P.length) {
+    fullDone = false;
+    fullP = Promise.resolve(window.store.getUnits()).then(full => {
+      if (Array.isArray(full) && full.length) {
+        // keep the order of the first paint so the next batches continue where it stopped
+        const byId = new Map(withCity(full).map(r => [r.id, r]));
+        const seen = new Set(P.map(r => r.id));
+        P = P.map(r => byId.get(r.id) || r).concat([...byId.values()].filter(r => !seen.has(r.id)));
+      }
+    }).catch(() => {}).then(() => { fullDone = true; curList = getFiltered(); watchMore(); });
+  }
   buildFacets();
   applyURLParams();
   render();

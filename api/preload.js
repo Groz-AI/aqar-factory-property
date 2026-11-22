@@ -80,15 +80,25 @@ const PARTIAL = {
     projects: (r, i) => i < 4 || r.is_featured || r.ready_to_move,
     units: (r, i) => i < 8 || r.is_featured || r.ready_to_move
   },
-  '/units.html': { projects: none },
+  // the listing pages draw their cards in batches of 24 (projects.js / units.js BATCH):
+  // the first batch arrives whole, the complete list loads right after first paint
+  '/projects.html': { projects: (r, i) => i < 24 },
+  '/units.html': { units: (r, i) => i < 24, projects: none },
   '/cities.html': { projects: none },
   '/developers.html': { projects: none }
 };
-function makePartial(t, rows, wholeIf) {
+// pages that use even fewer facts of a list than SLIM_KEYS (units.js reads
+// project id / city, cities.js the city id, developers.js the developer)
+const PAGE_KEYS = {
+  '/units.html': { projects: ['id', 'city', 'city_id'] },
+  '/cities.html': { projects: ['id', 'city_id'] },
+  '/developers.html': { projects: ['id', 'developer', 'developer_id'] }
+};
+function makePartial(t, rows, wholeIf, keys) {
   return rows.map((r, i) => {
     if (wholeIf(r, i)) return r;
     const o = {};
-    SLIM_KEYS[t].forEach(k => { if (r[k] !== undefined) o[k] = r[k]; });
+    (keys || SLIM_KEYS[t]).forEach(k => { if (r[k] !== undefined) o[k] = r[k]; });
     return o;
   });
 }
@@ -173,7 +183,7 @@ module.exports = async function handler(req, res) {
     tables.forEach((t, i) => {
       if (!Array.isArray(rows[i]) || !rows[i].length) return;
       const rule = PARTIAL[page] && PARTIAL[page][t];
-      if (rule) { data[t] = makePartial(t, rows[i], rule); partial[t] = 1; } else data[t] = rows[i];
+      if (rule) { data[t] = makePartial(t, rows[i], rule, PAGE_KEYS[page] && PAGE_KEYS[page][t]); partial[t] = 1; } else data[t] = rows[i];
     });
     // "<" escaped so no row can close the script tag; the JSON is valid JS
     const json = JSON.stringify(data).split('<').join('\\u003c');
