@@ -2,10 +2,19 @@
    REALTEEK — shared project dataset
    Used by projects.html (listing) and project.html (detail)
    ============================================================ */
-window.U = (id, w = 900) =>
+/* UO: the original image address (structured data, anything that must be an absolute, stable URL).
+   U: the address a page should DISPLAY — R2 photos go through /api/img, which sends a resized WebP
+   (the originals are 2-3 MB PNG/JPEG files); anything else is unchanged. localhost keeps originals
+   because the resizer only exists on Vercel. */
+window.UO = (id, w = 900) =>
   !id ? '' :
   /^https?:\/\//.test(id) ? id :
   `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=${w}&q=80`;
+window.U = (id, w = 900) => {
+  const o = window.UO(id, w);
+  return /^https:\/\/pub-[a-z0-9]+\.r2\.dev\//.test(o) && !/^(localhost|127\.0\.0\.1)$/.test(location.hostname)
+    ? '/api/img?u=' + encodeURIComponent(o) + '&w=' + w : o;
+};
 
 /* Card galleries used to load EVERY slide of EVERY card up front (~20 MB on the
    projects page). Slides now carry data-bg: the visible one loads when its card

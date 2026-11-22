@@ -101,7 +101,7 @@ function populate() {
       mainEntityOfPage: { '@type': 'WebPage', '@id': location.href },
       headline: customTitle || title,
       description: desc || undefined,
-      image: post.cover ? U(post.cover, 1600) : undefined,
+      image: post.cover ? UO(post.cover, 1600) : undefined,
       author: post.authorName ? { '@type': 'Person', name: post.authorName, url: 'https://www.aqar-factory.com/about.html' } : orgRef,
       publisher: orgRef,
       datePublished: post.publishedAt || undefined,

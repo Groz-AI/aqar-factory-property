@@ -130,7 +130,7 @@ function populate() {
     '@type': 'Product',
     name: projTitle,
     description: desc || undefined,
-    image: project.cover ? U(project.cover, 1600) : undefined,
+    image: project.cover ? UO(project.cover, 1600) : undefined,
     url: location.href,
     brand: orgRef,
     // only with a real price: an Offer without one is incomplete markup
@@ -152,7 +152,7 @@ function populate() {
     graph.push({
       '@type': 'Article',
       headline: projTitle, description: desc || undefined,
-      image: project.cover ? U(project.cover, 1600) : undefined,
+      image: project.cover ? UO(project.cover, 1600) : undefined,
       articleBody, author: orgRef, publisher: orgRef,
       mainEntityOfPage: { '@type': 'WebPage', '@id': location.href }
     });
