@@ -56,7 +56,7 @@ function slimRows(t, rows) {
 // first time a city / developer filter is chosen
 const SLIM_COLS = {
   cities: 'id,slug,name,name_ar,image,size,country,sort_order,published,created_at,updated_at',
-  developers: 'id,slug,name,name_ar,logo,sort_order,published,created_at,updated_at'
+  developers: 'id,slug,name,name_ar,logo,sort_order,published'
 };
 
 // ---- partial lists ------------------------------------------------------
@@ -90,6 +90,12 @@ const PARTIAL = {
 // pages that use even fewer facts of a list than SLIM_KEYS (units.js reads
 // project id / city, cities.js the city id, developers.js the developer)
 const PAGE_KEYS = {
+  // the home page draws only whole rows at first paint (a type chip waits for the complete list):
+  // other rows feed the city counts, the type chips and the search box, which need no photo / flags
+  '/': {
+    projects: ['id', 'slug', 'slug_ar', 'name', 'name_ar', 'category', 'city', 'city_id', 'developer', 'developer_id', 'price_value', 'area_value'],
+    units: ['id', 'slug', 'slug_ar', 'name', 'name_ar', 'type', 'price_value', 'beds', 'area_value', 'project_id', 'city_id', 'developer_id']
+  },
   // projects.js / units.js draw only the first batch from these rows and wait for the
   // complete list before filtering, searching or sorting: the facet lists (categories,
   // cities, developers, types) and the counts are all the other rows are used for
