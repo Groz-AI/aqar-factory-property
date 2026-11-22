@@ -289,6 +289,16 @@ const STATIC_META = {
     description: "Aqar Factory is a boutique real-estate house curating homes, offices and luxury spaces. Meet the team and the philosophy behind the work.",
     descriptionAr: 'Aqar Factory بيت عقاري متخصص يختار المنازل والمكاتب والمساحات الفاخرة. تعرّف على الفريق والفلسفة وراء العمل.'
   },
+  '/privacy.html': {
+    title: 'Privacy Policy — Aqar Factory', titleAr: 'سياسة الخصوصية — Aqar Factory',
+    description: 'How Aqar Factory collects, uses and protects your personal data, what cookies the website uses, and how to exercise your rights.',
+    descriptionAr: 'كيف تجمع Aqar Factory بياناتك الشخصية وتستخدمها وتحميها، وما ملفات الارتباط التي يستخدمها الموقع، وكيف تمارس حقوقك.'
+  },
+  '/terms.html': {
+    title: 'Terms of Use — Aqar Factory', titleAr: 'شروط الاستخدام — Aqar Factory',
+    description: 'The terms that apply when you use the Aqar Factory website: listings and prices, acceptable use, intellectual property and liability.',
+    descriptionAr: 'الشروط التي تسري عند استخدامك موقع Aqar Factory: العقارات والأسعار والاستخدام المقبول والملكية الفكرية والمسؤولية.'
+  },
   '/contact.html': {
     title: 'Contact — Aqar Factory', titleAr: 'تواصل معنا — Aqar Factory',
     description: 'Get in touch with Aqar Factory. Book a viewing, ask about a listing, or talk to an advisor — our team replies within one business day.',
@@ -605,7 +615,7 @@ async function handleStatic(req, res, params) {
     // built fresh from the database.
     html = html.replace(/<script type="application\/ld\+json" id="siteSchema">[\s\S]*?<\/script>\s*/, '');
     const PAGE_TYPE = {
-      '/about.html': 'AboutPage', '/contact.html': 'ContactPage',
+      '/about.html': 'AboutPage', '/contact.html': 'ContactPage', '/privacy.html': 'WebPage', '/terms.html': 'WebPage',
       '/projects.html': 'CollectionPage', '/units.html': 'CollectionPage', '/cities.html': 'CollectionPage', '/developers.html': 'CollectionPage', '/blog.html': 'CollectionPage'
     };
     const graph = [SchemaHelpers.companyNode(company), SchemaHelpers.websiteNode()];

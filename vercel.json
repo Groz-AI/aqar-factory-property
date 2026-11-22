@@ -22,7 +22,11 @@
     { "source": "/about", "destination": "/about.html", "permanent": true },
     { "source": "/ar/about", "destination": "/ar/about.html", "permanent": true },
     { "source": "/contact", "destination": "/contact.html", "permanent": true },
-    { "source": "/ar/contact", "destination": "/ar/contact.html", "permanent": true }
+    { "source": "/ar/contact", "destination": "/ar/contact.html", "permanent": true },
+    { "source": "/privacy", "destination": "/privacy.html", "permanent": true },
+    { "source": "/ar/privacy", "destination": "/ar/privacy.html", "permanent": true },
+    { "source": "/terms", "destination": "/terms.html", "permanent": true },
+    { "source": "/ar/terms", "destination": "/ar/terms.html", "permanent": true }
   ],
   "rewrites": [
     { "source": "/sitemap.xml", "destination": "/api/sitemap" },

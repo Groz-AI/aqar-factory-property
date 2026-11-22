@@ -1092,3 +1092,6 @@ em{font-style:normal}
 
 /* homepage Featured / Ready-to-move sections stay out of the layout until a project or unit is switched on */
 .home-picks[hidden]{display:none}
+
+.footer-legal a{color:inherit;text-decoration:underline;text-underline-offset:3px}
+.footer-legal a:hover{color:#fff}

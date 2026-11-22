@@ -133,7 +133,7 @@ module.exports = async function handler(req, res) {
   const latestOf = (...lists) => lists.map(newest).filter(Boolean).sort().pop() || null;
   // these two are plain files (no data behind them): set the date by hand when their text changes
   // (last: Developers link added to the header / footer)
-  const STATIC_FILE_LASTMOD = { '/about.html': '2026-11-20', '/contact.html': '2026-11-20' };
+  const STATIC_FILE_LASTMOD = { '/about.html': '2026-11-22', '/contact.html': '2026-11-20', '/privacy.html': '2026-11-22', '/terms.html': '2026-11-22' };
   const staticPages = [
     { path: '/', priority: '1.0', lastmod: latestOf(projects, units, posts) },
     { path: '/projects.html', priority: '0.9', lastmod: newest(projects) },
@@ -143,6 +143,8 @@ module.exports = async function handler(req, res) {
     { path: '/blog.html', priority: '0.8', lastmod: newest(posts) },
     { path: '/about.html', priority: '0.6', lastmod: STATIC_FILE_LASTMOD['/about.html'] },
     { path: '/contact.html', priority: '0.6', lastmod: STATIC_FILE_LASTMOD['/contact.html'] },
+    { path: '/privacy.html', priority: '0.3', lastmod: STATIC_FILE_LASTMOD['/privacy.html'] },
+    { path: '/terms.html', priority: '0.3', lastmod: STATIC_FILE_LASTMOD['/terms.html'] },
     { path: '/market_update', priority: '0.8', lastmod: newest(updates) }
   ];
 

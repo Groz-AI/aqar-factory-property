@@ -32,7 +32,7 @@ const PAGE_TABLES = {
   '/cities.html': ['cities', 'projects'],
   '/developers.html': ['developers', 'projects'],
   // no lists: these only need the Arabic text for visitors of /ar/ pages
-  '/about.html': [], '/contact.html': [], '/blog.html': []
+  '/about.html': [], '/contact.html': [], '/blog.html': [], '/privacy.html': [], '/terms.html': []
 };
 
 // cards show at most 6 photos and the AI helper reads only the first
