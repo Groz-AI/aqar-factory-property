@@ -20,6 +20,18 @@ function projectImages(p) {
   const imgs = (p.gallery || []).filter(Boolean);
   return imgs.length ? imgs.slice(0, 6) : [p.cover].filter(Boolean);
 }
+// a card's slideshow only runs while the card is near the screen: ~100 cards flipping photos in
+// parallel kept the browser restyling and repainting the whole page even when nobody could see them
+let galleryIO = null;
+function galleryVisibility() {
+  if (!galleryIO && 'IntersectionObserver' in window) {
+    galleryIO = new IntersectionObserver(es => es.forEach(e => {
+      const b = e.target;
+      if (e.isIntersecting) { if (b._start) b._start(); } else if (b._stop) b._stop();
+    }), { rootMargin: '150px 0px' });
+  }
+  return galleryIO;
+}
 function cycleGalleries(scopeSel, hoverSel, baseInterval) {
   document.querySelectorAll(scopeSel + ' [data-gallery]').forEach((box, idx) => {
     const slides = box.querySelectorAll('.pg-slide');
@@ -37,7 +49,10 @@ function cycleGalleries(scopeSel, hoverSel, baseInterval) {
       if (dots[i]) dots[i].classList.add('on');
     };
     const run = (ms) => { if (box._tid) clearInterval(box._tid); box._tid = setInterval(advance, ms); };
-    run(baseInterval + idx * 350);
+    const stop = () => { if (box._tid) { clearInterval(box._tid); box._tid = 0; } };
+    const io = galleryVisibility();
+    if (io) { box._start = () => run(baseInterval + idx * 350); box._stop = stop; io.observe(box); }
+    else run(baseInterval + idx * 350);
     const host = box.closest(hoverSel);
     if (host) {
       host.addEventListener('mouseenter', () => { advance(); run(1800); });
