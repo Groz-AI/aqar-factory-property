@@ -198,6 +198,13 @@
     </div>
   </div>
 </section>
+<script>
+// the hero text is static: fade it in right after the first paint instead of waiting for the
+// blocking script chain at the end of the page (the largest paint of the page was waiting for it)
+requestAnimationFrame(function () { requestAnimationFrame(function () {
+  document.querySelectorAll('.hero .reveal').forEach(function (el) { el.classList.add('in'); });
+}); });
+</script>
 
 <!-- ============ FEATURED (home flag sections) ============ -->
 <section class="section home-picks" id="featured" hidden>
