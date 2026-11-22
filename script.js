@@ -597,6 +597,9 @@ function wireReveals() {
    ============================================================ */
 (async function init() {
   const S = window.store;
+  // the hero text is static markup: show it now instead of after the data has loaded and the page
+  // has been drawn (the largest paint of the page was waiting for that)
+  revealElements([...document.querySelectorAll('.hero .reveal')]);
   try {
     // first paint from the rows the server put in the page (whole rows for the
     // cards shown, a few facts for the rest); the complete lists follow below
