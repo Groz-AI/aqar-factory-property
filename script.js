@@ -474,7 +474,11 @@ function initStarfield(canvas) {
       ctx.fill();
     });
   }
+  // the animation only runs while the canvas is near the screen: the footer's stars used to be
+  // redrawn 60 times a second from the first second on, 25,000 px below the visitor
+  let raf = 0, running = false;
   function frame() {
+    if (!running) return;
     t += 0.016;
     stars.forEach(s => {
       s.x += s.vx; s.y += s.vy;
@@ -482,10 +486,15 @@ function initStarfield(canvas) {
       if (s.y < 0) s.y = h; else if (s.y > h) s.y = 0;
     });
     draw();
-    requestAnimationFrame(frame);
+    raf = requestAnimationFrame(frame);
   }
+  function start() { if (!running) { running = true; raf = requestAnimationFrame(frame); } }
+  function stop() { running = false; cancelAnimationFrame(raf); }
   resize(); seed();
-  if (reduce) { draw(); } else { frame(); }
+  if (reduce) { draw(); }
+  else if ('IntersectionObserver' in window) {
+    new IntersectionObserver(es => es.forEach(e => (e.isIntersecting ? start() : stop())), { rootMargin: '120px' }).observe(canvas);
+  } else { start(); }
   window.addEventListener('resize', () => { resize(); seed(); if (reduce) draw(); });
   // re-measure once after layout settles (footer height, fonts)
   setTimeout(() => { resize(); seed(); if (reduce) draw(); }, 500);
@@ -513,7 +522,7 @@ function revealElements(els) {
   // Reveal anything already on screen immediately — covers cases where the
   // IntersectionObserver is throttled (e.g. the tab loaded in the background)
   // so above-the-fold content & images never sit invisible.
-  els.forEach(el => { if (inView(el)) show(el); });
+  els.filter(inView).forEach(show);   // read every position first, then write: no layout is forced per element
 
   if ('IntersectionObserver' in window) {
     if (!revealObserver) {
@@ -630,6 +639,6 @@ function wireReveals() {
   } catch (e) {
     console.error('Realteek: data load failed', e);
   }
-  initStarfields();
+  (window.requestIdleCallback || (f => setTimeout(f, 300)))(initStarfields, { timeout: 2000 });
   wireReveals();
 })();
