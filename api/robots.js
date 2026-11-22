@@ -10,8 +10,8 @@
 
 module.exports = function handler(req, res) {
   const host = req.headers['x-forwarded-host'] || req.headers.host;
-  // /ar/admin/ too: the Arabic site header links to it, and the /ar/ rewrite
-  // serves the same login page there, so crawlers were picking it up
+  // /admin stays crawlable on purpose (it answers with noindex); /ar/admin/* is
+  // redirected to /admin/* in vercel.json - the admin is Arabic by a stored switch, not by path
   const body = `User-agent: *\nAllow: /\n\nSitemap: https://${host}/sitemap.xml\n`;
 
   res.setHeader('Content-Type', 'text/plain; charset=utf-8');

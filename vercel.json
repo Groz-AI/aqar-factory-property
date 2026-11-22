@@ -26,7 +26,9 @@
     { "source": "/privacy", "destination": "/privacy.html", "permanent": true },
     { "source": "/ar/privacy", "destination": "/ar/privacy.html", "permanent": true },
     { "source": "/terms", "destination": "/terms.html", "permanent": true },
-    { "source": "/ar/terms", "destination": "/ar/terms.html", "permanent": true }
+    { "source": "/ar/terms", "destination": "/ar/terms.html", "permanent": true },
+    { "source": "/ar/admin", "destination": "/admin/login.html", "permanent": true },
+    { "source": "/ar/admin/:path*", "destination": "/admin/:path*", "permanent": true }
   ],
   "rewrites": [
     { "source": "/sitemap.xml", "destination": "/api/sitemap" },
