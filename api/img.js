@@ -20,10 +20,11 @@ const ALLOWED_HOSTS = new Set(['pub-8984ca4087bd4a4e8908ca76e2fc6828.r2.dev']);
 const WIDTHS = [320, 480, 640, 800, 1200, 1600];
 const MAX_INPUT_BYTES = 30 * 1024 * 1024;
 
-function toOriginal(res, url) {
+// keep = a deliberate choice (already small, SVG, GIF): safe to cache for a day; an error is retried after a minute
+function toOriginal(res, url, keep) {
   res.statusCode = 302;
   res.setHeader('Location', url);
-  res.setHeader('Cache-Control', 'public, max-age=60, s-maxage=60');
+  res.setHeader('Cache-Control', keep ? 'public, max-age=3600, s-maxage=86400' : 'public, max-age=60, s-maxage=60');
   res.end();
 }
 
@@ -48,7 +49,7 @@ module.exports = async function handler(req, res) {
     if (input.length > MAX_INPUT_BYTES) return toOriginal(res, url.href);
 
     const meta = await sharp(input, { failOn: 'none' }).metadata();
-    if (!meta.format || meta.format === 'svg' || meta.format === 'gif' || (meta.pages || 1) > 1) return toOriginal(res, url.href);
+    if (!meta.format || meta.format === 'svg' || meta.format === 'gif' || (meta.pages || 1) > 1) return toOriginal(res, url.href, true);
 
     const out = await sharp(input, { failOn: 'none' })
       .rotate()
@@ -56,7 +57,7 @@ module.exports = async function handler(req, res) {
       .webp({ quality: 78, alphaQuality: 90 })
       .toBuffer();
     // a tiny original can already be smaller than its WebP: keep it
-    if (out.length >= input.length) return toOriginal(res, url.href);
+    if (out.length >= input.length) return toOriginal(res, url.href, true);
 
     res.statusCode = 200;
     res.setHeader('Content-Type', 'image/webp');
