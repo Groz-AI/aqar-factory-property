@@ -51,6 +51,9 @@ const TXT = {
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 // same "unsplash id vs full URL" rule as data.js's window.U()
 const imgUrl = (id, w) => !id ? '' : /^https?:\/\//.test(id) ? id : `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=${w}&q=80`;
+// R2 photos are shown resized through /api/img (the originals are 2-3 MB); everything else unchanged.
+// Meta images, structured data and the click-to-enlarge links keep the original address.
+const shown = (id, w) => { const u = imgUrl(id, w); return /^https:\/\/pub-[a-z0-9]+\.r2\.dev\//.test(u) ? '/api/img?u=' + encodeURIComponent(u) + '&w=' + w : u; };
 const stripSlashes = (s) => String(s || '').replace(/^\/+|\/+$/g, '');
 
 async function rest(path) {
@@ -145,7 +148,7 @@ function listPage(rows, ar, cities) {
   const L = TXT[ar ? 'ar' : 'en'], pre = ar ? '/ar' : '';
   const cityName = (id) => { const c = cities.find(x => x.id === id); return c ? ((ar && c.name_ar) ? c.name_ar : c.name) : ''; };
   const cards = rows.map(r => {
-    const cover = imgUrl((r.photos || [])[0], 800);
+    const cover = shown((r.photos || [])[0], 800);
     const title = pickLang(r, 'title', ar), sum = pickLang(r, 'summary', ar);
     const city = cityName(r.city_id);
     return `<a class="blog-card mu-card" href="${pre}/market_update/${encodeURIComponent(r.slug)}" data-city="${esc(r.city_id || '')}">
@@ -204,9 +207,9 @@ function detailPage(r, ar, city, project) {
     ? `<a class="btn btn-dark mu-wa" href="https://wa.me/${waNum}${waText ? '?text=' + encodeURIComponent(waText) : ''}" target="_blank" rel="noopener">${esc(L.wa)}</a>`
     : `<a class="btn btn-dark mu-wa" data-mu-wa data-text="${esc(waText)}" href="#" target="_blank" rel="noopener" hidden>${esc(L.wa)}</a>`;
   const gallery = photos.length ? `<div class="mu-gallery${photos.length === 1 ? ' one' : ''}">${photos.map((p, i) =>
-    `<a class="mu-photo" href="${esc(imgUrl(p, 1800))}"><img src="${esc(imgUrl(p, i === 0 ? 1200 : 700))}" alt="${esc(title)} — ${esc(L.photo)} ${i + 1}" ${i === 0 ? 'fetchpriority="high"' : 'loading="lazy"'}></a>`).join('')}</div>` : '';
+    `<a class="mu-photo" href="${esc(imgUrl(p, 1800))}"><img src="${esc(shown(p, i === 0 ? 1200 : 700))}" alt="${esc(title)} — ${esc(L.photo)} ${i + 1}" ${i === 0 ? 'fetchpriority="high"' : 'loading="lazy"'}></a>`).join('')}</div>` : '';
   const crumbs = `<a href="${pre || '/'}">${esc(L.home)}</a><span>/</span><a href="${pre}/market_update">${esc(L.tab)}</a><span>/</span><b>${esc(title)}</b>`;
-  const body = `${hero({ bg: imgUrl(photos[0], 1700) || 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1700&q=80', crumbs, eyebrow: [city, date].filter(Boolean).join(' · '), h1: title })}
+  const body = `${hero({ bg: shown(photos[0], 1600) || 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1700&q=80', crumbs, eyebrow: [city, date].filter(Boolean).join(' · '), h1: title })}
 <main class="container mu-wrap">
   <article class="mu-article">
     ${summary ? `<p class="mu-summary">${esc(summary)}</p>` : ''}

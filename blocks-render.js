@@ -122,13 +122,16 @@
     }
   }
 
+  // R2 photos are shown resized (window.U in data.js -> /api/img); anything else is unchanged
+  function shown(src, w) { return typeof window !== 'undefined' && window.U && /^https?:/.test(src) ? window.U(src, w) : src; }
+
   function slotHTML(slot) {
     if (!slot) return '';
     if (slot.type === 'image' && slot.image) {
       const src = /^(https?:)?\/\//.test(slot.image) || /^data:/.test(slot.image)
         ? slot.image
         : `https://images.unsplash.com/photo-${slot.image}?auto=format&fit=crop&w=800&q=80`;
-      return `<img src="${esc(src)}" alt="" loading="lazy">`;
+      return `<img src="${esc(shown(src, 800))}" alt="" loading="lazy">`;
     }
     return slot && slot.text ? `<p${alignStyle(slot)}>${slot.text}</p>` : '';
   }
@@ -144,7 +147,7 @@
       const src = /^(https?:)?\/\//.test(b.image) || /^data:/.test(b.image)
         ? b.image
         : `https://images.unsplash.com/photo-${b.image}?auto=format&fit=crop&w=1200&q=80`;
-      return `<figure class="blog-block-image"><img src="${esc(src)}" alt="" loading="lazy"></figure>`;
+      return `<figure class="blog-block-image"><img src="${esc(shown(src, 1200))}" alt="" loading="lazy"></figure>`;
     }
     if (b.type === 'quote') return b.text ? `<blockquote class="blog-block-quote"${alignStyle(b)}>${b.text}</blockquote>` : '';
     if (b.type === 'list') {
