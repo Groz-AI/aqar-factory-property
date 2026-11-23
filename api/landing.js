@@ -84,7 +84,9 @@ module.exports = async function handler(req, res) {
     } catch (_) { /* fall through to 404 */ }
   }
   const mine = ent ? SchemaHelpers.entityProjects(kind, ent, projects) : [];
-  if (!ent || !mine.length) return notFound(res, ar);
+  // a city without projects has no page; a developer without projects does (it is listed on the
+  // developers page as soon as it is created in the admin) - it just says so, and is not offered to Google
+  if (!ent || (!mine.length && kind !== 'developer')) return notFound(res, ar);
 
   const slugNow = SchemaHelpers.entityUrlSlug(ent);
   const name = (ar && ent.name_ar) || ent.name;
@@ -108,7 +110,10 @@ module.exports = async function handler(req, res) {
     ? (ar ? `مشاريع في <em>${esc(name)}</em>` : `Projects in <em>${esc(name)}</em>`)
     : (ar ? `مشاريع <em>${esc(name)}</em>` : `<em>${esc(name)}</em> Projects`));
   const intro = clip(plain(ar ? (ent.description_ar || '') : (ent.description || '')), 155);
-  const generic = kind === 'city'
+  const generic = (kind === 'developer' && n === 0)
+    ? (ar ? `${name} من المطورين الذين نتعامل معهم. سنضيف مشاريعه هنا قريباً على Aqar Factory.`
+          : `${name} is one of the developers we work with. Its projects will be listed here soon on Aqar Factory.`)
+    : kind === 'city'
     ? (ar ? `تصفح ${n} مشروعاً عقارياً في ${name}: الأسعار وخطط السداد والمطورون على Aqar Factory.`
           : `Browse ${n} real estate project${n === 1 ? '' : 's'} in ${name}: prices, payment plans and developers on Aqar Factory.`)
     : (ar ? `تصفح ${n} مشروعاً من مشاريع ${name}: الأسعار وخطط السداد والمواقع على Aqar Factory.`
@@ -120,9 +125,9 @@ module.exports = async function handler(req, res) {
   const projPath = (p) => `${ar ? '/ar' : ''}/project/${encodeURIComponent((ar && p.slug_ar) || p.slug)}`;
 
   const jsonLd = { '@context': 'https://schema.org', '@graph': [
-    { '@type': 'CollectionPage', name: title, description, url: own, inLanguage: ar ? 'ar' : 'en',
+    ...(n ? [{ '@type': 'CollectionPage', name: title, description, url: own, inLanguage: ar ? 'ar' : 'en',
       mainEntity: { '@type': 'ItemList', numberOfItems: n,
-        itemListElement: mine.slice(0, 50).map((p, i) => ({ '@type': 'ListItem', position: i + 1, url: SITE + projPath(p), name: projName(p) })) } },
+        itemListElement: mine.slice(0, 50).map((p, i) => ({ '@type': 'ListItem', position: i + 1, url: SITE + projPath(p), name: projName(p) })) } }] : []),
     { '@type': 'BreadcrumbList', itemListElement: [
       { '@type': 'ListItem', position: 1, name: ar ? 'الرئيسية' : 'Home', item: SITE + (ar ? '/ar' : '/') },
       { '@type': 'ListItem', position: 2, name: ar ? 'المشاريع' : 'Projects', item: `${SITE}${ar ? '/ar' : ''}/projects.html` },
@@ -159,7 +164,7 @@ module.exports = async function handler(req, res) {
   page = page.replace(/(<div class="projects-grid" id="projectsGrid">)/, (m) => m + links);
 
   const json = JSON.stringify({ projects, cities, developers, categories }).split('<').join('\\u003c');
-  const landing = JSON.stringify({ kind, name: ent.name }).split('<').join('\\u003c');
+  const landing = JSON.stringify({ kind, name: ent.name, empty: n === 0 }).split('<').join('\\u003c');
   const tag = `<script>window.__LANDING=${landing};window.__PRELOAD=${json};</script>\n`;
   const anchor = '<script src="store.js"></script>';
   if (page.includes(anchor)) page = page.replace(anchor, () => tag + anchor);

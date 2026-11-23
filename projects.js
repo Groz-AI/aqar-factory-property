@@ -182,6 +182,17 @@ function render(){
   appendBatch();
   resCount.textContent = list.length;
   emptyState.hidden = list.length !== 0;
+  // a developer page whose developer has no projects yet says so, instead of "no projects match those filters"
+  const L = window.__LANDING;
+  if (L && L.empty && L.kind === 'developer' && !list.length && state.developer === L.name && !emptyState.dataset.dev) {
+    emptyState.dataset.dev = '1';
+    emptyState.querySelector('h3').textContent = t('No projects published yet for this developer');
+    emptyState.querySelector('p').textContent = t('New projects are added regularly. Browse everything we have in the meantime.');
+    const b = emptyState.querySelector('button');
+    const a = document.createElement('a');
+    a.className = 'btn btn-dark'; a.href = '/projects.html'; a.style.marginTop = '1.2rem'; a.textContent = t('Browse all projects');
+    b.replaceWith(a);
+  }
   resetBtn.hidden = !(state.cat !== 'all' || state.city !== 'all' || state.developer !== 'all' || state.q || state.sort !== 'featured');
   searchClear.hidden = !state.q;
   renderIntro();
@@ -290,7 +301,7 @@ function applyURLParams() {
   const dev = params.get('developer');
   // /city/<slug> and /developer/<slug> pages start with their city / developer selected
   const L = window.__LANDING;
-  if (L && L.kind === 'developer' && P.some(p => p.developer === L.name)) state.developer = L.name;
+  if (L && L.kind === 'developer' && (L.empty || P.some(p => p.developer === L.name))) state.developer = L.name;
   if (L && L.kind === 'city' && [...citySelect.options].some(o => o.value === L.name)) { state.city = L.name; citySelect.value = L.name; }
   if (dev && P.some(p => p.developer === dev)) state.developer = dev;
   if (city && [...citySelect.options].some(o => o.value === city)) {

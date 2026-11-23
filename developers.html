@@ -102,9 +102,31 @@
   </div>
 </section>
 
+<!-- SEARCH -->
+<div class="filter-toolbar">
+  <div class="container">
+    <div class="toolbar-inner">
+      <div class="search-box">
+        <svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.6"/><path d="m20 20-3-3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        <input type="text" id="devSearch" placeholder="Search developers by name…" aria-label="Search developers" autocomplete="off" data-i18n-placeholder data-i18n-aria />
+        <button class="search-clear" id="devSearchClear" aria-label="Clear search" hidden data-i18n-aria>
+          <svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <span class="result-count"><b id="devCount">…</b> <span data-i18n>developers</span></span>
+    </div>
+  </div>
+</div>
+
 <!-- DEVELOPERS -->
 <main class="container">
   <div class="city-rows" id="devRows"></div>
+  <div class="empty-state" id="devEmpty" hidden>
+    <svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.6"/><path d="m20 20-3-3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+    <h3 data-i18n>No developers match your search</h3>
+    <p data-i18n>Try a different name.</p>
+    <button class="btn btn-dark" id="devEmptyReset" style="margin-top:1.2rem" data-i18n>Clear search</button>
+  </div>
 </main>
 
 <!-- FOOTER -->

@@ -1074,6 +1074,17 @@
     "Governing law": "القانون الواجب التطبيق",
     "These terms are governed by the laws of the Arab Republic of Egypt, and the courts of Cairo have jurisdiction over any dispute.": "تخضع هذه الشروط لقوانين جمهورية مصر العربية، وتختص محاكم القاهرة بأي نزاع.",
     "Questions about these terms? Reach us at:": "هل لديك أسئلة حول هذه الشروط؟ تواصل معنا عبر:",
+    // developers search + developer page without projects
+    "Search developers by name…": "ابحث عن مطور بالاسم…",
+    "Search developers": "ابحث في المطورين",
+    "developers": "مطورون",
+    "No developers match your search": "لا يوجد مطور يطابق بحثك",
+    "Try a different name.": "جرّب اسمًا آخر.",
+    "No projects yet": "لا توجد مشاريع بعد",
+    "View developer": "عرض المطور",
+    "No projects published yet for this developer": "لا توجد مشاريع منشورة لهذا المطور بعد",
+    "New projects are added regularly. Browse everything we have in the meantime.": "تُضاف مشاريع جديدة باستمرار. تصفّح كل ما لدينا في الوقت الحالي.",
+    "Browse all projects": "تصفح كل المشاريع",
   };
 
   function normalize(s) { return String(s == null ? '' : s).replace(/\s+/g, ' ').trim(); }

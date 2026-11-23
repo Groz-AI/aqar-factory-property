@@ -373,12 +373,12 @@ const LISTING_INJECT = {
     row: (r, ar) => ({ slug: SchemaHelpers.entityUrlSlug(r), name: (ar && r.name_ar) || r.name, sub: ((ar ? r.description_ar : r.description) || '').replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, '$1') || r.country || '' })
   }],
   '/developers.html': [{
-    // only developers that own at least one project (the others have no page)
+    // every published developer; one without projects links to a short noindex page
     table: 'developers', containerId: 'devRows', limit: 200,
     select: 'slug,name,name_ar,description,description_ar,projects(count)',
     href: (slug, ar) => `${ar ? '/ar' : ''}/developer/${encodeURIComponent(slug)}`,
     row: (r, ar) => ({
-      slug: (r.projects && r.projects[0] && r.projects[0].count > 0) ? SchemaHelpers.entityUrlSlug(r) : '',
+      slug: SchemaHelpers.entityUrlSlug(r),
       name: (ar && r.name_ar) || r.name,
       sub: ((ar ? r.description_ar : r.description) || '').replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, '$1').replace(/\s+/g, ' ').trim().slice(0, 160)
     })
