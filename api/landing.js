@@ -11,7 +11,8 @@
    which starts with this city or developer already selected
    (window.__LANDING). The list data is inlined (window.__PRELOAD) so
    there is no wait, exactly as api/preload.js does for the lists.
-   Unknown names, or ones without any published project, answer 404.
+   Unknown names answer 404, and so does a city without any published project
+   (a developer without projects gets a short noindex page instead).
    ============================================================ */
 
 const SchemaHelpers = require('../schema-helpers.js');

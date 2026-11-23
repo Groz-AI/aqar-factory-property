@@ -235,7 +235,8 @@
     const devs = (q && (state.kind === 'all' || state.kind === 'developer') && state.type === 'all' && !state.city
       && state.beds === 'any' && !priceNarrowed && !areaNarrowed)
       ? DEVS.filter(d => matchesQuery(d._hay, q)) : [];
-    if (state.kind === 'developer') return devs;
+    // the Developers chip: every developer (or the ones the words find); the other filters mean nothing for them
+    if (state.kind === 'developer') return DEVS.filter(d => matchesQuery(d._hay, q));
     return devs.concat(COMBINED.filter(it => {
       if (state.kind !== 'all' && it._kind !== state.kind) return false;
       if (state.type !== 'all' && it.type !== state.type) return false;
@@ -372,8 +373,8 @@
         .sort((a, b) => b.s - a.s)
         .slice(0, 6)
         .map(x => x.it);
-      resultsCount.textContent = t('No exact matches — recommended for you');
-      resultsGrid.innerHTML = recs.length
+      resultsCount.textContent = state.kind === 'developer' ? t('No developers match your search') : t('No exact matches — recommended for you');
+      resultsGrid.innerHTML = state.kind === 'developer' ? `<p class="smart-results-empty">${t('No developers match your search')}</p>` : recs.length
         ? recs.map(cardHTML).join('')
         : `<p class="smart-results-empty">${t('No projects or units match those filters')}</p>`;
     }

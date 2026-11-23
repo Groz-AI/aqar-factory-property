@@ -136,12 +136,19 @@ function searchText(p){
   }
   return p._hay;
 }
+/* a project belongs to a developer by the link (developer_id); the name text is the fallback. The text
+   can be stale after a rename or a merge, which used to hide such a project on its developer's page */
+function developerMatches(p, name){
+  if (p.developer === name) return true;
+  const d = (DEVS || []).find(x => x.name === name);
+  return !!(d && p.developerId && p.developerId === d.id);
+}
 function getFiltered(){
   const words = norm(state.q).split(' ').filter(Boolean);
   let list = P.filter(p =>
     (state.cat === 'all' || p.category === state.cat) &&
     (state.city === 'all' || p.city === state.city) &&
-    (state.developer === 'all' || p.developer === state.developer) &&
+    (state.developer === 'all' || developerMatches(p, state.developer)) &&
     (!words.length || words.every(w => searchText(p).includes(w)))
   );
   const byNum = (key, dir) => (a, b) => dir * ((Number(a[key]) || 0) - (Number(b[key]) || 0));
@@ -315,9 +322,9 @@ function applyURLParams() {
   const dev = params.get('developer');
   // /city/<slug> and /developer/<slug> pages start with their city / developer selected
   const L = window.__LANDING;
-  if (L && L.kind === 'developer' && (L.empty || P.some(p => p.developer === L.name))) state.developer = L.name;
+  if (L && L.kind === 'developer' && (L.empty || P.some(p => developerMatches(p, L.name)))) state.developer = L.name;
   if (L && L.kind === 'city' && [...citySelect.options].some(o => o.value === L.name)) { state.city = L.name; citySelect.value = L.name; }
-  if (dev && P.some(p => p.developer === dev)) state.developer = dev;
+  if (dev && P.some(p => developerMatches(p, dev))) state.developer = dev;
   if (city && [...citySelect.options].some(o => o.value === city)) {
     state.city = city;
     citySelect.value = city;

@@ -722,3 +722,7 @@
 .legal p{margin-bottom:1rem}
 .legal ul{margin:0 0 1.1rem;padding-inline-start:1.3rem}
 .legal li{margin-bottom:.45rem}
+
+
+/* developers page: the search box gets the full row on a phone */
+@media (max-width:620px){.dev-toolbar .search-box{flex:1 1 100%}.dev-toolbar .result-count{margin-inline-start:auto}}
