@@ -100,7 +100,7 @@ const PAGE_KEYS = {
   // complete list before filtering, searching or sorting: the facet lists (categories,
   // cities, developers, types) and the counts are all the other rows are used for
   '/projects.html': { projects: ['id', 'slug', 'category', 'city', 'city_id', 'developer', 'developer_id'] },
-  '/units.html': { units: ['id', 'slug', 'type', 'project_id', 'city_id'], projects: ['id', 'city', 'city_id'] },
+  '/units.html': { units: ['id', 'slug', 'type', 'project_id', 'city_id'], projects: ['id', 'city', 'city_id', 'developer', 'developer_id'] },
   '/cities.html': { projects: ['id', 'city_id'] },
   '/developers.html': { projects: ['id', 'developer', 'developer_id'] }
 };

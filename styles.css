@@ -1095,3 +1095,9 @@ em{font-style:normal}
 
 .footer-legal a{color:inherit;text-decoration:underline;text-underline-offset:3px}
 .footer-legal a:hover{color:#fff}
+
+/* developer cards in the smart search results: a logo on white instead of a photo */
+.project.is-dev .project-img{background:#fff;display:flex;align-items:center;justify-content:center}
+.project.is-dev .project-img img{object-fit:contain;padding:28px 36px;box-sizing:border-box}
+.project.is-dev .project-img .dev-initial{font-family:'Fraunces',serif;font-size:4rem;color:var(--ink-soft)}
+.result-kind-badge.developer{color:var(--ink)}

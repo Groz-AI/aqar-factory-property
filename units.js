@@ -115,12 +115,26 @@ function cardHTML(u) {
 }
 
 /* ---------- filtering + sorting ---------- */
+/* spelling-insensitive text for searching: case, Arabic diacritics and the usual letter variants
+   (ا أ إ آ / ى ي / ة ه) are ignored; a unit is also found by the name of its developer */
+const norm = (s) => String(s == null ? '' : s).toLowerCase()
+  .replace(/[\u064B-\u065F\u0670\u0640]/g, '')
+  .replace(/[إأآٱ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه')
+  .replace(/[\s\-_.,&()/]+/g, ' ').trim();
+let devById = {};
+function searchText(u) {
+  if (u._hay === undefined) {
+    const d = devById[u.developerId] || devById[u.projectDeveloperId] || {};
+    u._hay = norm([u.name, u.nameAr, u.type, u.location, u.cityName, u.developer, u.projectDeveloper, d.name, d.name_ar].join(' '));
+  }
+  return u._hay;
+}
 function getFiltered() {
-  const q = state.q.trim().toLowerCase();
+  const words = norm(state.q).split(' ').filter(Boolean);
   let list = P.filter(u =>
     (state.type === 'all' || u.type === state.type) &&
     (state.city === 'all' || u.cityName === state.city) &&
-    (!q || [u.name, u.nameAr, u.type, u.location, u.cityName].join(' ').toLowerCase().includes(q))
+    (!words.length || words.every(w => searchText(u).includes(w)))
   );
   const byNum = (key, dir) => (a, b) => dir * ((Number(a[key]) || 0) - (Number(b[key]) || 0));
   switch (state.sort) {
@@ -232,12 +246,15 @@ function applyURLParams() {
   const quick = !!(window.__PRELOAD_PARTIAL && window.__PRELOAD_PARTIAL.units) && !/[?&](city|type)=/.test(location.search);
   let withCity = (rows) => rows;
   try {
-    const [units, projects, cities] = await Promise.all([
+    const [units, projects, cities, devs] = await Promise.all([
       window.store.getUnits ? window.store.getUnits(quick ? { quick: true } : undefined) : [],
       window.store.getProjects ? window.store.getProjects({ quick: true }) : [],
       window.store.getCities ? window.store.getCities() : [],
+      window.store.getDevelopers ? window.store.getDevelopers() : [],
       window.store.getCategories ? window.store.getCategories() : null
     ]);
+    devById = {};
+    (devs || []).forEach(d => { devById[d.id] = d; });
     const projectsByDbId = {};
     (projects || []).forEach(pr => { if (pr.dbId) projectsByDbId[pr.dbId] = pr; });
     const cityById = {};
@@ -248,7 +265,8 @@ function applyURLParams() {
       const linkedProject = u.projectId ? projectsByDbId[u.projectId] : null;
       const cityId = linkedProject ? linkedProject.cityId : u.cityId;
       const cityRow = cityId ? cityById[cityId] : null;
-      return Object.assign({}, u, { cityName: (linkedProject && linkedProject.city) || (cityRow && cityRow.name) || '' });
+      return Object.assign({}, u, { cityName: (linkedProject && linkedProject.city) || (cityRow && cityRow.name) || '',
+        projectDeveloperId: linkedProject ? linkedProject.developerId : null, projectDeveloper: linkedProject ? linkedProject.developer : '' });
     });
     P = withCity(units);
   } catch (e) { P = []; }

@@ -638,11 +638,11 @@ function wireReveals() {
       fullListsReady = Promise.all([S.getProjects(), S.getUnits ? S.getUnits() : []]).then(([p, u]) => {
         if (Array.isArray(p) && p.length) allProjects = p;
         if (Array.isArray(u) && u.length) allUnits = u;
-        if (window.smartSearch && window.smartSearch.refreshData) window.smartSearch.refreshData(cities || [], allProjects, allUnits);
+        if (window.smartSearch && window.smartSearch.refreshData) window.smartSearch.refreshData(cities || [], allProjects, allUnits, devs || []);
       }).catch(() => {});
     }
     applyContent(content);
-    if (window.smartSearch) window.smartSearch.setData(cities || [], allProjects, allUnits);
+    if (window.smartSearch) window.smartSearch.setData(cities || [], allProjects, allUnits, devs || []);
     initHeroTyping();
     renderHomePicks();
     renderUnitChips();

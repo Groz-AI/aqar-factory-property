@@ -122,13 +122,27 @@ function cardHTML(p){
 }
 
 /* ---------- filtering + sorting ---------- */
+/* spelling-insensitive text for searching: case, Arabic diacritics and the usual letter variants
+   (ا أ إ آ / ى ي / ة ه) are ignored */
+const norm = (s) => String(s == null ? '' : s).toLowerCase()
+  .replace(/[\u064B-\u065F\u0670\u0640]/g, '')
+  .replace(/[إأآٱ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه')
+  .replace(/[\s\-_.,&()/]+/g, ' ').trim();
+let devArById = null;
+function searchText(p){
+  if (p._hay === undefined) {
+    if (!devArById) { devArById = {}; (DEVS || []).forEach(d => { devArById[d.id] = d.name_ar || ''; }); }
+    p._hay = norm([p.name, p.nameAr, p.city, p.location, p.category, p.developer, devArById[p.developerId] || ''].join(' '));
+  }
+  return p._hay;
+}
 function getFiltered(){
-  const q = state.q.trim().toLowerCase();
+  const words = norm(state.q).split(' ').filter(Boolean);
   let list = P.filter(p =>
     (state.cat === 'all' || p.category === state.cat) &&
     (state.city === 'all' || p.city === state.city) &&
     (state.developer === 'all' || p.developer === state.developer) &&
-    (!q || [p.name, p.nameAr, p.city, p.location, p.category, p.developer].join(' ').toLowerCase().includes(q))
+    (!words.length || words.every(w => searchText(p).includes(w)))
   );
   const byNum = (key, dir) => (a, b) => dir * ((Number(a[key]) || 0) - (Number(b[key]) || 0));
   switch(state.sort){

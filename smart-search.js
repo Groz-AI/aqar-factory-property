@@ -1,8 +1,10 @@
 /* ============================================================
    AQAR FACTORY — unified smart search (homepage hero)
    ------------------------------------------------------------
-   Searches Projects and Units together — no Projects/Units tab
-   needed first. Text search + city apply immediately; "Advanced"
+   Searches Projects, Units and Developers together — no tab
+   needed first. A developer's name (English or Arabic) also finds the
+   projects and units it owns.
+   Text search + city apply immediately; "Advanced"
    expands a richer filter panel (type, price range, area range,
    bedrooms, sort) that live-narrows the same combined results grid.
    Relies on globals from script.js (IMG, cycleGalleries, t,
@@ -32,6 +34,7 @@
   const resultsClear = document.getElementById('smartResultsClear');
 
   let COMBINED = [];
+  let DEVS = []; // developer cards: shown only for a text search (they have no price / type / city)
   let cityOptions = [];
   let searchCitySelect = null;
   let priceSlider = null;
@@ -59,6 +62,15 @@
     return (...args) => { clearTimeout(tid); tid = setTimeout(() => fn(...args), ms); };
   }
 
+  // spelling-insensitive text for matching: case, Arabic diacritics and the usual letter variants
+  // (ا أ إ آ / ى ي / ة ه) are ignored, so "القمزي" finds "القمزى"
+  const norm = (s) => String(s == null ? '' : s).toLowerCase()
+    .replace(/[\u064B-\u065F\u0670\u0640]/g, '')
+    .replace(/[إأآٱ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه')
+    .replace(/[\s\-_.,&()/]+/g, ' ').trim();
+  // every word of the query must appear somewhere in the item's text
+  const matchesQuery = (hay, q) => { const w = norm(q); return !w || w.split(' ').every(x => hay.includes(x)); };
+
   /* ---------- combined dataset ---------- */
   // a unit's real city usually only exists via its linked project's cityId
   // (or, rarely, its own cityId) — its free-text `location` field is a street
@@ -72,28 +84,54 @@
     const cityRow = cityId ? cityById[cityId] : null;
     return (linkedProject && linkedProject.city) || (cityRow && cityRow.name) || u.location || '';
   }
-  function buildCombined(projects, units, cities) {
+  function buildCombined(projects, units, cities, devs) {
+    const devById = {};
+    (devs || []).forEach(d => { devById[d.id] = d; });
     const projectsByDbId = {};
     (projects || []).forEach(p => { if (p.dbId) projectsByDbId[p.dbId] = p; });
     const cityById = {};
     (cities || []).forEach(c => { cityById[c.id] = c; });
 
+    const linkedProjectOf = (u) => (u.projectId ? projectsByDbId[u.projectId] : null);
+    const unitDevId = (u) => u.developerId || (linkedProjectOf(u) && linkedProjectOf(u).developerId) || null;
     const pItems = (projects || []).map(p => ({
       _kind: 'project', id: p.id, slugAr: p.slugAr || '', name: p.name, nameAr: p.nameAr || '', city: p.city || p.location || '',
       type: p.category, price: (p.stats && p.stats.price) || '', priceValue: Number(p.priceValue) || 0,
       area: (p.stats && p.stats.area) || '', areaValue: Number(p.areaValue) || 0, beds: 0,
-      cover: p.cover, gallery: p.gallery
+      cover: p.cover, gallery: p.gallery,
+      devName: (devById[p.developerId] && devById[p.developerId].name) || p.developer || '', devNameAr: (devById[p.developerId] && devById[p.developerId].name_ar) || ''
     }));
     const uItems = (units || []).map(u => ({
       _kind: 'unit', id: u.id, slugAr: u.slugAr || '', name: u.name, nameAr: u.nameAr || '', city: resolveUnitCity(u, projectsByDbId, cityById),
       type: u.type, price: u.price || '', priceValue: Number(u.priceValue) || 0,
       area: u.area || '', areaValue: Number(u.areaValue) || 0, beds: Number(u.beds) || 0,
-      cover: u.cover, gallery: u.gallery
+      cover: u.cover, gallery: u.gallery,
+      devName: (devById[unitDevId(u)] && devById[unitDevId(u)].name) || u.developer || (linkedProjectOf(u) && linkedProjectOf(u).developer) || '',
+      devNameAr: (devById[unitDevId(u)] && devById[unitDevId(u)].name_ar) || ''
     }));
-    return pItems.concat(uItems);
+    // the text each item is matched against (name, city, type and its developer, in both languages)
+    const all = pItems.concat(uItems);
+    all.forEach(it => { it._hay = norm(`${it.name} ${it.nameAr} ${it.city} ${it.type} ${it.devName} ${it.devNameAr}`); });
+    return all;
+  }
+
+  // one card per published developer (found by name, never browsed): how many projects it has and its page
+  function buildDevelopers(projects, devs) {
+    const counts = {}, byName = {};
+    (projects || []).forEach(p => {
+      if (p.developerId) counts[p.developerId] = (counts[p.developerId] || 0) + 1;
+      else if (p.developer) byName[p.developer] = (byName[p.developer] || 0) + 1;
+    });
+    const S = window.SchemaHelpers;
+    return (devs || []).map(d => {
+      const slug = S && S.entityUrlSlug ? S.entityUrlSlug(d) : '';
+      return { _kind: 'developer', id: d.id, name: d.name || '', nameAr: d.name_ar || '', logo: d.logo || '', slug,
+        count: counts[d.id] || byName[d.name] || 0, _hay: norm(`${d.name || ''} ${d.name_ar || ''}`) };
+    }).sort((a, b) => b.count - a.count || String(a.name).localeCompare(String(b.name)));
   }
 
   function typesFor(kind) {
+    if (kind === 'developer') return [];
     const pool = kind === 'unit' ? COMBINED.filter(i => i._kind === 'unit')
       : kind === 'project' ? COMBINED.filter(i => i._kind === 'project')
       : COMBINED;
@@ -153,7 +191,8 @@
     const opts = [
       { value: 'all', label: t('All') },
       { value: 'project', label: t('Projects') },
-      { value: 'unit', label: t('Units') }
+      { value: 'unit', label: t('Units') },
+      { value: 'developer', label: t('Developers') }
     ];
     kindChipsEl.innerHTML = opts.map(o =>
       `<button type="button" class="chip${state.kind === o.value ? ' active' : ''}" data-value="${o.value}">${o.label}</button>`).join('');
@@ -189,8 +228,15 @@
 
   /* ---------- filter + sort + render ---------- */
   function getFiltered() {
-    const q = state.q.trim().toLowerCase();
-    return COMBINED.filter(it => {
+    const q = state.q.trim();
+    const priceNarrowed = state.priceMin > priceBounds[0] || state.priceMax < priceBounds[1];
+    const areaNarrowed = state.areaMin > areaBounds[0] || state.areaMax < areaBounds[1];
+    // developers match by name only: a type / city / bedrooms / price / area filter excludes them
+    const devs = (q && (state.kind === 'all' || state.kind === 'developer') && state.type === 'all' && !state.city
+      && state.beds === 'any' && !priceNarrowed && !areaNarrowed)
+      ? DEVS.filter(d => matchesQuery(d._hay, q)) : [];
+    if (state.kind === 'developer') return devs;
+    return devs.concat(COMBINED.filter(it => {
       if (state.kind !== 'all' && it._kind !== state.kind) return false;
       if (state.type !== 'all' && it.type !== state.type) return false;
       if (state.city && !it.city.toLowerCase().includes(state.city.toLowerCase())) return false;
@@ -200,9 +246,9 @@
         const need = state.beds === '4+' ? 4 : Number(state.beds);
         if (state.beds === '4+' ? it.beds < 4 : it.beds !== need) return false;
       }
-      if (q && !`${it.name} ${it.nameAr} ${it.city} ${it.type}`.toLowerCase().includes(q)) return false;
+      if (q && !matchesQuery(it._hay, q)) return false;
       return true;
-    });
+    }));
   }
 
   function sortList(list) {
@@ -216,7 +262,27 @@
     }
   }
 
+  function devCardHTML(d) {
+    const nm = (isAr() && d.nameAr) ? d.nameAr : d.name;
+    const href = `${isAr() ? '/ar' : ''}/developer/${encodeURIComponent(d.slug)}`;
+    const pic = d.logo
+      ? `<img class="pg-slide active" src="${IMG(d.logo, 400)}" alt="${escHTML(nm)}" width="400" height="300" loading="lazy" decoding="async">`
+      : `<span class="dev-initial" aria-hidden="true">${escHTML(String(nm || '·').charAt(0))}</span>`;
+    const label = d.count === 0 ? t('No projects yet') : d.count === 1 ? t('1 Project') : `${d.count.toLocaleString()} ${t('Projects')}`;
+    return `
+    <a class="project reveal is-dev" href="${href}">
+      <div class="project-img">${pic}<span class="result-kind-badge developer">${t('Developer')}</span></div>
+      <div class="project-body">
+        <span class="project-tag">${t('Developer')}</span>
+        <h3>${escHTML(nm)}</h3>
+        <p>${label}</p>
+        <div class="project-foot"><span>${d.count === 0 ? t('View developer') : t('View projects')}</span><span></span></div>
+      </div>
+    </a>`;
+  }
+
   function cardHTML(it) {
+    if (it._kind === 'developer') return devCardHTML(it);
     const imgs = (it.gallery && it.gallery.length ? it.gallery : [it.cover]).filter(Boolean).slice(0, 5);
     const altName = String(pick(it, 'name', 'nameAr') || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     const slides = imgs.map((g, i) => i === 0
@@ -277,7 +343,7 @@
     }
     const q = state.q.trim().toLowerCase();
     if (q) {
-      const hay = `${it.name} ${it.nameAr} ${it.city} ${it.type}`.toLowerCase();
+      const hay = `${it.name} ${it.nameAr} ${it.city} ${it.type} ${it.devName || ''} ${it.devNameAr || ''}`.toLowerCase();
       if (hay.includes(q)) score += 4;
       else if (q.split(/\s+/).some(w => w.length > 2 && hay.includes(w))) score += 1.5;
     }
@@ -295,7 +361,9 @@
     // projects.js/units.js's listing grids, which already clear these before
     // every re-render)
     resultsGrid.querySelectorAll('[data-gallery]').forEach(b => { if (b._tid) clearInterval(b._tid); });
-    let list = sortList(getFiltered());
+    const found = getFiltered();
+    // developers stay on top; the sort order applies to the projects and units
+    let list = found.filter(i => i._kind === 'developer').concat(sortList(found.filter(i => i._kind !== 'developer')));
 
     if (list.length) {
       resultsCount.textContent = `${list.length} ${t(list.length === 1 ? 'result' : 'results')}`;
@@ -380,8 +448,9 @@
   }
 
   /* ---------- public entry point (called from script.js's boot) ---------- */
-  function setData(cities, projects, units) {
-    COMBINED = buildCombined(projects, units, cities);
+  function setData(cities, projects, units, devs) {
+    COMBINED = buildCombined(projects, units, cities, devs);
+    DEVS = buildDevelopers(projects, devs);
 
     cityOptions = (cities || []).map(c => ({ value: c.name, label: window.cityText(c.name) }));
     searchCitySelect = searchCitySelect || (typeof initCustomSelect === 'function' ? initCustomSelect(document.getElementById('searchCity')) : null);
@@ -412,8 +481,9 @@
 
   // the complete lists arrived after first paint (the page started from the
   // partial rows api/preload.js sent): swap them in, bounds and chips stay
-  function refreshData(cities, projects, units) {
-    COMBINED = buildCombined(projects, units, cities);
+  function refreshData(cities, projects, units, devs) {
+    COMBINED = buildCombined(projects, units, cities, devs);
+    DEVS = buildDevelopers(projects, devs);
     if (hasSearched) render();
   }
 
