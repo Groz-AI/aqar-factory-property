@@ -1075,6 +1075,7 @@
     "These terms are governed by the laws of the Arab Republic of Egypt, and the courts of Cairo have jurisdiction over any dispute.": "تخضع هذه الشروط لقوانين جمهورية مصر العربية، وتختص محاكم القاهرة بأي نزاع.",
     "Questions about these terms? Reach us at:": "هل لديك أسئلة حول هذه الشروط؟ تواصل معنا عبر:",
     // developers search + developer page without projects
+    "developer": "مطور",
     "Search developers by name…": "ابحث عن مطور بالاسم…",
     "Search developers": "ابحث في المطورين",
     "developers": "مطورون",

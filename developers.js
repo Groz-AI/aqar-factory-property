@@ -65,6 +65,7 @@ const norm = (s) => String(s == null ? '' : s).toLowerCase()
       const list = words.length ? rows.filter(r => words.every(w => r.hay.includes(w))) : rows;
       wrap.innerHTML = list.map(cardHTML).join('');
       count.textContent = list.length.toLocaleString();
+      count.nextElementSibling.textContent = list.length === 1 ? t('developer') : t('developers');
       empty.hidden = list.length !== 0;
       clear.hidden = !input.value;
     }
