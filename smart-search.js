@@ -273,7 +273,6 @@
     <a class="project reveal is-dev" href="${href}">
       <div class="project-img">${pic}<span class="result-kind-badge developer">${t('Developer')}</span></div>
       <div class="project-body">
-        <span class="project-tag">${t('Developer')}</span>
         <h3>${escHTML(nm)}</h3>
         <p>${label}</p>
         <div class="project-foot"><span>${d.count === 0 ? t('View developer') : t('View projects')}</span><span></span></div>
