@@ -134,8 +134,8 @@ module.exports = async function handler(req, res) {
 
   const history = Array.isArray(body.history) ? body.history.slice(-6) : [];
   const ctx = body.context || {};
-  const projects = catalog(ctx.projects, [['category', 30], ['location', 40], ['price', 30], ['unitTypes', 60]]);
-  const units = catalog(ctx.units, [['type', 20], ['location', 40], ['price', 30], ['beds', 4], ['baths', 4], ['area', 12]]);
+  const projects = catalog(ctx.projects, [['category', 30], ['location', 40], ['price', 45], ['unitTypes', 60]]);
+  const units = catalog(ctx.units, [['type', 20], ['location', 40], ['price', 45], ['beds', 4], ['baths', 4], ['area', 12]]);
   const cities = names(ctx.cities);
   const categories = names(ctx.categories);
   const unitTypes = names(ctx.unitTypes);
@@ -151,7 +151,9 @@ module.exports = async function handler(req, res) {
     `YOUR JOB`,
     `- Have a natural, consultative conversation to learn what the customer wants to buy: preferred city/location, unit type (villa, apartment, duplex, office, etc), budget range, and any must-haves (bedrooms, size, etc).`,
     `- Ask short, friendly clarifying questions ONE OR TWO AT A TIME — don't interrogate the customer with a long list at once.`,
-    `- Once you have enough information, recommend 1-3 specific PROJECTS and/or UNITS below, using each one's exact "name" field so the site can link to it. Never invent a project, unit, location, price, or feature that isn't in the lists below.`,
+    `- Once you have enough information, recommend 1-3 specific PROJECTS and/or UNITS below, copying each name character for character (including any size written in it) so the site can link to it. Never invent a project, unit, location, price, or feature that isn't in the lists below.`,
+    `- Accuracy matters more than a perfect match: state ONLY facts written on that listing's own line. Do not add finishing, delivery, view, payment, availability or bedroom details that are not written there, and do not say a home can be changed.`,
+    `- Copy prices from the line; never estimate, round up or adjust them. A project's price is the project's STARTING price, never the price of a particular size or number of bedrooms. Projects list no bedroom counts, so say the customer should confirm bedrooms and exact prices with our team. If a line has no price, say the price is on request.`,
     `- If nothing fits well, say so honestly and suggest the closest real alternatives.`,
     `- Keep replies short: 2-4 sentences, in plain text (no markdown, no tables).`,
     ``,
@@ -193,7 +195,7 @@ module.exports = async function handler(req, res) {
         max_completion_tokens: 800,
         reasoning_effort: 'low',
         include_reasoning: false,
-        temperature: 0.5
+        temperature: 0.2
       })
     });
     const data = await upstream.json();
