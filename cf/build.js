@@ -13,7 +13,7 @@
    Settings (environment):
      IMAGES=0            skip the photo copies (pages then use the originals)
      IMAGES=40           only the first 40 photos (for a local test)
-     IMAGE_MINUTES=12    stop making new copies after this long
+     IMAGE_MINUTES=6     stop making new copies after this long (the whole build must end within 20 min)
      IMAGE_CACHE_URL     the live site (https://...); copies it already has are taken from there
      PAGES=30            only the first 30 detail pages (for a local test)
    ============================================================ */
@@ -148,7 +148,7 @@ async function buildImages() {
   sharp.concurrency(1);
   const cacheDir = path.join(ROOT, 'node_modules', '.cache', 'cf-img');
   fs.mkdirSync(cacheDir, { recursive: true });
-  const deadline = Date.now() + Number(process.env.IMAGE_MINUTES || 12) * 60000;
+  const deadline = Date.now() + Number(process.env.IMAGE_MINUTES || 6) * 60000;
   let made = 0, failed = 0, late = 0, reused = 0;
   // on Cloudflare: take copies from whichever address already serves this build's photos
   const candidates = process.env.IMAGE_CACHE_URL ? [process.env.IMAGE_CACHE_URL]
