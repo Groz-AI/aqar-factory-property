@@ -12,7 +12,9 @@
   const localMode = !cloud && !!window.RealteekLocal;
   // sessionStorage (not localStorage) — admin sessions end when the tab/browser
   // closes, so every new browser session requires a fresh sign-in
-  const sb = cloud ? window.supabase.createClient(cfg.url, cfg.anonKey, { auth: { storage: window.sessionStorage } })
+  // publish.js watches the saves, so changes get published to the live site
+  const watched = window.AdminPublish ? { fetch: window.AdminPublish.track((...args) => window.fetch(...args)) } : {};
+  const sb = cloud ? window.supabase.createClient(cfg.url, cfg.anonKey, { auth: { storage: window.sessionStorage }, global: watched })
            : (localMode ? window.RealteekLocal.makeClient() : null);
   const configured = cloud || localMode;
   const FALLBACK = window.FALLBACK || {};
@@ -571,6 +573,7 @@
 
     wireChrome();
     applyPermissionVisibility();
+    if (cloud && window.AdminPublish) window.AdminPublish.start(sb, toast);
     await hideFaqFieldsIfNotMigrated();
     await hideHomeFlagsIfNotMigrated();
     await hideAboutTextIfNotMigrated();
@@ -729,6 +732,7 @@
   function wireChrome() {
     $$('.sb-link').forEach(btn => btn.addEventListener('click', () => go(btn.dataset.view)));
     $('#logoutBtn').addEventListener('click', async () => {
+      if (window.AdminPublish) await window.AdminPublish.flush();
       if (sb) await sb.auth.signOut();
       location.replace('login.html');
     });

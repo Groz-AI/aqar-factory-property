@@ -49,6 +49,11 @@
           <div class="av" id="userAv">A</div>
           <div><b id="userName">Admin</b><small id="userEmail">—</small></div>
         </div>
+        <button class="btn btn-sky btn-sm" id="publishBtn" style="width:100%;margin-bottom:8px;display:none">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg>
+          <span data-i18n>Publish now</span>
+        </button>
+        <small id="publishNote" style="display:block;text-align:center;color:#8a97a5;margin-bottom:8px"></small>
         <button class="btn btn-ghost btn-sm" id="logoutBtn" style="width:100%">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
           <span data-i18n>Sign out</span>
@@ -97,6 +102,7 @@
   <script src="../fallback.js"></script>
   <script src="../local-backend.js"></script>
   <script src="../blocks-render.js"></script>
+  <script src="publish.js"></script>
   <script src="admin.js"></script>
 </body>
 </html>

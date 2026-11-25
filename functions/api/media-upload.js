@@ -10,8 +10,8 @@ import { AwsClient } from 'aws4fetch';
 
 const json = (status, body) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' } });
 
-// any logged-in ACTIVE admin (not merely any signed-in database user)
-async function verifyCaller(env, token) {
+// any logged-in ACTIVE admin (not merely any signed-in database user); also used by publish.js
+export async function verifyCaller(env, token) {
   if (!token || !env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) return false;
   try {
     const key = env.SUPABASE_SERVICE_ROLE_KEY;
