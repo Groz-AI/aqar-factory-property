@@ -1,0 +1,22 @@
+# Rebuilds the Cloudflare site so pages for new / edited items reach search engines.
+# Visitors already see current lists (loaded from the database); this refreshes the pre-built pages.
+# Setup: Cloudflare Pages -> Settings -> Builds -> Add deploy hook, then in GitHub
+# Settings -> Secrets and variables -> Actions add the secret CF_DEPLOY_HOOK with that address.
+# (Scheduled runs only happen from the default branch.)
+name: Rebuild Cloudflare site
+
+on:
+  schedule:
+    - cron: "17 */6 * * *"   # every 6 hours (120 builds a month; the free plan allows 500)
+  workflow_dispatch:          # "Run workflow" in the Actions tab publishes right away
+
+jobs:
+  rebuild:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call the deploy hook
+        env:
+          HOOK: ${{ secrets.CF_DEPLOY_HOOK }}
+        run: |
+          if [ -z "$HOOK" ]; then echo "CF_DEPLOY_HOOK is not set - skipping."; exit 0; fi
+          curl -sS -f -X POST "$HOOK" > /dev/null && echo "Build requested."

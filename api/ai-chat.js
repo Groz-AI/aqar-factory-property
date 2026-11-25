@@ -64,7 +64,8 @@ function allowedOrigin(req) {
   try { host = new URL(src).hostname; } catch (_) { return false; }
   return host === 'aqar-factory.com' || host.endsWith('.aqar-factory.com') ||
     host === 'localhost' || host === '127.0.0.1' ||
-    /^aqar-factory-property[a-z0-9-]*\.vercel\.app$/.test(host);
+    /^aqar-factory-property[a-z0-9-]*\.vercel\.app$/.test(host) ||
+    /^([a-z0-9-]+\.)?aqar-factory\.pages\.dev$/.test(host);
 }
 
 module.exports = async function handler(req, res) {

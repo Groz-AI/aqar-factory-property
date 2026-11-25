@@ -195,16 +195,7 @@
   async function fetchFullRows(table) {
     const cached = cacheGet(table);
     if (cached) return cached;
-    // 1) the CDN-cached copy (nearby, instant); 2) the database directly
-    if (/^https?:/.test(location.protocol) && !/^(localhost|127.)/.test(location.hostname)) {
-      try {
-        const r = await fetch('/api/list?t=' + table);
-        if (r.ok) {
-          const rows = await r.json();
-          if (Array.isArray(rows) && rows.length) { cacheSet(table, rows); return rows; }
-        }
-      } catch (_) { /* fall through to the direct query */ }
-    }
+    // straight from the database (there is no server function in front of it)
     try {
       const { data, error } = await sb.from(table).select(LIST_COLS[table] || '*').eq('published', true).order('sort_order', { ascending: true });
       if (error || !data || !data.length) return null;
@@ -231,7 +222,10 @@
     const pre = window.__PRELOAD && window.__PRELOAD[table];
     if (Array.isArray(pre) && pre.length) {
       const partial = !!(window.__PRELOAD_PARTIAL && window.__PRELOAD_PARTIAL[table]);
-      if (!partial || quick) return map ? pre.map(map) : pre;
+      // a page built ahead of time (__PRELOAD_STATIC) paints from its inlined rows (quick), and anything
+      // that asks for the real list gets the current one from the database
+      const stale = !!window.__PRELOAD_STATIC;
+      if ((!partial && !stale) || quick) return map ? pre.map(map) : pre;
       if (!fullMemo[table]) fullMemo[table] = fetchFullRows(table);
       const rows = await fullMemo[table];
       // could not load the complete list: the partial rows are still real data

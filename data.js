@@ -3,22 +3,18 @@
    Used by projects.html (listing) and project.html (detail)
    ============================================================ */
 /* UO: the original image address (structured data, anything that must be an absolute, stable URL).
-   U: the address a page should DISPLAY — R2 photos go through /api/img, which sends a resized WebP
-   (the originals are 2-3 MB PNG/JPEG files); anything else is unchanged. localhost keeps originals
-   because the resizer only exists on Vercel. */
+   U: the address a page should DISPLAY — a resized WebP copy of an R2 photo, made when the site was
+   built (cf/build.js lists them in window.__IMG); a photo without a copy yet shows the original. */
 window.UO = (id, w = 900) =>
   !id ? '' :
   /^https?:\/\//.test(id) ? id :
   `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=${w}&q=80`;
-// the sizes /api/img can send (same list as api/img.js): asking for fewer distinct sizes keeps the CDN cache small
-window.U = (function () {
-  const SNAP = [320, 480, 640, 800, 1200, 1600];
-  return (id, w = 900) => {
-    const o = window.UO(id, w);
-    return /^https:\/\/pub-[a-z0-9]+\.r2\.dev\//.test(o) && !/^(localhost|127\.0\.0\.1)$/.test(location.hostname)
-      ? '/api/img?u=' + encodeURIComponent(o) + '&w=' + (SNAP.find(x => x >= w * 0.88) || 1600) : o;
-  };
-})();
+window.U = (id, w = 900) => {
+  const o = window.UO(id, w);
+  const m = o.match(/^https:\/\/pub-[a-z0-9]+\.r2\.dev\/([^?#]+)$/);
+  const have = m && window.__IMG && window.__IMG[m[1]];
+  return have ? '/_img/' + m[1] + '-' + (have.find(s => s >= w * 0.88) || have[have.length - 1]) + '.webp' : o;
+};
 
 /* Card galleries used to load EVERY slide of EVERY card up front (~20 MB on the
    projects page). Slides now carry data-bg: the visible one loads when its card

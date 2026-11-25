@@ -25,3 +25,9 @@ backup-export/
 
 # private handoff notes (contain keys)
 HANDOFF.md
+
+# Cloudflare build output
+dist/
+cf/generated.json
+.wrangler/
+.dev.vars

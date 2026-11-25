@@ -1,0 +1,5 @@
+# Cloudflare Pages settings (secrets are added in the dashboard, never here)
+name = "aqar-factory"
+pages_build_output_dir = "dist"
+compatibility_date = "2026-10-01"
+compatibility_flags = ["nodejs_compat"]

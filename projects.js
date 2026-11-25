@@ -239,8 +239,7 @@ function loadFullRows(kind) {
     fullRowsPromise[kind] = (async () => {
       let rows = null;
       try {
-        const r = await fetch('/api/list?t=' + kind);
-        if (r.ok) rows = await r.json();
+        // (the database query below does it)
       } catch (_) {}
       if (!Array.isArray(rows) && window.store && window.store.sb) {
         try { const { data } = await window.store.sb.from(kind).select('*').eq('published', true); rows = data; } catch (_) {}
