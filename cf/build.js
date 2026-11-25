@@ -362,7 +362,8 @@ async function copyStatic() {
 
   // 7. redirects: the ones in vercel.json and middleware.js
   const vercel = JSON.parse(fs.readFileSync(path.join(ROOT, 'vercel.json'), 'utf8'));
-  (vercel.redirects || []).filter(r => !r.has && !r.source.includes(':')).forEach(r => { redirects[r.source] = r.destination; });
+  const permanent = []; // answered with 308, as the previous host did
+  (vercel.redirects || []).filter(r => !r.has && !r.source.includes(':')).forEach(r => { redirects[r.source] = r.destination; permanent.push(r.source); });
   const mw = fs.readFileSync(path.join(ROOT, 'middleware.js'), 'utf8');
   const start = mw.indexOf('const RENAMED = {');
   const end = mw.indexOf('\n  };', start);
@@ -375,10 +376,10 @@ async function copyStatic() {
 
   const notFound = (ar) => `<!DOCTYPE html><html lang="${ar ? 'ar' : 'en'}"${ar ? ' dir="rtl"' : ''}><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex"><title>${ar ? 'الصفحة غير موجودة' : 'Page not found'}</title></head><body style="font-family:sans-serif;text-align:center;padding:60px 20px"><h1>${ar ? 'الصفحة غير موجودة' : 'Page not found'}</h1><p><a href="${ar ? '/ar' : '/'}">Aqar Factory</a></p></body></html>`;
   write('404.html', notFound(false));
-  fs.writeFileSync(path.join(ROOT, 'cf', 'generated.json'), JSON.stringify({ supabase: { url: SUPA, key: KEY }, redirects, notFound: { en: notFound(false), ar: notFound(true) } }));
+  fs.writeFileSync(path.join(ROOT, 'cf', 'generated.json'), JSON.stringify({ supabase: { url: SUPA, key: KEY }, redirects, permanent, notFound: { en: notFound(false), ar: notFound(true) } }));
 
   write('_routes.json', JSON.stringify({ version: 1, include: ['/*'], exclude: ['/admin/*', '/_img/*', '/*.css', '/*.js', '/*.png', '/*.jpg', '/*.ico', '/*.svg', '/*.webp', '/*.xml', '/*.txt'] }));
-  write('_headers', ['/admin/*', '  X-Robots-Tag: noindex, nofollow', '', '/_img/*.webp', '  Cache-Control: public, max-age=31536000, immutable', ''].join('\n'));
+  write('_headers', ['/*', '  Strict-Transport-Security: max-age=63072000', '', '/admin/*', '  X-Robots-Tag: noindex, nofollow', '', '/_img/*.webp', '  Cache-Control: public, max-age=31536000, immutable', ''].join('\n'));
 
   const count = (dir) => fs.readdirSync(dir, { withFileTypes: true }).reduce((n, e) => n + (e.isDirectory() ? count(path.join(dir, e.name)) : 1), 0);
   const total = count(OUT);
